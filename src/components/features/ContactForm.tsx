@@ -19,6 +19,7 @@
  */
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api/v1';
+const SITE_KEY = process.env.NEXT_PUBLIC_SITE_KEY ?? 'lilygemstudio';
 
 import { useEffect, useRef, useState } from 'react';
 
@@ -96,7 +97,7 @@ export function ContactForm() {
       const res = await fetch(`${API_BASE}/contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ ...form, cf_hp: honeypot }),
+        body: JSON.stringify({ ...form, cf_hp: honeypot, site: SITE_KEY }),
       });
       if (!res.ok) throw new Error('server_error');
       setState('success');
