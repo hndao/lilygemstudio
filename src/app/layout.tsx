@@ -79,6 +79,19 @@ export default function RootLayout({
             src="https://plausible.io/js/script.tagged-events.js"
           />
         )}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var country = document.cookie.match(/(^| )NEXT_COUNTRY=([^;]+)/);
+                  var isVn = country && country[2] === 'VN';
+                  document.documentElement.classList.add(isVn ? 'country-vn' : 'country-global');
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
       </head>
       <body className="font-body antialiased bg-(--color-background) text-(--color-foreground)">
         {children}

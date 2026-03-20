@@ -154,6 +154,8 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
             <PriceLine
               price={product.price}
               compareAtPrice={product.compareAtPrice}
+              priceVnd={product.priceVnd}
+              compareAtPriceVnd={product.compareAtPriceVnd}
               size="lg"
             />
           )}
@@ -172,10 +174,12 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
           {/* CTA — client component island (window.plausible requires browser) */}
           <AffiliateCTA
             affiliateLink={product.affiliateLink}
+            affiliateLinkVn={product.affiliateLinkVn}
             productId={product.id}
             productSlug={slug}
             productName={product.name}
             price={product.price}
+            priceVnd={product.priceVnd}
           />
 
           {/* FTC disclosure (legal component — network-specific copy) */}
@@ -229,8 +233,10 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         productSlug={slug}
         productName={product.name}
         price={product.price}
+        priceVnd={product.priceVnd}
         coverImage={galleryImages[0]}
         affiliateLink={product.affiliateLink}
+        affiliateLinkVn={product.affiliateLinkVn}
       />
     </main>
   );

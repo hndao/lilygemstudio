@@ -138,8 +138,11 @@ export interface ProductCard {
   tagline: string;          // one-line hook for grid cards
   price: Money;
   compareAtPrice?: Money;   // crossed-out original price (sale indicator)
+  priceVnd?: Money;
+  compareAtPriceVnd?: Money;
   coverImage: ProductImage;
   affiliateLink: AffiliateLink;
+  affiliateLinkVn?: AffiliateLink;
   reviewSummary: ReviewSummary;
   badge?: 'new' | 'bestseller' | 'sale' | 'limited';
 }

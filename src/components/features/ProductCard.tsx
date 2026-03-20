@@ -33,7 +33,7 @@ export function ProductCard({
   priority = false,
   sizes = '(max-width: 767px) 50vw, (max-width: 1279px) 33vw, 25vw',
 }: ProductCardProps) {
-  const { slug, name, tagline, price, compareAtPrice, coverImage, reviewSummary, badge } = product;
+  const { slug, name, tagline, price, compareAtPrice, priceVnd, compareAtPriceVnd, coverImage, reviewSummary, badge } = product;
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-lg bg-(--color-surface) shadow-(--shadow-soft) transition-shadow duration-200 hover:shadow-(--shadow-card)">
@@ -71,7 +71,14 @@ export function ProductCard({
         <p className="line-clamp-1 text-xs text-(--color-muted)">{tagline}</p>
 
         {/* Price + compare-at */}
-        <PriceLine price={price} compareAtPrice={compareAtPrice} size="sm" className="mt-auto pt-1" />
+        <PriceLine 
+          price={price} 
+          compareAtPrice={compareAtPrice} 
+          priceVnd={priceVnd} 
+          compareAtPriceVnd={compareAtPriceVnd} 
+          size="sm" 
+          className="mt-auto pt-1" 
+        />
 
         {/* Star rating */}
         <StarRating

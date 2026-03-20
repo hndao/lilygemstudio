@@ -12,6 +12,8 @@ import type { Money } from '@/types';
 interface PriceLineProps {
   price: Money;
   compareAtPrice?: Money;
+  priceVnd?: Money;
+  compareAtPriceVnd?: Money;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
@@ -25,35 +27,57 @@ const SIZE_MAP = {
 export function PriceLine({
   price,
   compareAtPrice,
+  priceVnd,
+  compareAtPriceVnd,
   size = 'sm',
   className = '',
 }: PriceLineProps) {
   const sizes = SIZE_MAP[size];
   const isOnSale = compareAtPrice && compareAtPrice.amount > price.amount;
+  const isOnSaleVnd = compareAtPriceVnd && priceVnd && compareAtPriceVnd.amount > priceVnd.amount;
 
-  return (
-    <div className={`flex items-baseline gap-2 ${className}`}>
-      {/* Current price — sage colour when on sale to reinforce the deal */}
+  const renderPriceLabel = (current: Money, compare?: Money, saleBool?: boolean) => (
+    <>
       <span
         className={[
           'font-heading',
           sizes.price,
-          isOnSale ? 'text-(--color-sage)' : 'text-(--color-stone)',
+          saleBool ? 'text-(--color-sage)' : 'text-(--color-stone)',
         ].join(' ')}
-        aria-label={`Price: ${price.formatted}`}
+        aria-label={`Price: ${current.formatted}`}
       >
-        {price.formatted}
+        {current.formatted}
       </span>
-
-      {/* Compare-at price — struck through, muted */}
-      {isOnSale && (
+      {saleBool && compare && (
         <span
           className={`font-body line-through text-(--color-muted) ${sizes.compare}`}
-          aria-label={`Original price: ${compareAtPrice.formatted}`}
+          aria-label={`Original price: ${compare.formatted}`}
         >
-          {compareAtPrice.formatted}
+          {compare.formatted}
         </span>
       )}
+    </>
+  );
+
+  if (priceVnd) {
+    return (
+      <>
+        {/* Global pricing — default. Hidden if country-vn is active */}
+        <div className={`flex items-baseline gap-2 [.country-vn_&]:hidden ${className}`}>
+          {renderPriceLabel(price, compareAtPrice, isOnSale)}
+        </div>
+        {/* VN pricing — hidden by default. Shown if country-vn is active */}
+        <div className={`hidden items-baseline gap-2 [.country-vn_&]:flex ${className}`}>
+          {renderPriceLabel(priceVnd, compareAtPriceVnd, isOnSaleVnd)}
+        </div>
+      </>
+    );
+  }
+
+  // Fallback: no VN price available, always show global
+  return (
+    <div className={`flex items-baseline gap-2 ${className}`}>
+      {renderPriceLabel(price, compareAtPrice, isOnSale)}
     </div>
   );
 }

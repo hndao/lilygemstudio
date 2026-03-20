@@ -37,25 +37,43 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // Detect Country from Vercel edge header (fallback to GLOBAL for local dev)
+  const ipCountry = req.headers.get('x-vercel-ip-country');
+  const countryCode = ipCountry === 'VN' ? 'VN' : 'GLOBAL';
+  const currentCountryCookie = req.cookies.get('NEXT_COUNTRY')?.value;
+  
+  let response: NextResponse | undefined;
+
   // Check if the pathname already starts with a supported locale
   const hasLocale = SUPPORTED_LOCALES.some(
     (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`)
   );
 
   if (hasLocale) {
-    return NextResponse.next();
+    response = NextResponse.next();
+  } else {
+    // Redirect to locale-prefixed URL
+    const cookieLocale = req.cookies.get('NEXT_LOCALE')?.value as Locale | undefined;
+    const locale =
+      cookieLocale && SUPPORTED_LOCALES.includes(cookieLocale)
+        ? cookieLocale
+        : getLocaleFromRequest(req);
+
+    const url = req.nextUrl.clone();
+    url.pathname = `/${locale}${pathname}`;
+    response = NextResponse.redirect(url);
   }
 
-  // Redirect to locale-prefixed URL
-  const cookieLocale = req.cookies.get('NEXT_LOCALE')?.value as Locale | undefined;
-  const locale =
-    cookieLocale && SUPPORTED_LOCALES.includes(cookieLocale)
-      ? cookieLocale
-      : getLocaleFromRequest(req);
+  // Always enforce the correct NEXT_COUNTRY cookie
+  if (currentCountryCookie !== countryCode) {
+    response.cookies.set('NEXT_COUNTRY', countryCode, {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+      sameSite: 'lax',
+    });
+  }
 
-  const url = req.nextUrl.clone();
-  url.pathname = `/${locale}${pathname}`;
-  return NextResponse.redirect(url);
+  return response;
 }
 
 export const config = {

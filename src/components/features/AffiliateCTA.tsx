@@ -18,6 +18,7 @@ import type { AffiliateLink, Money } from '@/types';
 
 interface AffiliateCTAProps {
   affiliateLink: AffiliateLink;
+  affiliateLinkVn?: AffiliateLink;
   /** Numeric product ID — used to build the /go/{productId} redirect URL. */
   productId: string;
   productSlug: string;
@@ -25,43 +26,74 @@ interface AffiliateCTAProps {
   /**
    * Optional price — when provided and amount === 0, the CTA label switches to
    * "Check Current Price" (amber) because the exact price is unknown or dynamic.
-   * Amazon prices fluctuate and a $0 value signals the importer couldn't read it.
    */
   price?: Money;
+  priceVnd?: Money;
 }
 
-export function AffiliateCTA({ affiliateLink, productId, productSlug, productName, price }: AffiliateCTAProps) {
-  const networkLabel =
-    affiliateLink.network.charAt(0).toUpperCase() + affiliateLink.network.slice(1);
+export function AffiliateCTA({
+  affiliateLink,
+  affiliateLinkVn,
+  productId,
+  productSlug,
+  productName,
+  price,
+  priceVnd,
+}: AffiliateCTAProps) {
+  const renderCTA = (link: AffiliateLink, prc?: Money, isVnButton = false) => {
+    // If it's the VN button and the network is "direct" (common for Zalo/Local shops)
+    // we use a specific label instead of "Shop on Direct".
+    const rawNetwork = link.network.charAt(0).toUpperCase() + link.network.slice(1);
+    const networkLabel = isVnButton && link.network === 'direct' ? 'Zalo / Website' : rawNetwork;
 
-  // $0.00 or missing price → Gemini couldn't read the price. Show neutral CTA.
-  const isFree = !price || price.amount === 0;
-  const ctaLabel = isFree ? 'Check Current Price' : `Shop on ${networkLabel}`;
+    const isFree = !prc || prc.amount === 0;
+    
+    // Zalo / VN local buttons: blue (#0068FF is Zalo brand color)
+    const ctaLabel = isFree ? 'Check Current Price' : (isVnButton ? `Contact via ${networkLabel}` : `Shop on ${networkLabel}`);
+    
+    let bgClass = 'bg-(--color-cta) hover:bg-(--color-cta-hover)';
+    if (isFree || link.network === 'amazon') {
+      bgClass = 'bg-[#FF9900] hover:bg-[#E68A00]';
+    } else if (isVnButton && link.network === 'direct') {
+      bgClass = 'bg-[#0068FF] hover:bg-[#0054cc]';
+    }
 
-  // Amazon affiliate pages: amber (#FF9900) aligns with Amazon's own brand colour
-  // and subtly signals "this goes to Amazon" — a trust cue for experienced shoppers.
-  const bgClass = isFree || affiliateLink.network === 'amazon'
-    ? 'bg-[#FF9900] hover:bg-[#E68A00]'
-    : 'bg-(--color-cta) hover:bg-(--color-cta-hover)';
+    return (
+      <a
+        href={isVnButton ? link.url : `/go/${productId}`}
+        {...AFFILIATE_LINK_PROPS}
+        onClick={() =>
+          trackAffiliateClick({
+            slug: productSlug,
+            network: link.network,
+            name: productName,
+          })
+        }
+        className={`mt-2 flex w-full min-h-[44px] items-center justify-center gap-2 px-6 py-3.5 font-heading text-sm font-700 uppercase tracking-widest text-white transition-colors ${bgClass}`}
+        aria-label={`${ctaLabel} — ${productName}`}
+      >
+        {ctaLabel}
+        <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
+      </a>
+    );
+  };
 
-  return (
-    <a
-      href={`/go/${productId}`}
-      {...AFFILIATE_LINK_PROPS}
-      onClick={() =>
-        trackAffiliateClick({
-          slug: productSlug,
-          network: affiliateLink.network,
-          name: productName,
-        })
-      }
-      // Sharp corners (no rounded) per "premium feel" design spec; tracking-widest for luxury feel
-      className={`mt-2 flex w-full min-h-[44px] items-center justify-center gap-2 px-6 py-3.5 font-heading text-sm font-700 uppercase tracking-widest text-white transition-colors ${bgClass}`}
-      aria-label={`${ctaLabel} — ${productName}`}
-    >
-      {ctaLabel}
-      <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
-    </a>
-  );
+  if (affiliateLinkVn) {
+    return (
+      <>
+        {/* Global CTA — default. Hidden if country-vn is active */}
+        <div className="[.country-vn_&]:hidden">
+          {renderCTA(affiliateLink, price, false)}
+        </div>
+        {/* VN CTA — hidden by default. Shown if country-vn is active */}
+        <div className="hidden [.country-vn_&]:block">
+          {renderCTA(affiliateLinkVn, priceVnd, true)}
+        </div>
+      </>
+    );
+  }
+
+  // Fallback: no VN link available, always show global
+  return renderCTA(affiliateLink, price, false);
 }
 
