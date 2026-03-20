@@ -1,0 +1,56 @@
+{
+  "nav": {
+    "home": "Home",
+    "shop": "Shop",
+    "about": "About Us",
+    "contact": "Contact",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  },
+  "header": {
+    "logo_alt": "LilyGem Studio",
+    "open_menu": "Open menu",
+    "close_menu": "Close menu"
+  },
+  "footer": {
+    "tagline": "Handcrafted bracelets and rings made from agate, quartz, and natural gemstones.",
+    "copyright": "LilyGem Studio. All rights reserved.",
+    "shop_heading": "Shop",
+    "company_heading": "Company",
+    "legal_heading": "Legal",
+    "all_products": "All Products",
+    "bestsellers": "Bestsellers",
+    "new_arrivals": "New Arrivals",
+    "on_sale": "On Sale"
+  },
+  "shop": {
+    "title": "Shop",
+    "description": "Browse our collection of handcrafted gemstone jewelry.",
+    "no_products": "No products found.",
+    "sort_label": "Sort by",
+    "filter_label": "Filter"
+  },
+  "product": {
+    "add_to_cart": "Buy Now",
+    "reviews_title": "Customer Reviews",
+    "no_reviews": "No reviews yet.",
+    "related_products": "You May Also Like",
+    "available": "In Stock",
+    "sold_out": "Sold Out"
+  },
+  "home": {
+    "hero_title": "Natural Gemstone Jewelry, Handcrafted",
+    "hero_subtitle": "Discover our collection of bracelets and rings made from agate, rose quartz, and natural stones.",
+    "shop_now": "Shop Now",
+    "featured_title": "Featured Products"
+  },
+  "not_found": {
+    "title": "Page Not Found",
+    "message": "The page you are looking for does not exist.",
+    "back_home": "Go Home"
+  },
+  "lang_switcher": {
+    "en": "English",
+    "vi": "Tiếng Việt"
+  }
+}

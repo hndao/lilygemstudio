@@ -1,0 +1,56 @@
+{
+  "nav": {
+    "home": "Trang Chủ",
+    "shop": "Cửa Hàng",
+    "about": "Về Chúng Tôi",
+    "contact": "Liên Hệ",
+    "privacy": "Chính Sách Bảo Mật",
+    "terms": "Điều Khoản Dịch Vụ"
+  },
+  "header": {
+    "logo_alt": "LilyGem Studio",
+    "open_menu": "Mở menu",
+    "close_menu": "Đóng menu"
+  },
+  "footer": {
+    "tagline": "Vòng tay và nhẫn thủ công làm từ mã não, thạch anh và đá tự nhiên.",
+    "copyright": "LilyGem Studio. Bảo lưu mọi quyền.",
+    "shop_heading": "Cửa Hàng",
+    "company_heading": "Công Ty",
+    "legal_heading": "Pháp Lý",
+    "all_products": "Tất Cả Sản Phẩm",
+    "bestsellers": "Bán Chạy",
+    "new_arrivals": "Hàng Mới Về",
+    "on_sale": "Đang Giảm Giá"
+  },
+  "shop": {
+    "title": "Cửa Hàng",
+    "description": "Khám phá bộ sưu tập trang sức đá quý thủ công của chúng tôi.",
+    "no_products": "Không tìm thấy sản phẩm.",
+    "sort_label": "Sắp xếp",
+    "filter_label": "Lọc"
+  },
+  "product": {
+    "add_to_cart": "Mua Ngay",
+    "reviews_title": "Đánh Giá Khách Hàng",
+    "no_reviews": "Chưa có đánh giá nào.",
+    "related_products": "Có Thể Bạn Thích",
+    "available": "Còn Hàng",
+    "sold_out": "Hết Hàng"
+  },
+  "home": {
+    "hero_title": "Trang Sức Đá Quý Tự Nhiên, Thủ Công",
+    "hero_subtitle": "Khám phá bộ sưu tập vòng tay và nhẫn làm từ mã não, thạch anh hồng và đá tự nhiên.",
+    "shop_now": "Mua Ngay",
+    "featured_title": "Sản Phẩm Nổi Bật"
+  },
+  "not_found": {
+    "title": "Không Tìm Thấy Trang",
+    "message": "Trang bạn đang tìm kiếm không tồn tại.",
+    "back_home": "Về Trang Chủ"
+  },
+  "lang_switcher": {
+    "en": "English",
+    "vi": "Tiếng Việt"
+  }
+}
