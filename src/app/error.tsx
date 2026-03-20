@@ -19,8 +19,6 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowLeft, RefreshCw, ShoppingBag } from 'lucide-react';
-import { Header } from '@/components/shared/Header';
-import { Footer } from '@/components/shared/Footer';
 
 const EASE: [number, number, number, number] = [0.25, 0.46, 0.45, 0.94];
 
@@ -48,7 +46,6 @@ export default function Error({
 
   return (
     <>
-      <Header />
 
       <main className="flex min-h-[calc(100vh-128px)] items-center justify-center bg-(--color-background) px-4 py-20">
         <motion.div
@@ -146,7 +143,7 @@ export default function Error({
         </motion.div>
       </main>
 
-      <Footer />
+      <footer aria-hidden className="h-16 bg-(--color-stone)" />
     </>
   );
 }

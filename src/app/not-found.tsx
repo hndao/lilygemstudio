@@ -1,27 +1,18 @@
 /**
  * Root 404 — app/not-found.tsx
  *
- * WHY HEADER/FOOTER HERE: This file is rendered by the root layout only,
- * which has no Header/Footer of its own. It covers direct URL misses that
- * fall outside every route group (e.g. /totally-unknown-path).
- *
- * WHY NOT HERE for route-group 404s: When notFound() is thrown inside
- * (marketing) or (shop), Next.js renders the nearest not-found.tsx but still
- * applies all ancestor layouts — including the route group layout that already
- * renders Header/Footer. Those route groups define their own not-found.tsx
- * (without Header/Footer) to avoid the duplicate.
+ * This covers direct URL misses that fall outside the [lang] route group.
+ * Header/Footer are not available here since they need dictionary props.
+ * A minimal redirect-to-home message is shown instead.
  */
 
-import { Header } from '@/components/shared/Header';
-import { Footer } from '@/components/shared/Footer';
+import Link from 'next/link';
 import { NotFoundContent } from '@/components/shared/NotFoundContent';
 
 export default function NotFound() {
   return (
     <>
-      <Header />
       <NotFoundContent />
-      <Footer />
     </>
   );
 }
