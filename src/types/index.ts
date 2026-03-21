@@ -147,6 +147,8 @@ export interface ProductCard {
   affiliateLinkVn?: AffiliateLink;
   reviewSummary: ReviewSummary;
   badge?: 'new' | 'bestseller' | 'sale' | 'limited';
+  /** Full CDN URL for the product demo/review video — null when no video uploaded */
+  videoUrl?: string;
 }
 
 export interface ProductDetail extends ProductCard {

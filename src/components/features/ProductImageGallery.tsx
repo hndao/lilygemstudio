@@ -11,6 +11,10 @@
  *  - Tablet:  main image (~360px) + 3 thumbnails below (unchanged)
  *  - Desktop: main image (800×800) + 4 thumbnails below (unchanged)
  *
+ * VIDEO SUPPORT: When videoUrl is provided it becomes slide 0 (first in carousel,
+ * first thumbnail). The <video> element uses preload="none" + poster={coverImage}
+ * so it has zero LCP impact — the browser only downloads the video on play.
+ *
  * WHY NO EMBLA: embla-carousel is not in the project's package.json. CSS snap
  * scroll achieves equivalent swipe UX with zero bundle cost and no hydration
  * overhead. IntersectionObserver drives dot indicators without polling.
@@ -23,38 +27,51 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import type { ProductImage } from '@/types';
 
+// ── Media slide types ──────────────────────────────────────────────────────────
+
+type VideoSlide = { type: 'video'; url: string; poster: string };
+type ImageSlide = { type: 'image'; image: ProductImage };
+type MediaSlide = VideoSlide | ImageSlide;
+
 interface ProductImageGalleryProps {
   images: ProductImage[];
   productName: string;
+  videoUrl?: string;
 }
 
-export function ProductImageGallery({ images, productName }: ProductImageGalleryProps) {
-  // activeIndex drives desktop thumbnail highlight + desktop main image display
+export function ProductImageGallery({ images, productName, videoUrl }: ProductImageGalleryProps) {
+  // Build unified slide list: video first (when present), then images
+  const slides: MediaSlide[] = [
+    ...(videoUrl
+      ? [{ type: 'video' as const, url: videoUrl, poster: images[0]?.src ?? '' }]
+      : []),
+    ...images.map((image): ImageSlide => ({ type: 'image', image })),
+  ];
+
   const [activeIndex, setActiveIndex] = useState(0);
-  // mobileIndex tracks carousel position independently via IntersectionObserver
   const [mobileIndex, setMobileIndex] = useState(0);
 
-  const activeImage = images[activeIndex] ?? images[0];
-  const thumbnails = images.slice(0, 4);
+  const activeSlide = slides[activeIndex] ?? slides[0];
+  const thumbnails = slides.slice(0, 4);
   const carouselRef = useRef<HTMLDivElement>(null);
 
   // IntersectionObserver: which slide is ≥50% visible → update dot indicator
   useEffect(() => {
     const carousel = carouselRef.current;
-    if (!carousel || images.length <= 1) return;
+    if (!carousel || slides.length <= 1) return;
 
-    const slides = Array.from(carousel.children) as HTMLElement[];
+    const children = Array.from(carousel.children) as HTMLElement[];
     const observer = new IntersectionObserver(
       (entries) => {
         const visible = entries.find((e) => e.isIntersecting);
-        if (visible) setMobileIndex(slides.indexOf(visible.target as HTMLElement));
+        if (visible) setMobileIndex(children.indexOf(visible.target as HTMLElement));
       },
       { root: carousel, threshold: 0.5 },
     );
 
-    slides.forEach((slide) => observer.observe(slide));
+    children.forEach((child) => observer.observe(child));
     return () => observer.disconnect();
-  }, [images.length]);
+  }, [slides.length]);
 
   const scrollToSlide = useCallback((i: number) => {
     const carousel = carouselRef.current;
@@ -66,43 +83,57 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
     <div className="flex flex-col gap-3">
 
       {/* ── MOBILE: CSS snap-scroll carousel ─────────────────────────────── */}
-      {/* aspect-ratio box reserves space before images load → prevents CLS  */}
       <div
         ref={carouselRef}
         className={[
           'flex overflow-x-auto snap-x snap-mandatory rounded-xl',
           'scroll-smooth [-webkit-overflow-scrolling:touch]',
-          // hide scrollbar cross-browser
           '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
           'md:hidden',
         ].join(' ')}
-        aria-label="Product image gallery"
+        aria-label="Product media gallery"
         role="region"
       >
-        {images.map((img, i) => (
-          // aspect-[1/1] reserves the space so layout doesn't shift on load
-          <div key={i} className="relative aspect-square w-full shrink-0 snap-start bg-(--color-sand-light)"
-            // Allow vertical scroll + pinch-to-zoom; horizontal handled by snap container
-            style={{ touchAction: 'pan-y pinch-zoom' }}
-          >
-            <Image
-              src={img.src}
-              alt={img.alt || (i === 0 ? productName : `${productName}, view ${i + 1}`)}
-              fill
-              priority={i === 0}
-              sizes="100vw"
-              placeholder={img.blurDataURL ? 'blur' : 'empty'}
-              blurDataURL={img.blurDataURL}
-              className="object-cover"
-            />
-          </div>
-        ))}
+        {slides.map((slide, i) =>
+          slide.type === 'video' ? (
+            // Video slide — preload="none" + poster prevents LCP degradation
+            <div key="video" className="relative aspect-square w-full shrink-0 snap-start bg-black">
+              <video
+                src={slide.url}
+                poster={slide.poster}
+                preload="none"
+                muted
+                playsInline
+                controls
+                className="h-full w-full object-contain"
+                aria-label={`${productName} — product video`}
+              />
+            </div>
+          ) : (
+            <div
+              key={i}
+              className="relative aspect-square w-full shrink-0 snap-start bg-(--color-sand-light)"
+              style={{ touchAction: 'pan-y pinch-zoom' }}
+            >
+              <Image
+                src={slide.image.src}
+                alt={slide.image.alt || (i === 0 ? productName : `${productName}, view ${i + 1}`)}
+                fill
+                priority={i === 0 && !videoUrl}
+                sizes="100vw"
+                placeholder={slide.image.blurDataURL ? 'blur' : 'empty'}
+                blurDataURL={slide.image.blurDataURL}
+                className="object-cover"
+              />
+            </div>
+          )
+        )}
       </div>
 
       {/* Progress dots — mobile only */}
-      {images.length > 1 && (
-        <div className="flex justify-center gap-1.5 md:hidden" role="tablist" aria-label="Image position">
-          {images.map((_, i) => (
+      {slides.length > 1 && (
+        <div className="flex justify-center gap-1.5 md:hidden" role="tablist" aria-label="Media position">
+          {slides.map((_, i) => (
             <button
               key={i}
               role="tab"
@@ -114,32 +145,45 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
                   ? 'w-4 bg-(--color-sage)'
                   : 'w-1.5 bg-(--color-sand-dark)',
               ].join(' ')}
-              aria-label={`Go to image ${i + 1}`}
+              aria-label={i === 0 && videoUrl ? 'Play video' : `Go to image ${videoUrl ? i : i + 1}`}
             />
           ))}
         </div>
       )}
 
-      {/* ── DESKTOP: Static main image + thumbnail strip ──────────────────── */}
+      {/* ── DESKTOP: Static main view + thumbnail strip ────────────────────── */}
       <div className="hidden md:flex md:flex-col md:gap-3">
-        {/* Main image */}
+        {/* Main viewer */}
         <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-(--color-sand-light)">
-          <Image
-            src={activeImage.src}
-            alt={activeImage.alt || productName}
-            fill
-            priority
-            sizes="(max-width: 1279px) 360px, 800px"
-            placeholder={activeImage.blurDataURL ? 'blur' : 'empty'}
-            blurDataURL={activeImage.blurDataURL}
-            className="object-cover transition-opacity duration-300"
-          />
+          {activeSlide.type === 'video' ? (
+            <video
+              src={activeSlide.url}
+              poster={activeSlide.poster}
+              preload="none"
+              muted
+              playsInline
+              controls
+              className="h-full w-full object-contain bg-black"
+              aria-label={`${productName} — product video`}
+            />
+          ) : (
+            <Image
+              src={activeSlide.image.src}
+              alt={activeSlide.image.alt || productName}
+              fill
+              priority
+              sizes="(max-width: 1279px) 360px, 800px"
+              placeholder={activeSlide.image.blurDataURL ? 'blur' : 'empty'}
+              blurDataURL={activeSlide.image.blurDataURL}
+              className="object-cover transition-opacity duration-300"
+            />
+          )}
         </div>
 
         {/* Thumbnail strip — tablet 3-col, desktop 4-col */}
         {thumbnails.length > 1 && (
           <div className="grid grid-cols-3 gap-2 xl:grid-cols-4">
-            {thumbnails.map((img, i) => (
+            {thumbnails.map((slide, i) => (
               <button
                 key={i}
                 onClick={() => setActiveIndex(i)}
@@ -149,16 +193,30 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
                     ? 'border-(--color-sage)'
                     : 'border-transparent hover:border-(--color-sand-dark)',
                 ].join(' ')}
-                aria-label={`View image ${i + 1}`}
+                aria-label={slide.type === 'video' ? 'Play video' : `View image ${i + 1}`}
                 aria-current={i === activeIndex}
               >
-                <Image
-                  src={img.src}
-                  alt={img.alt || `${productName}, view ${i + 1}`}
-                  fill
-                  sizes="(max-width: 1279px) 80px, 120px"
-                  className="object-cover"
-                />
+                {slide.type === 'video' ? (
+                  // Video thumbnail: poster image + play icon overlay
+                  <>
+                    {slide.poster && (
+                      <Image src={slide.poster} alt="Video thumbnail" fill sizes="120px" className="object-cover" />
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <svg className="h-6 w-6 text-white drop-shadow" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
+                  </>
+                ) : (
+                  <Image
+                    src={slide.image.src}
+                    alt={slide.image.alt || `${productName}, view ${i + 1}`}
+                    fill
+                    sizes="(max-width: 1279px) 80px, 120px"
+                    className="object-cover"
+                  />
+                )}
               </button>
             ))}
           </div>
@@ -167,4 +225,3 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
     </div>
   );
 }
-

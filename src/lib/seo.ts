@@ -167,6 +167,20 @@ export function productJsonLd(product: ProductDetail, reviews: Review[] = []): o
     },
   };
 
+  // VideoObject — enables Google's video rich result on the product page.
+  // WHY preload="none" on the <video> tag is irrelevant to JSON-LD: structured
+  // data tells Google the video exists; the element attribute controls loading.
+  // thumbnailUrl points to the cover image so Google has a fallback poster.
+  if (product.videoUrl) {
+    schema.video = {
+      '@type': 'VideoObject',
+      name: `${product.name} — Product Video`,
+      description: product.tagline,
+      thumbnailUrl: product.coverImage.src,
+      contentUrl: product.videoUrl,
+    };
+  }
+
   // Custom fields → schema.org additionalProperty + direct fields
   // WHY additionalProperty: Google supports PropertyValue pairs for arbitrary
   // product specs. Injecting them here extends the Shopping rich result with

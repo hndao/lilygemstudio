@@ -137,7 +137,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-12 lg:gap-16">
 
         {/* Image gallery — swipe carousel on mobile, thumbnail grid on desktop */}
-        <ProductImageGallery images={galleryImages} productName={displayName} />
+        <ProductImageGallery images={galleryImages} productName={displayName} videoUrl={product.videoUrl} />
 
         {/* Product info — right column */}
         <div className="flex flex-col gap-4">
