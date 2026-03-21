@@ -12,6 +12,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import type { ProductCard as ProductCardType } from '@/types';
 import { Badge } from '@/components/ui/Badge';
 import { StarRating } from '@/components/ui/StarRating';
@@ -33,12 +34,20 @@ export function ProductCard({
   priority = false,
   sizes = '(max-width: 767px) 50vw, (max-width: 1279px) 33vw, 25vw',
 }: ProductCardProps) {
-  const { slug, name, tagline, price, compareAtPrice, priceVnd, compareAtPriceVnd, coverImage, reviewSummary, badge } = product;
+  const { slug, name, nameVi, tagline, taglineVi, price, compareAtPrice, priceVnd, compareAtPriceVnd, coverImage, reviewSummary, badge } = product;
+
+  // Since ProductCard is rendered by ProductGrid (a Client Component),
+  // it implicitly runs on the client and can use useParams.
+  const params = useParams();
+  const lang = (params?.lang as string) || 'vi';
+
+  const displayName = lang === 'vi' && nameVi ? nameVi : name;
+  const displayTagline = lang === 'vi' && taglineVi ? taglineVi : tagline;
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-lg bg-(--color-surface) shadow-(--shadow-soft) transition-shadow duration-200 hover:shadow-(--shadow-card)">
       {/* Image wrapper — aspect-ratio locks height, prevents CLS */}
-      <Link href={`/shop/${slug}`} className="relative block aspect-square overflow-hidden bg-(--color-sand-light)">
+      <Link href={`/${lang}/shop/${slug}`} className="relative block aspect-square overflow-hidden bg-(--color-sand-light)">
         <Image
           src={coverImage.src}
           alt={coverImage.alt}
@@ -58,18 +67,30 @@ export function ProductCard({
         )}
       </Link>
 
-      {/* Card content */}
-      <div className="flex flex-1 flex-col gap-1.5 p-3 md:p-4">
-        {/* Product name */}
-        <Link href={`/shop/${slug}`}>
-          <h3 className="line-clamp-2 text-sm font-600 leading-snug text-(--color-stone) transition-colors hover:text-(--color-sage) md:text-base">
-            {name}
-          </h3>
-        </Link>
+      {/* Content area: Name, Tagline, Price, Rating */}
+      <div className="flex flex-1 flex-col p-4">
+        {/* Row 1: Name and Rating (Name truncates with ellipsis) */}
+        <div className="flex items-start justify-between gap-3">
+          <Link href={`/${lang}/shop/${slug}`} className="line-clamp-2 flex-1 outline-none">
+            <h3 className="font-heading text-base font-semibold text-(--color-foreground) transition-colors group-hover:text-(--color-terracotta)">
+              {displayName}
+            </h3>
+          </Link>
+          <div className="shrink-0 pt-0.5">
+            <StarRating
+              rating={reviewSummary.averageRating}
+              count={reviewSummary.totalCount}
+              size="sm"
+            />
+          </div>
+        </div>
 
-        {/* Tagline — one-line hook, muted */}
-        <p className="line-clamp-1 text-xs text-(--color-muted)">{tagline}</p>
-
+        {/* Optional Tagline */}
+        {displayTagline && (
+          <p className="mt-1.5 line-clamp-1 text-sm text-(--color-muted)">
+            {displayTagline}
+          </p>
+        )}
         {/* Price + compare-at */}
         <PriceLine 
           price={price} 

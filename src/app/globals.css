@@ -37,31 +37,28 @@ h2[id] {
 }
 
 @theme inline {
-  /* ─── Brand Palette ─────────────────────────────────────────────── */
-  --color-stone: #2D3436;
-  --color-stone-light: #4a5568;
-  --color-sand: #EAD8C0;
-  --color-sand-light: #F5EDE0;
-  --color-sand-dark: #D4BFA0;
-  --color-sage: #76885B;
-  --color-sage-light: #8FA073;
-  --color-sage-dark: #5C6B45;
-  --color-terracotta: #B35C44;
-  /* Earthy accent for editorial links */
-  --color-terracotta-dark: #8E4936;
+  /* ─── Brand Palette (LilyGemStudio) ─────────────────────────────── */
+  --color-stone: #2C2A31;         /* Deep Slate / Dark Plum */
+  --color-stone-light: #4A4652;
+  --color-sand: #F4E2E6;          /* Blush / Pale Rose Gold */
+  --color-sand-light: #FBF4F6;
+  --color-sand-dark: #E4C0C8;
+  --color-sage: #A66C7A;          /* Deep Rose (Replaces earthy green) */
+  --color-sage-light: #C496A1;
+  --color-sage-dark: #7A4B58;
+  --color-terracotta: #D4AF37;    /* Gold (Replaces clay) */
+  --color-terracotta-dark: #A6851F;
 
-  --color-charcoal: #1A1A1A;
-  /* near-black — used for LIMITED badge */
-  --color-cream: #FFF8F0;
-  /* warm white — used for BESTSELLER badge text */
+  --color-charcoal: #1A1A1A;      /* near-black */
+  --color-cream: #FFFDFD;         /* cool white */
 
   /* ─── Semantic Aliases ───────────────────────────────────────────── */
-  --color-background: #FDFAF6;
+  --color-background: #FDFCFC;    /* crisp off-white for body backgrounds */
   /* warm off-white for body backgrounds */
   --color-surface: #FFFFFF;
   --color-foreground: var(--color-stone);
-  --color-muted: #6B7280;
-  --color-border: #E8D5BE;
+  --color-muted: #7E7C82;
+  --color-border: #F0DEE2;
   --color-primary: var(--color-stone);
   --color-secondary: var(--color-sand);
   --color-accent: var(--color-sage);
@@ -136,8 +133,8 @@ html {
 }
 
 :root {
-  --color-terracotta: #B35C44;
-  --color-terracotta-dark: #8E4936;
+  --color-terracotta: #D4AF37;
+  --color-terracotta-dark: #A6851F;
 }
 
 body {

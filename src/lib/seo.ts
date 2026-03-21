@@ -167,6 +167,27 @@ export function productJsonLd(product: ProductDetail, reviews: Review[] = []): o
     },
   };
 
+  // Custom fields → schema.org additionalProperty + direct fields
+  // WHY additionalProperty: Google supports PropertyValue pairs for arbitrary
+  // product specs. Injecting them here extends the Shopping rich result with
+  // structured spec data (material, sustainability score, etc.).
+  const customFields = product.customFields ?? {};
+  if (Object.keys(customFields).length > 0) {
+    schema.additionalProperty = Object.entries(customFields).map(([name, value]) => ({
+      '@type': 'PropertyValue',
+      name: name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+      value: String(value),
+    }));
+
+    // Inject known schema.org direct fields when present in custom_fields.
+    if (customFields.material) schema.material = String(customFields.material);
+    if (customFields.color) schema.color = String(customFields.color);
+    if (customFields.sustainability_score) {
+      // WHY sustainabilityNote: Google's eco-friendly rich result uses this field.
+      schema.sustainabilityNote = `Sustainability Score: ${customFields.sustainability_score}`;
+    }
+  }
+
   // AggregateRating — only include when we have real review data
   if (product.reviewSummary.totalCount > 0) {
     schema.aggregateRating = {

@@ -28,6 +28,7 @@ import { ExpertVerdict } from '@/components/features/ExpertVerdict';
 import { FeatureAnalysis } from '@/components/features/FeatureAnalysis';
 import { BlocksRenderer } from '@/components/features/BlocksRenderer';
 import { MobileStickyBar } from '@/components/features/MobileStickyBar';
+import { ProductSpecs } from '@/components/features/ProductSpecs';
 import { StarRating } from '@/components/ui/StarRating';
 import { PriceLine } from '@/components/ui/PriceLine';
 import { Badge } from '@/components/ui/Badge';
@@ -35,7 +36,7 @@ import { Badge } from '@/components/ui/Badge';
 export const revalidate = 3600; // 1h ISR — matches PRODUCT_DETAIL TTL
 
 interface ProductPageProps {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string; lang: string }>;
   searchParams: Promise<{ preview_token?: string }>;
 }
 
@@ -60,7 +61,7 @@ export async function generateMetadata({ params, searchParams }: ProductPageProp
 }
 
 export default async function ProductPage({ params, searchParams }: ProductPageProps) {
-  const { slug } = await params;
+  const { slug, lang } = await params;
   const { preview_token: token } = await searchParams;
 
   // Parallel fetch — product + first page of reviews
@@ -84,11 +85,17 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   // Ensure gallery always has at least the cover image
   const galleryImages = product.images?.length > 0 ? product.images : [product.coverImage];
 
+  const displayName = lang === 'vi' && product.nameVi ? product.nameVi : product.name;
+  const displayTagline = lang === 'vi' && product.taglineVi ? product.taglineVi : product.tagline;
+  const displayCategoryName = lang === 'vi' && product.category?.nameVi ? product.category.nameVi : product.category?.name;
+  const displayDescription = lang === 'vi' && product.descriptionVi ? product.descriptionVi : product.description;
+  const displayBrandStory = lang === 'vi' && product.brandStoryVi ? product.brandStoryVi : product.brandStory;
+
   const crumbs = [
-    { name: 'Home', url: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://dariiv.com'}` },
-    { name: 'Shop', url: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://dariiv.com'}/shop` },
-    ...(product.category ? [{ name: product.category.name, url: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://dariiv.com'}/shop?category=${product.category.slug}` }] : []),
-    { name: product.name, url: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://dariiv.com'}/shop/${slug}` },
+    { name: 'Home', url: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lilygemstudio.com'}/${lang}` },
+    { name: 'Shop', url: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lilygemstudio.com'}/${lang}/shop` },
+    ...(product.category ? [{ name: displayCategoryName, url: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lilygemstudio.com'}/${lang}/shop?category=${product.category.slug}` }] : []),
+    { name: displayName, url: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lilygemstudio.com'}/${lang}/shop/${slug}` },
   ];
 
   return (
@@ -108,21 +115,21 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="mb-6 text-sm text-(--color-muted)">
         <ol className="flex items-center gap-1.5">
-          <li><Link href="/" className="hover:text-(--color-stone)">Home</Link></li>
+          <li><Link href={`/${lang}`} className="hover:text-(--color-stone)">Home</Link></li>
           <li aria-hidden="true">›</li>
-          <li><Link href="/shop" className="hover:text-(--color-stone)">Shop</Link></li>
+          <li><Link href={`/${lang}/shop`} className="hover:text-(--color-stone)">Shop</Link></li>
           {product.category && (
             <>
               <li aria-hidden="true">›</li>
               <li>
-                <Link href={`/shop?category=${product.category.slug}`} className="hover:text-(--color-stone)">
-                  {product.category.name}
+                <Link href={`/${lang}/shop?category=${product.category.slug}`} className="hover:text-(--color-stone)">
+                  {displayCategoryName}
                 </Link>
               </li>
             </>
           )}
           <li aria-hidden="true">›</li>
-          <li className="text-(--color-stone) font-500 truncate max-w-[160px]">{product.name}</li>
+          <li className="text-(--color-stone) font-500 truncate max-w-[160px]">{displayName}</li>
         </ol>
       </nav>
 
@@ -130,15 +137,15 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-12 lg:gap-16">
 
         {/* Image gallery — swipe carousel on mobile, thumbnail grid on desktop */}
-        <ProductImageGallery images={galleryImages} productName={product.name} />
+        <ProductImageGallery images={galleryImages} productName={displayName} />
 
         {/* Product info — right column */}
         <div className="flex flex-col gap-4">
           {product.badge && <Badge variant={product.badge} />}
 
           {/* H1: text-2xl on mobile to avoid 4–5 lines of wrapping text */}
-          <h1 className="text-2xl leading-tight md:text-3xl lg:text-4xl">{product.name}</h1>
-          <p className="text-(--color-sage) font-500">{product.tagline}</p>
+          <h1 className="text-2xl leading-tight md:text-3xl lg:text-4xl">{displayName}</h1>
+          <p className="text-(--color-sage) font-500">{displayTagline}</p>
 
           {/* FTC Disclosure — immediately below title per spec ("above the fold") */}
           <p className="text-[11px] text-(--color-muted)">
@@ -177,7 +184,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
             affiliateLinkVn={product.affiliateLinkVn}
             productId={product.id}
             productSlug={slug}
-            productName={product.name}
+            productName={displayName}
             price={product.price}
             priceVnd={product.priceVnd}
           />
@@ -199,6 +206,11 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         <FeatureAnalysis pros_cons={product.pros_cons} className="mt-12" />
       )}
 
+      {/* Product Specs — category-driven custom fields (Product Specs group) */}
+      {product.customFields && Object.keys(product.customFields).length > 0 && (
+        <ProductSpecs customFields={product.customFields} className="mt-10" />
+      )}
+
       {/* AI content blocks — hero intro, spec_table, split */}
       {product.blocks && product.blocks.length > 0 && (
         <BlocksRenderer blocks={product.blocks} className="mt-10" />
@@ -206,8 +218,8 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
 
       {/* Tabs: Description / Artisan Story / Reviews */}
       <ProductTabs
-        description={product.description ?? ''}
-        brandStory={product.brandStory ?? ''}
+        description={displayDescription ?? ''}
+        brandStory={displayBrandStory ?? ''}
         reviews={reviews}
         reviewCount={reviewCount}
       />
@@ -231,7 +243,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       <MobileStickyBar
         productId={product.id}
         productSlug={slug}
-        productName={product.name}
+        productName={displayName}
         price={product.price}
         priceVnd={product.priceVnd}
         coverImage={galleryImages[0]}

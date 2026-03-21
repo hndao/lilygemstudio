@@ -70,14 +70,15 @@ async function apiFetch<T>(endpoint: string, opts: FetchOptions = {}): Promise<T
  * the product list (no description, brand_story, full metadata).
  */
 const CARD_FIELDS = [
-  'id', 'slug', 'name', 'tagline', 'price', 'compare_at_price',
-  'cover_image', 'affiliate_url', 'affiliate_network',
+  'id', 'slug', 'name', 'name_vi', 'tagline', 'tagline_vi', 'price', 'compare_at_price',
+  'price_vnd', 'compare_at_price_vnd',
+  'cover_image', 'affiliate_url', 'affiliate_network', 'affiliate_url_vn',
   'badge', 'avg_rating', 'review_count',
 ].join(',');
 
 const DETAIL_FIELDS = [
   ...CARD_FIELDS.split(','),
-  'description', 'brand_story', 'images', 'category',
+  'description', 'description_vi', 'brand_story', 'brand_story_vi', 'images', 'category',
   'tags', 'metadata', 'artisan',
 ].join(',');
 

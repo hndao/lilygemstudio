@@ -135,7 +135,9 @@ export interface ProductCard {
   id: string;
   slug: string;
   name: string;
+  nameVi?: string;           // Tiếng Việt translation (LilyGemStudio only)
   tagline: string;          // one-line hook for grid cards
+  taglineVi?: string;
   price: Money;
   compareAtPrice?: Money;   // crossed-out original price (sale indicator)
   priceVnd?: Money;
@@ -149,11 +151,15 @@ export interface ProductCard {
 
 export interface ProductDetail extends ProductCard {
   description: string;      // full markdown/HTML description
+  descriptionVi?: string;
   brandStory: string;       // artisan origin story
+  brandStoryVi?: string;
   images: ProductImage[];   // full gallery (cover + extras)
-  category: { slug: string; name: string };
+  category: { slug: string; name: string; nameVi?: string };
   tags: string[];
   metadata: ProductMetadata; // specs + AI-generated SEO fields (seo.meta_title, seo.meta_description, seo.keywords)
+  /** Category-driven custom fields — key/value pairs defined per category (specs, affiliate data, SEO signals) */
+  customFields?: Record<string, string | number | boolean>;
   artisan?: ArtisanCard;    // optional — not all products have an artisan profile
   /** AI-generated expert verdict — rendered by ExpertVerdict.tsx */
   verdict?: ProductVerdict;
@@ -312,6 +318,7 @@ export interface SiteSettings {
 export interface Category {
   id: string;
   name: string;
+  nameVi?: string;          // Tiếng Việt translation
   slug: string;
   productCount: number;
 }
