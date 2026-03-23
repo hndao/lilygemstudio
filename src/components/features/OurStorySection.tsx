@@ -82,6 +82,7 @@ export function OurStorySection() {
                 fill
                 sizes="(max-width: 1279px) 50vw, 640px"
                 className="object-cover"
+                unoptimized
               />
             </div>
           </motion.div>
