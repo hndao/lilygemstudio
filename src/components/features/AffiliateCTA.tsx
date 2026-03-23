@@ -80,11 +80,11 @@ export function AffiliateCTA({
 
   return (
     <>
-      <div className="[.country-vn_&]:hidden block w-full">
+      <div className="geo-hide-vn w-full">
         {renderCTA(affiliateLink, price, false)}
       </div>
       {affiliateLinkVn && (
-        <div className="hidden [.country-vn_&]:block w-full">
+        <div className="geo-show-vn w-full">
           {renderCTA(affiliateLinkVn, priceVnd, true)}
         </div>
       )}

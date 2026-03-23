@@ -1,36 +1,37 @@
 /**
- * Badge — product status overlay (NEW, BESTSELLER, SALE, LIMITED).
+ * Badge — pill-shaped product tag (Natural, Bestseller, Sale, Limited).
  *
- * WHY SEPARATE COMPONENT: Badge copy and colour are business rules that
- * change independently of the card layout. Centralising here means a
- * marketing copy change ("BEST SELLER" → "TOP PICK") touches one file.
+ * REDESIGNED to match the mockup's pill-shaped tags with Agate-inspired colors.
+ * The "natural"/"new" variant includes a ✓ checkmark icon for trust signaling.
+ *
+ * STYLE: padding 4px 12px, rounded 20px (pill), font 11px/600.
  */
 
 import type { ProductCard } from '@/types';
 
 type BadgeVariant = NonNullable<ProductCard['badge']>;
 
-const BADGE_CONFIG: Record<BadgeVariant, { label: string; className: string }> = {
+const BADGE_CONFIG: Record<BadgeVariant, { label: string; className: string; icon?: boolean }> = {
   new: {
-    label: 'NEW',
-    // Sage background — signals freshness, on-brand
-    // WHY --color-cta: badge text is small (12px) — needs ≥4.5:1 contrast on white.
-    className: 'bg-(--color-cta) text-white',
+    label: 'Natural gemstone',
+    // Moss Agate tint bg, dark moss text — includes checkmark icon
+    className: 'bg-(--color-nature-bg) text-(--color-nature-text)',
+    icon: true,
   },
   bestseller: {
-    label: 'BESTSELLER',
-    // Stone background — authority, trust signal
-    className: 'bg-(--color-stone) text-(--color-cream)',
+    label: 'Bestseller',
+    // Quartz Mist bg, Agate Brown text
+    className: 'bg-(--color-quartz-mist) text-(--color-cta)',
   },
   sale: {
-    label: 'SALE',
-    // Warm amber — urgency without aggressive red (artisan brand tone)
-    className: 'bg-amber-600 text-white',
+    label: 'Sale',
+    // Rose Quartz tone
+    className: 'bg-(--color-quartz-mist) text-(--color-promo)',
   },
   limited: {
-    label: 'LIMITED',
-    // Muted charcoal — scarcity signal, premium feel
-    className: 'bg-(--color-charcoal) text-(--color-sand)',
+    label: 'Limited',
+    // Agate dark tone
+    className: 'bg-(--color-quartz-mist) text-(--color-agate-dark)',
   },
 };
 
@@ -45,14 +46,19 @@ export function Badge({ variant, className = '' }: BadgeProps) {
   return (
     <span
       className={[
-        'self-start inline-block rounded px-2 py-0.5 font-heading text-[11px] font-semibold tracking-[0.2em] uppercase',
+        'inline-flex items-center gap-1 rounded-[20px] px-3 py-1 text-[11px] font-600',
         config.className,
         className,
       ].join(' ')}
       aria-label={config.label}
     >
+      {config.icon && (
+        <svg width="12" height="12" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+          <circle cx="9" cy="9" r="7" stroke="currentColor" strokeWidth="1.4" />
+          <path d="M6 9.5L8 11.5L12 7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
       {config.label}
     </span>
   );
 }
-

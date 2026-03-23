@@ -42,7 +42,7 @@ export function PriceLine({
         className={[
           'font-heading',
           sizes.price,
-          saleBool ? 'text-(--color-sage)' : 'text-(--color-stone)',
+          'text-(--color-terracotta-dark)',
         ].join(' ')}
         aria-label={`Price: ${current.formatted}`}
       >
@@ -50,7 +50,7 @@ export function PriceLine({
       </span>
       {saleBool && compare && (
         <span
-          className={`font-body line-through text-(--color-muted) ${sizes.compare}`}
+          className={`font-body line-through text-(--color-sand-dark) ${sizes.compare}`}
           aria-label={`Original price: ${compare.formatted}`}
         >
           {compare.formatted}
@@ -63,11 +63,11 @@ export function PriceLine({
     return (
       <>
         {/* Global pricing — default. Hidden if country-vn is active */}
-        <div className={`flex items-baseline gap-2 [.country-vn_&]:hidden ${className}`}>
+        <div className={`items-baseline gap-2 geo-hide-vn-flex ${className}`}>
           {renderPriceLabel(price, compareAtPrice, isOnSale)}
         </div>
         {/* VN pricing — hidden by default. Shown if country-vn is active */}
-        <div className={`hidden items-baseline gap-2 [.country-vn_&]:flex ${className}`}>
+        <div className={`items-baseline gap-2 geo-show-vn-flex ${className}`}>
           {renderPriceLabel(priceVnd, compareAtPriceVnd, isOnSaleVnd)}
         </div>
       </>

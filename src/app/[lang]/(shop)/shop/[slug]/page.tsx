@@ -23,6 +23,7 @@ import { ProductTabs } from '@/components/features/ProductTabs';
 import { ProductGrid } from '@/components/features/ProductGrid';
 import { ArtisanSpotlight } from '@/components/features/ArtisanSpotlight';
 import { AffiliateCTA } from '@/components/features/AffiliateCTA';
+import { ProductBuyBox } from '@/components/features/ProductBuyBox';
 import { ExpertVerdict } from '@/components/features/ExpertVerdict';
 import { FeatureAnalysis } from '@/components/features/FeatureAnalysis';
 import { BlocksRenderer } from '@/components/features/BlocksRenderer';
@@ -90,6 +91,10 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   const displayDescription = lang === 'vi' && product.descriptionVi ? product.descriptionVi : product.description;
   const displayBrandStory = lang === 'vi' && product.brandStoryVi ? product.brandStoryVi : product.brandStory;
 
+  // Extract bracelet size from product name (e.g. "57.8mm" from "57.8mm Golden Silk Veil...")
+  const sizeMatch = displayName?.match(/(\d+\.?\d*)mm/);
+  const defaultSize = sizeMatch ? `${sizeMatch[1]}mm` : undefined;
+
   const crumbs = [
     { name: 'Home', url: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lilygemstudio.com'}/${lang}` },
     { name: 'Shop', url: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lilygemstudio.com'}/${lang}/shop` },
@@ -140,17 +145,20 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
 
         {/* Product info — right column */}
         <div className="flex flex-col gap-4">
-          {product.badge && <Badge variant={product.badge} />}
+          {/* Pill badges row */}
+          {product.badge && (
+            <div className="flex flex-wrap gap-2">
+              <Badge variant={product.badge} />
+            </div>
+          )}
 
-          {/* H1: text-2xl on mobile to avoid 4–5 lines of wrapping text */}
+          {/* H1 */}
           <h1 className="text-2xl leading-tight md:text-3xl lg:text-4xl">{displayName}</h1>
-          <p className="text-(--color-sage) font-500">{displayTagline}</p>
+          <p className="text-[13px] font-500 text-(--color-cta)">{displayTagline}</p>
 
-
-
-          {/* Price — "Invaluable Peace of Mind" shown when amount = 0 */}
+          {/* Price */}
           {product.price.amount === 0 ? (
-            <p className="font-heading text-lg font-700 text-(--color-sage)">
+            <p className="font-heading text-lg font-700 text-(--color-cta)">
               Invaluable Peace of Mind
             </p>
           ) : (
@@ -169,23 +177,41 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
             size="md"
           />
 
-          {/* Expert Verdict — E-E-A-T authority box */}
+          {/* Expert Verdict */}
           {product.verdict && (
             <ExpertVerdict verdict={product.verdict} />
           )}
 
-          {/* CTA — client component island (window.plausible requires browser) */}
-          <AffiliateCTA
-            affiliateLink={product.affiliateLink}
-            affiliateLinkVn={product.affiliateLinkVn}
-            productId={product.id}
-            productSlug={slug}
-            productName={displayName}
-            price={product.price}
-            priceVnd={product.priceVnd}
-          />
+          {/* ── Buy Box: VN users get full cart experience, Global gets affiliate link ── */}
 
-          {/* Artisan spotlight — shown when the product has an artisan profile */}
+          {/* Global CTA — Shop on Etsy (hidden when country-vn) */}
+          <div className="geo-hide-vn w-full">
+            <AffiliateCTA
+              affiliateLink={product.affiliateLink}
+              affiliateLinkVn={product.affiliateLinkVn}
+              productId={product.id}
+              productSlug={slug}
+              productName={displayName}
+              price={product.price}
+              priceVnd={product.priceVnd}
+            />
+          </div>
+
+          {/* VN Buy Box — size selector, qty picker, 3-tier CTA (hidden by default) */}
+          <div className="geo-show-vn w-full">
+            <ProductBuyBox
+              productId={product.id}
+              productSlug={slug}
+              productName={displayName}
+              price={product.price}
+              priceVnd={product.priceVnd}
+              affiliateLinkVn={product.affiliateLinkVn}
+              coverImage={galleryImages[0].src}
+              defaultSize={defaultSize}
+            />
+          </div>
+
+          {/* Artisan spotlight */}
           {product.artisan && (
             <ArtisanSpotlight artisan={product.artisan} />
           )}
@@ -241,6 +267,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         coverImage={galleryImages[0]}
         affiliateLink={product.affiliateLink}
         affiliateLinkVn={product.affiliateLinkVn}
+        defaultSize={defaultSize}
       />
     </main>
   );

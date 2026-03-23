@@ -6,28 +6,27 @@
  * BEHAVIOUR:
  *  - Hidden on initial load
  *  - Slides up from bottom after user scrolls past 600px (past the primary buy box)
- *  - Only renders on mobile (md:hidden in the parent, fixed positioning here)
+ *  - Only renders on mobile (md:hidden)
  *
- * LAYOUT:
- *  - Left: product thumbnail (40×40) + truncated name + price
- *  - Right: full-height amber CTA button (Check Current Price / Shop on Amazon)
+ * VN LAYOUT (from mockup Section 04):
+ *  ┌─────────────────────────────────────────┐
+ *  │  ♡ (48px)  │  💬 (48px)  │  🛒 Thêm vào giỏ (flex-1)  │
+ *  └─────────────────────────────────────────┘
  *
- * GLASSMORPHISM: backdrop-blur-md + #FDF8F2/85 maintains the earthy cream aesthetic
- * while blurring content below. border-t adds subtle separation from page content.
+ * GLOBAL LAYOUT (unchanged):
+ *  - Left: product thumbnail + truncated name + price
+ *  - Right: full-height "Shop on Etsy" button
  *
- * WHY 600px THRESHOLD: The primary "Buy Box" (AffiliateCTA) is visible until
- * ~500–600px of scroll on a typical mobile viewport. Showing the sticky bar
- * only after the user has scrolled past it avoids redundant duplication.
- *
- * TOUCH TARGETS: The CTA button spans the full right section — minimum 44px
- * height as required by WCAG 2.5.5 and Apple HIG.
+ * SPECS: Height 72px, bg #FFFDF9, border-top 1px #E8E2DA, gap 10px,
+ *        safe-area-inset-bottom for iPhone notch.
  */
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { ExternalLink } from 'lucide-react';
+import { Heart, MessageCircle, ShoppingCart, ExternalLink } from 'lucide-react';
 import { trackAffiliateClick } from '@/lib/analytics';
 import { AFFILIATE_LINK_PROPS } from '@/lib/ftc';
+import { MobileCartSheet } from '@/components/features/MobileCartSheet';
 import type { AffiliateLink, Money, ProductImage } from '@/types';
 
 interface MobileStickyBarProps {
@@ -39,7 +38,7 @@ interface MobileStickyBarProps {
   coverImage: ProductImage;
   affiliateLink: AffiliateLink;
   affiliateLinkVn?: AffiliateLink;
-  /** The ref element to scroll past before revealing the bar */
+  defaultSize?: string;
   scrollThreshold?: number;
 }
 
@@ -52,61 +51,46 @@ export function MobileStickyBar({
   coverImage,
   affiliateLink,
   affiliateLinkVn,
+  defaultSize,
   scrollThreshold = 600,
 }: MobileStickyBarProps) {
   const [visible, setVisible] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [wishlisted, setWishlisted] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setVisible(window.scrollY > scrollThreshold);
-    // passive: true — tells the browser this listener won't call preventDefault()
-    // allowing it to scroll immediately without waiting for JS (performance win)
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [scrollThreshold]);
 
-  const renderContent = (prc: Money, link: AffiliateLink, isVn = false) => {
-    const rawNetwork = link.network.charAt(0).toUpperCase() + link.network.slice(1);
-    const networkLabel = isVn && link.network === 'direct' ? 'Zalo' : rawNetwork;
-    const isFree = prc.amount === 0;
-    const ctaLabel = isFree ? 'Check Current Price' : (isVn ? `Contact via ${networkLabel}` : `Shop on ${networkLabel}`);
-    
-    let bgClass = 'bg-(--color-cta)';
-    if (link.network === 'amazon') bgClass = 'bg-[#FF9900]';
-    else if (isVn && link.network === 'direct') bgClass = 'bg-[#0068FF]';
+  const zaloUrl = affiliateLinkVn?.url ?? '#';
+
+  /* ── Global layout (Shop on Etsy) ─────────────────────────────────── */
+  const renderGlobalBar = () => {
+    const rawNetwork = affiliateLink.network.charAt(0).toUpperCase() + affiliateLink.network.slice(1);
+    const isFree = price.amount === 0;
+    const ctaLabel = isFree ? 'Check Current Price' : `Shop on ${rawNetwork}`;
 
     return (
-      <div className="flex w-full">
-        {/* Left: thumbnail + product info */}
+      <div className="flex w-full items-center">
         <div className="flex flex-1 items-center gap-3 px-4 py-3">
-          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-(--color-sand-light)">
-            <Image
-              src={coverImage.src}
-              alt={coverImage.alt || productName}
-              fill
-              sizes="40px"
-              className="object-cover"
-            />
+          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-(--color-quartz-mist)">
+            <Image src={coverImage.src} alt={coverImage.alt || productName} fill sizes="40px" className="object-cover" />
           </div>
           <div className="min-w-0">
             <p className="truncate text-xs font-600 text-(--color-stone)">{productName}</p>
-            <p className="text-xs text-(--color-sage) font-700">
-              {isFree ? 'Invaluable Peace of Mind' : prc.formatted}
+            <p className="text-xs font-700 text-(--color-cta)">
+              {isFree ? 'Invaluable Peace of Mind' : price.formatted}
             </p>
           </div>
         </div>
-
-        {/* Right: full-height CTA button */}
         <a
-          href={isVn ? link.url : `/go/${productId}`}
+          href={`/go/${productId}`}
           {...AFFILIATE_LINK_PROPS}
-          onClick={() => trackAffiliateClick({ slug: productSlug, network: link.network, name: productName })}
+          onClick={() => trackAffiliateClick({ slug: productSlug, network: affiliateLink.network, name: productName })}
           aria-label={ctaLabel}
-          className={[
-            'flex min-h-[60px] min-w-[140px] items-center justify-center gap-1.5',
-            'px-4 font-heading text-xs font-700 uppercase tracking-widest text-white',
-            'transition-opacity hover:opacity-90',
-            bgClass,
-          ].join(' ')}
+          className="flex min-h-[60px] min-w-[140px] items-center justify-center gap-1.5 bg-(--color-cta) px-4 font-heading text-xs font-700 uppercase tracking-widest text-white transition-opacity hover:opacity-90"
         >
           {ctaLabel}
           <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
@@ -115,29 +99,88 @@ export function MobileStickyBar({
     );
   };
 
+  /* ── VN layout (♡ | 💬 | 🛒) ──────────────────────────────────────── */
+  const renderVnBar = () => (
+    <>
+      <div className="flex w-full items-center gap-2.5 px-4 py-3">
+        {/* Wishlist icon */}
+        <button
+          type="button"
+          onClick={() => setWishlisted((prev) => !prev)}
+          className={[
+            'flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] border-[1.5px] transition-all',
+            wishlisted
+              ? 'border-(--color-promo) bg-(--color-promo)/10'
+              : 'border-(--color-border) hover:bg-(--color-quartz-mist)',
+          ].join(' ')}
+          aria-label={wishlisted ? 'Bỏ yêu thích' : 'Yêu thích'}
+        >
+          <Heart
+            className={`h-5 w-5 text-(--color-promo) ${wishlisted ? 'fill-(--color-promo)' : ''}`}
+            aria-hidden="true"
+          />
+        </button>
+
+        {/* Zalo icon */}
+        <a
+          href={zaloUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] border-[1.5px] border-(--color-border) transition-all hover:bg-(--color-quartz-mist)"
+          aria-label="Zalo"
+        >
+          <MessageCircle className="h-5 w-5 text-(--color-zalo)" aria-hidden="true" />
+        </a>
+
+        {/* Add to Cart — primary, fills remaining space */}
+        <button
+          type="button"
+          onClick={() => setSheetOpen(true)}
+          className="flex h-12 flex-1 items-center justify-center gap-2 rounded-[12px] bg-(--color-cta) text-[15px] font-600 text-(--color-cream) transition-all hover:bg-(--color-cta-hover)"
+          aria-label="Thêm vào giỏ hàng"
+        >
+          <ShoppingCart className="h-[18px] w-[18px]" aria-hidden="true" />
+          Thêm vào giỏ
+        </button>
+      </div>
+
+      {/* Bottom sheet for size/qty selection */}
+      <MobileCartSheet
+        isOpen={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        productId={productId}
+        productSlug={productSlug}
+        productName={productName}
+        price={priceVnd ?? price}
+        coverImage={coverImage.src}
+        defaultSize={defaultSize}
+      />
+    </>
+  );
+
   return (
     <div
       role="complementary"
       aria-label="Quick buy bar"
       className={[
-        // fixed to bottom, full-width, above content (z-50)
-        'fixed bottom-0 left-0 right-0 z-50 md:hidden',
-        // glassmorphism — earthy cream at 85% opacity with backdrop blur
-        'border-t border-[#EAD8C0] bg-[#FDF8F2]/85 backdrop-blur-md',
-        // slide-up animation
+        'fixed bottom-0 left-0 right-0 z-[100] md:hidden',
+        'border-t border-(--color-border) bg-(--color-surface)',
+        'pb-[env(safe-area-inset-bottom)]',
         'transition-transform duration-300 ease-out',
         visible ? 'translate-y-0' : 'translate-y-full',
       ].join(' ')}
     >
-      <div className="[.country-vn_&]:hidden block w-full">
-        {renderContent(price, affiliateLink, false)}
+      {/* Global bar — hidden when VN */}
+      <div className="geo-hide-vn w-full">
+        {renderGlobalBar()}
       </div>
-      {affiliateLinkVn && priceVnd && (
-        <div className="hidden [.country-vn_&]:block w-full">
-          {renderContent(priceVnd, affiliateLinkVn, true)}
+
+      {/* VN bar — hidden by default, shown for VN users */}
+      {affiliateLinkVn && (
+        <div className="geo-show-vn w-full">
+          {renderVnBar()}
         </div>
       )}
     </div>
   );
 }
-

@@ -45,7 +45,7 @@ export function ProductCard({
   const displayTagline = lang === 'vi' && taglineVi ? taglineVi : tagline;
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-lg bg-(--color-surface) shadow-(--shadow-soft) transition-shadow duration-200 hover:shadow-(--shadow-card)">
+    <article className="group flex flex-col overflow-hidden rounded-xl border border-(--color-border) bg-(--color-surface) shadow-(--shadow-soft) transition-shadow duration-200 hover:shadow-(--shadow-card)">
       {/* Image wrapper — aspect-ratio locks height, prevents CLS */}
       <Link href={`/${lang}/shop/${slug}`} className="relative block aspect-square overflow-hidden bg-(--color-sand-light)">
         <Image
