@@ -146,10 +146,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
           <h1 className="text-2xl leading-tight md:text-3xl lg:text-4xl">{displayName}</h1>
           <p className="text-(--color-sage) font-500">{displayTagline}</p>
 
-          {/* FTC Disclosure — immediately below title per spec ("above the fold") */}
-          <p className="text-[11px] text-(--color-muted)">
-            As an Amazon Associate, DARIIV earns from qualifying purchases.
-          </p>
+
 
           {/* Price — "Invaluable Peace of Mind" shown when amount = 0 */}
           {product.price.amount === 0 ? (
