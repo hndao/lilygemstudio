@@ -71,7 +71,7 @@ export const COOKIE_CATEGORIES: CookieCategory[] = [
     key: 'marketing',
     label: 'Marketing & Affiliate Tracking',
     description:
-      'Enables affiliate attribution (e.g. Pinterest, TikTok) so we can earn a small commission at no cost to you. Opting out does not affect prices.',
+      'Enables social media tracking (e.g. Pinterest, TikTok) to help us understand where our visitors come from. Opting out does not affect prices.',
     required: false,
   },
   {

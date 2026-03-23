@@ -21,7 +21,6 @@ import { productJsonLd, breadcrumbJsonLd, generateProductMeta } from '@/lib/seo'
 import { ProductImageGallery } from '@/components/features/ProductImageGallery';
 import { ProductTabs } from '@/components/features/ProductTabs';
 import { ProductGrid } from '@/components/features/ProductGrid';
-import { AffiliateDisclosure } from '@/components/shared/AffiliateDisclosure';
 import { ArtisanSpotlight } from '@/components/features/ArtisanSpotlight';
 import { AffiliateCTA } from '@/components/features/AffiliateCTA';
 import { ExpertVerdict } from '@/components/features/ExpertVerdict';
@@ -189,9 +188,6 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
             priceVnd={product.priceVnd}
           />
 
-          {/* FTC disclosure (legal component — network-specific copy) */}
-          <AffiliateDisclosure variant="inline" network={product.affiliateLink.network} />
-
           {/* Artisan spotlight — shown when the product has an artisan profile */}
           {product.artisan && (
             <ArtisanSpotlight artisan={product.artisan} />
@@ -226,9 +222,8 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
 
       {/* Integrity blockquote — trust signal at end of page */}
       <blockquote className="mt-16 border-l-2 border-(--color-sand-dark) pl-5 text-sm italic leading-relaxed text-(--color-muted)">
-        Every product featured on DARIIV is verified through real-world research.
-        When you buy through our links, we may earn a small commission from Amazon
-        at no extra cost to you. No middlemen, no mystery — just quality you can trust.
+        Every piece featured on LilyGem Studio is carefully crafted and verified for quality. 
+        When you shop with us, you support independent artisans. No middlemen, no mystery — just authentic beauty you can trust.
       </blockquote>
 
       {/* Related products */}
