@@ -69,7 +69,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html className={`${inter.variable} ${montserrat.variable} ${playfair.variable}`}>
+    <html className={`${inter.variable} ${montserrat.variable} ${playfair.variable}`} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href={process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"} />
         {process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN && (

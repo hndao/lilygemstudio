@@ -69,7 +69,7 @@ const CSP_DIRECTIVES = [
     ? "connect-src 'self' http://localhost:8000 https://api.dariiv.com https://plausible.io"
     : "connect-src 'self' https://api.dariiv.com https://plausible.io",
   "font-src 'self'",
-  "media-src 'none'",
+  "media-src 'self' https://media.dariiv.com",
   "object-src 'none'",
   "frame-src 'none'",
   "frame-ancestors 'none'",
