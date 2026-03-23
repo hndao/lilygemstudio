@@ -89,11 +89,6 @@ export function MobileMenu({ isOpen, onClose, dict, lang }: MobileMenuProps) {
               ))}
             </ul>
 
-            {/* Language switcher at the bottom */}
-            <div className="mt-auto border-t border-(--color-border) px-6 py-4">
-              <p className="mb-2 text-xs text-(--color-muted) uppercase tracking-widest">Language</p>
-              <LanguageSwitcher currentLang={lang} dict={dict} />
-            </div>
           </motion.nav>
         </>
       )}

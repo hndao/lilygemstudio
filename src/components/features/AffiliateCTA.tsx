@@ -78,22 +78,7 @@ export function AffiliateCTA({
     );
   };
 
-  if (affiliateLinkVn) {
-    return (
-      <>
-        {/* Global CTA — default. Hidden if country-vn is active */}
-        <div className="[.country-vn_&]:hidden">
-          {renderCTA(affiliateLink, price, false)}
-        </div>
-        {/* VN CTA — hidden by default. Shown if country-vn is active */}
-        <div className="hidden [.country-vn_&]:block">
-          {renderCTA(affiliateLinkVn, priceVnd, true)}
-        </div>
-      </>
-    );
-  }
-
-  // Fallback: no VN link available, always show global
+  // Always show global CTA (VN detection temporarily disabled)
   return renderCTA(affiliateLink, price, false);
 }
 

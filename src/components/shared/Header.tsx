@@ -64,9 +64,8 @@ export function Header({ dict, lang }: HeaderProps) {
             ))}
           </nav>
 
-          {/* ── Right-side: Lang switcher + Hamburger ────────────────── */}
+          {/* ── Right-side: Hamburger ────────────────────────────────── */}
           <div className="flex items-center gap-3">
-            <LanguageSwitcher currentLang={lang} dict={dict} />
             <button
               onClick={() => setMenuOpen(true)}
               className="xl:hidden flex items-center justify-center rounded-md p-2 text-(--color-sand) transition-colors hover:bg-white/10 hover:text-(--color-cream)"

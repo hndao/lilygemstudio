@@ -129,17 +129,8 @@ export function MobileStickyBar({
         visible ? 'translate-y-0' : 'translate-y-full',
       ].join(' ')}
     >
-      {/* Global Bar */}
-      <div className={priceVnd ? '[.country-vn_&]:hidden' : ''}>
-        {renderContent(price, affiliateLink, false)}
-      </div>
-
-      {/* VN Bar */}
-      {priceVnd && affiliateLinkVn && (
-        <div className="hidden [.country-vn_&]:block">
-           {renderContent(priceVnd, affiliateLinkVn, true)}
-        </div>
-      )}
+      {/* Always show global bar (VN detection temporarily disabled) */}
+      {renderContent(price, affiliateLink, false)}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const SUPPORTED_LOCALES = ['en', 'vi'] as const;
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
-export const DEFAULT_LOCALE: Locale = 'vi';
+export const DEFAULT_LOCALE: Locale = 'en';
 
 /**
  * Detect preferred locale from Accept-Language header.
@@ -39,7 +39,7 @@ export function middleware(req: NextRequest) {
 
   // Detect Country from Vercel edge header (fallback to GLOBAL for local dev)
   const ipCountry = req.headers.get('x-vercel-ip-country');
-  const countryCode = ipCountry === 'VN' ? 'VN' : 'GLOBAL';
+  const countryCode = 'GLOBAL'; // Temporarily disable VN IP detection
   const currentCountryCookie = req.cookies.get('NEXT_COUNTRY')?.value;
   
   let response: NextResponse | undefined;
