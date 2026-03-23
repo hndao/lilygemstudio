@@ -26,8 +26,8 @@ import { HeroContent } from './HeroContent';
 const FALLBACK_SLIDE: HeroSlide = {
   image_url: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1600&q=80',
   image_alt: 'Artisan handwoven baskets and ceramics arranged on a warm wooden surface',
-  title: 'Artisan Goods\nMade With Purpose',
-  description: 'Handpicked artisan products with verified reviews and transparent affiliate disclosures. Curated for the US & CA market.',
+  title: 'Where Nature\nMeets Art',
+  description: "Unique handcrafted agate jewelry from the heart of Vietnam. Every piece tells a story of nature's creativity.",
   cta_text: 'Shop Now',
   cta_url: '/shop',
 };

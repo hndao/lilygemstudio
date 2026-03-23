@@ -47,17 +47,16 @@ export function OurStorySection() {
               className="editorial-title mt-3 text-(--color-stone)"
               style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)' }}
             >
-              Blending Wisdom with Innovation: The Heart Behind DARIIV
+              Where Nature Meets Art: The Heart Behind LilyGem
             </h2>
             <p className="mt-4 leading-relaxed text-(--color-muted)">
-              DARIIV was founded on a simple yet profound realization: In an era of mass production, true quality is found in the intersection of <strong>innovation and tradition</strong>.
+              LilyGemStudio was founded in Ho Chi Minh City in 2023 with a profound appreciation for the earth&apos;s raw beauty. We believe that true quality is found where <strong>nature meets art</strong>.
             </p>
             <p className="mt-3 leading-relaxed text-(--color-muted)">
-              Whether we are scouting for life-enhancing <strong>smart home technologies</strong> that empower our seniors to live safely, or hand-curating <strong>authentic agate treasures</strong> that connect us back to the earth’s raw beauty, our mission remains the same: <strong>Integrity over everything</strong>.
+              Inspired by the timeless elegance and unique patterns of natural agate, our mission is to hand-curate <strong>authentic gemstone treasures</strong> that connect you back to the earth. Every piece tells a unique story of nature&apos;s creativity.
             </p>
-
             <p className="mt-3 leading-relaxed text-(--color-muted)">
-              Every product featured on DARIIV is meticulously researched, verified by real-world use, and curated to bring peace of mind and elegance to your modern home. No middlemen, no bias—just stories worth telling and quality you can feel.
+              Every bracelet and ring featured at LilyGemStudio is meticulously handcrafted. No two pieces are alike—just like the people who wear them. Celebrate life&apos;s special moments and express your individuality through our curated collections.
             </p>
             <Link
               href="/our-story"
@@ -78,8 +77,8 @@ export function OurStorySection() {
           >
             <div className="relative aspect-[4/5] overflow-hidden rounded-xl">
               <Image
-                src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80"
-                alt="Artisan hands weaving a traditional basket with natural palm straw"
+                src="https://images.unsplash.com/photo-1611080775929-231a403bd2f6?w=800&q=80"
+                alt="Close-up of a natural agate gemstone slice revealing intricate banding patterns"
                 fill
                 sizes="(max-width: 1279px) 50vw, 640px"
                 className="object-cover"

@@ -12,10 +12,10 @@ import type { Metadata } from 'next';
 export const dynamic = 'force-static';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | DARIIV',
+  title: 'Privacy Policy | LilyGem Studio',
   description:
-    'How DARIIV collects, uses, and protects your personal information in compliance with US and Canadian privacy law.',
-  alternates: { canonical: 'https://dariiv.com/privacy' },
+    'How LilyGem Studio collects and uses your personal information — strictly for order fulfillment and purchase communication.',
+  alternates: { canonical: 'https://lilygemstudio.com/privacy' },
 };
 
 const LAST_UPDATED = 'February 24, 2026';
@@ -33,36 +33,50 @@ export default function PrivacyPolicyPage() {
 
         <Section title="1. Information We Collect">
           <p>
-            We collect minimal data necessary to improve your browsing experience, including
-            device information (via cookies) and any information you voluntarily provide through
-            our contact forms or newsletter signups.
+            When you place an order through our Etsy shop, we receive the shipping address, contact
+            details, and order information you provide at checkout. This information is managed by
+            Etsy in accordance with their privacy policy. On this website, we may also collect
+            anonymised browsing data (e.g., page views) solely to improve your experience.
           </p>
         </Section>
 
-        <Section title="2. How We Use Data">
+        <Section title="2. How We Use Your Information">
           <p>
-            We use this information to analyze site traffic, personalize content, and notify you
-            of price drops (if opted-in). We do{' '}
-            <strong>not</strong> sell your personal data to third parties.
+            We use your personal information <strong>only</strong> for the following purposes:
+          </p>
+          <ul className="list-disc pl-5 flex flex-col gap-1">
+            <li>To process and fulfil your order (shipping, packaging, dispatch).</li>
+            <li>To communicate with you directly about your purchase (tracking, delays, issues).</li>
+            <li>To comply with applicable legal and tax obligations.</li>
+          </ul>
+          <p>
+            We do <strong>not</strong> sell, rent, or share your personal data with third parties
+            for marketing purposes.
           </p>
         </Section>
 
-        <Section title="3. Third-Party Links">
+        <Section title="3. Payment Information">
           <p>
-            Our site contains links to external retail websites. Once you leave DARIIV.com, their
-            respective privacy policies apply. We encourage you to review the policies of any site
-            you visit.
+            All payments are processed securely through Etsy&apos;s payment platform, which supports
+            Visa, Mastercard, and other major methods. LilyGem Studio never receives, stores, or
+            has access to your full credit card details.
           </p>
         </Section>
 
-        <Section title="4. Your Rights">
+        <Section title="4. Data Retention">
           <p>
-            Depending on your location (such as California or Canada), you may have specific rights
-            regarding your data access and deletion. Contact us at{' '}
-            <a href="mailto:hello@dariiv.com" className="text-(--color-sage) underline">
-              hello@dariiv.com
-            </a>{' '}
-            for any inquiries.
+            We retain your order and contact information only as long as necessary to fulfil your
+            order and meet our legal obligations. We do not store payment card data at any point.
+          </p>
+        </Section>
+
+        <Section title="5. Contact Us">
+          <p>
+            For any questions about how your personal data is handled, please reach out via our
+            Etsy shop messaging system or contact us at{' '}
+            <a href="mailto:hello@lilygemstudio.com" className="text-(--color-sage) underline">
+              hello@lilygemstudio.com
+            </a>.
           </p>
         </Section>
 

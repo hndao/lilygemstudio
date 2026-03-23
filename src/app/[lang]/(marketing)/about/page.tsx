@@ -12,60 +12,60 @@ import Link from 'next/link';
 export const dynamic = 'force-static';
 
 export const metadata: Metadata = {
-  title: 'About | DARIIV',
+  title: 'About | LilyGem Studio',
   description:
-    'DARIIV is a curated marketplace for artisan goods — handpicked products with verified reviews and transparent affiliate disclosures.',
-  alternates: { canonical: 'https://dariiv.com/about' },
+    'LilyGem Studio crafts handmade natural agate jewelry in Ho Chi Minh City, Vietnam — unique bangles and bracelets inspired by nature\'s timeless elegance.',
+  alternates: { canonical: 'https://lilygemstudio.com/about' },
   openGraph: {
-    title: 'About | DARIIV',
+    title: 'About | LilyGem Studio',
     description:
-      'DARIIV is a curated marketplace for artisan goods — handpicked products with verified reviews and transparent affiliate disclosures.',
+      'LilyGem Studio crafts handmade natural agate jewelry in Ho Chi Minh City, Vietnam — unique bangles and bracelets inspired by nature\'s timeless elegance.',
     type: 'website',
   },
 };
 
 const STATS = [
-  { value: '500+', label: 'Curated Products' },
-  { value: '120+', label: 'Artisan Partners' },
-  { value: '98%', label: 'Verified Reviews' },
-  { value: '2', label: 'Markets: US & CA' },
+  { value: '100%', label: 'Natural Stone, No Dye' },
+  { value: 'Est. 2023', label: 'Ho Chi Minh City, Vietnam' },
+  { value: '2', label: 'Ethical Mining Partners' },
+  { value: '0', label: 'Two Pieces Alike' },
 ];
 
 const HOW_IT_WORKS = [
   {
     step: '01',
-    title: 'We Find the Makers',
-    body: 'Our team travels to source regions and scours independent markets to find artisans whose craft meets our quality bar.',
+    title: 'We Source Ethically',
+    body: 'Raw agate is selected from two trusted Vietnamese partners committed to responsible, sustainable mining in Ho Chi Minh City and across Vietnam.',
   },
   {
     step: '02',
-    title: 'We Verify the Reviews',
-    body: 'Every review on DARIIV is from a confirmed buyer. We cross-reference purchase records before a review goes live.',
+    title: 'We Handcraft Each Piece',
+    body: 'Every bangle and bracelet is shaped and polished by hand in our studio. Meticulous craftsmanship ensures no two pieces are ever identical.',
   },
   {
     step: '03',
-    title: 'We Link Transparently',
-    body: 'When you click through and buy, we earn a small commission. This is always disclosed — it\'s how we fund the curation.',
+    title: 'We Tell the Stone\'s Story',
+    body: 'Each piece ships with its provenance — the stone\'s origin, the natural patterns that make it unique, and the intention behind its design.',
   },
   {
     step: '04',
-    title: 'You Shop with Confidence',
-    body: 'You get honest recommendations, real stories, and fair prices — with no hidden agendas.',
+    title: 'You Wear Nature',
+    body: 'Your jewelry becomes a personal connection with nature\'s artistry — timeless, organic, and entirely one of a kind.',
   },
 ];
 
 const VALUES = [
   {
-    title: 'Craft Over Commerce',
-    body: 'We lead with the maker\'s story, not the margin. Products are chosen for quality and provenance first.',
+    title: 'Nature Over Mass Production',
+    body: 'Every piece begins with raw agate chosen for its unique pattern. We never use synthetic materials or duplicated molds — nature sets the design.',
   },
   {
-    title: 'Transparency Always',
-    body: 'Affiliate relationships, pricing sources, and review methodology are all disclosed openly.',
+    title: 'Meticulous Craftsmanship',
+    body: 'Hand-formed and polished in our Ho Chi Minh City studio, each piece honors the material and the centuries-old tradition of stone artistry.',
   },
   {
-    title: 'Community Driven',
-    body: 'Our editorial direction is shaped by the DARIIV community — the products you love most rise to the top.',
+    title: 'Ethical Roots',
+    body: 'Our raw agate is sourced from two trusted Vietnamese partners dedicated to responsible, sustainably mined stone — from the earth, with care.',
   },
 ];
 
@@ -77,15 +77,15 @@ export default function AboutPage() {
         <div className="mx-auto max-w-[1280px] px-4 md:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-10 md:grid-cols-2 md:items-center md:gap-16">
             <div>
-              <span className="brand-label">About DARIIV</span>
+              <span className="brand-label">About LilyGem Studio</span>
               <h1 className="mt-3">
-                A Marketplace Built on{' '}
-                <span className="editorial-title text-(--color-sage)">Trust</span>
+                Where Nature Meets{' '}
+                <span className="editorial-title text-(--color-sage)">Art</span>
               </h1>
               <p className="mt-5 max-w-lg leading-relaxed text-(--color-muted)">
-                DARIIV is a curated discovery platform for artisan goods. We handpick every product,
-                verify every review, and disclose every affiliate relationship — so you can shop
-                with complete confidence.
+                LilyGem Studio creates unique natural agate jewelry from the heart of Vietnam.
+                Inspired by the timeless elegance of stone and the rhythms of nature, every piece
+                is handcrafted in Ho Chi Minh City — and no two are ever the same.
               </p>
               <div className="mt-8 flex flex-wrap gap-4">
                 <Link
@@ -105,7 +105,7 @@ export default function AboutPage() {
             <div className="relative aspect-[4/3] overflow-hidden rounded-xl">
               <Image
                 src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=900&q=80"
-                alt="Artisan handwoven baskets and ceramics arranged on a warm wooden surface"
+                alt="Natural agate stone jewelry handcrafted in Ho Chi Minh City, Vietnam by LilyGem Studio"
                 fill
                 priority
                 sizes="(max-width: 767px) 100vw, 50vw"
@@ -135,7 +135,7 @@ export default function AboutPage() {
         <div className="mx-auto max-w-[1280px] px-4 md:px-6 lg:px-8">
           <div className="text-center">
             <span className="brand-label">The Process</span>
-            <h2 id="how-heading" className="mt-3">How DARIIV Works</h2>
+            <h2 id="how-heading" className="mt-3">How We Make It</h2>
           </div>
           <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {HOW_IT_WORKS.map((item) => (
@@ -170,9 +170,9 @@ export default function AboutPage() {
       {/* ── CTA strip ── */}
       <section className="bg-(--color-sage) py-16 md:py-20">
         <div className="mx-auto max-w-[760px] px-4 text-center md:px-6 lg:px-8">
-          <h2 className="text-white">Ready to Discover Something Special?</h2>
+          <h2 className="text-white">Ready to Wear a Piece of Nature?</h2>
           <p className="mx-auto mt-4 max-w-md leading-relaxed text-white/80">
-            Browse our hand-curated collection of artisan goods — each one with a story worth knowing.
+            Browse our collection of handcrafted natural agate jewelry — each piece unique, each one a story worth wearing.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Link
