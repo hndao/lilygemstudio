@@ -53,11 +53,8 @@ export function middleware(req: NextRequest) {
     response = NextResponse.next();
   } else {
     // Redirect to locale-prefixed URL
-    const cookieLocale = req.cookies.get('NEXT_LOCALE')?.value as Locale | undefined;
-    const locale =
-      cookieLocale && SUPPORTED_LOCALES.includes(cookieLocale)
-        ? cookieLocale
-        : getLocaleFromRequest(req);
+    // Temporarily force English default, ignoring cookies and browser headers
+    const locale = 'en';
 
     const url = req.nextUrl.clone();
     url.pathname = `/${locale}${pathname}`;
