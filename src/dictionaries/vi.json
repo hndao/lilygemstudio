@@ -52,5 +52,26 @@
   "lang_switcher": {
     "en": "English",
     "vi": "Tiếng Việt"
+  },
+  "buybox": {
+    "specs_title": "Thông số chi tiết",
+    "color_label": "Màu đá",
+    "quantity": "Số lượng",
+    "decrease_qty": "Giảm số lượng",
+    "increase_qty": "Tăng số lượng",
+    "add_to_cart": "Thêm vào giỏ hàng",
+    "add_to_cart_short": "Thêm vào giỏ",
+    "added_to_cart": "✓ Đã thêm vào giỏ hàng",
+    "contact_zalo": "Liên hệ qua Zalo",
+    "message": "Nhắn tin",
+    "wishlist_add": "Yêu thích",
+    "wishlist_remove": "Bỏ yêu thích",
+    "close": "Đóng",
+    "sheet_title": "Chọn màu và số lượng",
+    "confirm": "Xác nhận",
+    "zalo_text": "Xin chào, tôi quan tâm đến sản phẩm \"%s\". Vui lòng tư vấn thêm.",
+    "email_subject": "Hỏi về %s",
+    "out_of_stock": "Hết hàng",
+    "only_x_left": "Còn %d sản phẩm"
   }
 }

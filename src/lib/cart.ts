@@ -6,6 +6,9 @@
  * When the backend cart API is built, swap these functions to use fetch().
  *
  * STORAGE KEY: 'lilygem_cart' — namespaced to avoid collisions.
+ *
+ * DEDUPLICATION KEY: productId + colorSlug. Two cart entries with the same
+ * product but different colors are treated as separate items.
  */
 
 import type { Money } from '@/types';
@@ -16,7 +19,8 @@ export interface CartItem {
   productId: string;
   slug: string;
   name: string;
-  size: string;
+  /** Selected color slug from ColorOption.slug — undefined for single-color or uncolored products */
+  colorSlug?: string;
   quantity: number;
   price: Money;
   image: string;
@@ -37,17 +41,22 @@ export function getCart(): CartItem[] {
 function saveCart(items: CartItem[]): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(CART_KEY, JSON.stringify(items));
-  // Dispatch a custom event so other components (e.g. header cart badge) can react
   window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: getCartCount() } }));
 }
 
+/** Deduplicate key: same product + same color (undefined treated as '') */
+function itemKey(productId: string, colorSlug?: string): string {
+  return `${productId}::${colorSlug ?? ''}`;
+}
+
 /**
- * Add an item. If same productId + size exists, increment quantity.
+ * Add an item. If same productId + colorSlug exists, increment quantity.
  * Otherwise append a new entry.
  */
 export function addToCart(item: CartItem): void {
   const cart = getCart();
-  const idx = cart.findIndex((c) => c.productId === item.productId && c.size === item.size);
+  const key = itemKey(item.productId, item.colorSlug);
+  const idx = cart.findIndex((c) => itemKey(c.productId, c.colorSlug) === key);
   if (idx >= 0) {
     cart[idx].quantity += item.quantity;
   } else {
@@ -56,20 +65,22 @@ export function addToCart(item: CartItem): void {
   saveCart(cart);
 }
 
-/** Remove a specific productId + size combination. */
-export function removeFromCart(productId: string, size: string): void {
-  const cart = getCart().filter((c) => !(c.productId === productId && c.size === size));
+/** Remove a specific productId + colorSlug combination. */
+export function removeFromCart(productId: string, colorSlug?: string): void {
+  const key = itemKey(productId, colorSlug);
+  const cart = getCart().filter((c) => itemKey(c.productId, c.colorSlug) !== key);
   saveCart(cart);
 }
 
 /** Update quantity for a specific item. Removes if qty <= 0. */
-export function updateQuantity(productId: string, size: string, qty: number): void {
+export function updateQuantity(productId: string, colorSlug: string | undefined, qty: number): void {
   if (qty <= 0) {
-    removeFromCart(productId, size);
+    removeFromCart(productId, colorSlug);
     return;
   }
+  const key = itemKey(productId, colorSlug);
   const cart = getCart();
-  const idx = cart.findIndex((c) => c.productId === productId && c.size === size);
+  const idx = cart.findIndex((c) => itemKey(c.productId, c.colorSlug) === key);
   if (idx >= 0) {
     cart[idx].quantity = qty;
     saveCart(cart);

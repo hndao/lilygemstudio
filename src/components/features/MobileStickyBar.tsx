@@ -23,11 +23,12 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { Heart, MessageCircle, ShoppingCart, ExternalLink } from 'lucide-react';
+import { Heart, ShoppingCart, ExternalLink } from 'lucide-react';
 import { trackAffiliateClick } from '@/lib/analytics';
 import { AFFILIATE_LINK_PROPS } from '@/lib/ftc';
 import { MobileCartSheet } from '@/components/features/MobileCartSheet';
-import type { AffiliateLink, Money, ProductImage } from '@/types';
+import type { Dictionary } from '@/lib/i18n';
+import type { AffiliateLink, ColorOption, Money, ProductImage } from '@/types';
 
 interface MobileStickyBarProps {
   productId: string;
@@ -37,9 +38,12 @@ interface MobileStickyBarProps {
   priceVnd?: Money;
   coverImage: ProductImage;
   affiliateLink: AffiliateLink;
-  affiliateLinkVn?: AffiliateLink;
-  defaultSize?: string;
+  zaloUrl?: string;
+  /** Color options for the mobile cart sheet — from above_cart color field */
+  colorOptions?: ColorOption[];
+  stockQuantity?: number | null;
   scrollThreshold?: number;
+  dict: Dictionary['buybox'];
 }
 
 export function MobileStickyBar({
@@ -50,9 +54,11 @@ export function MobileStickyBar({
   priceVnd,
   coverImage,
   affiliateLink,
-  affiliateLinkVn,
-  defaultSize,
+  zaloUrl,
+  colorOptions,
+  stockQuantity,
   scrollThreshold = 600,
+  dict,
 }: MobileStickyBarProps) {
   const [visible, setVisible] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -64,7 +70,7 @@ export function MobileStickyBar({
     return () => window.removeEventListener('scroll', handleScroll);
   }, [scrollThreshold]);
 
-  const zaloUrl = affiliateLinkVn?.url ?? '#';
+  const zaloHref = zaloUrl ?? '#';
 
   /* ── Global layout (Shop on Etsy) ─────────────────────────────────── */
   const renderGlobalBar = () => {
@@ -113,7 +119,7 @@ export function MobileStickyBar({
               ? 'border-(--color-promo) bg-(--color-promo)/10'
               : 'border-(--color-border) hover:bg-(--color-quartz-mist)',
           ].join(' ')}
-          aria-label={wishlisted ? 'Bỏ yêu thích' : 'Yêu thích'}
+          aria-label={wishlisted ? dict.wishlist_remove : dict.wishlist_add}
         >
           <Heart
             className={`h-5 w-5 text-(--color-promo) ${wishlisted ? 'fill-(--color-promo)' : ''}`}
@@ -123,13 +129,13 @@ export function MobileStickyBar({
 
         {/* Zalo icon */}
         <a
-          href={zaloUrl}
+          href={zaloHref}
           target="_blank"
           rel="noopener noreferrer"
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] border-[1.5px] border-(--color-border) transition-all hover:bg-(--color-quartz-mist)"
           aria-label="Zalo"
         >
-          <MessageCircle className="h-5 w-5 text-(--color-zalo)" aria-hidden="true" />
+          <Image src="/logo-zalo.webp" alt="Zalo" width={20} height={20} className="shrink-0" />
         </a>
 
         {/* Add to Cart — primary, fills remaining space */}
@@ -137,10 +143,10 @@ export function MobileStickyBar({
           type="button"
           onClick={() => setSheetOpen(true)}
           className="flex h-12 flex-1 items-center justify-center gap-2 rounded-[12px] bg-(--color-cta) text-[15px] font-600 text-(--color-cream) transition-all hover:bg-(--color-cta-hover)"
-          aria-label="Thêm vào giỏ hàng"
+          aria-label={dict.add_to_cart}
         >
           <ShoppingCart className="h-[18px] w-[18px]" aria-hidden="true" />
-          Thêm vào giỏ
+          {dict.add_to_cart_short}
         </button>
       </div>
 
@@ -153,7 +159,9 @@ export function MobileStickyBar({
         productName={productName}
         price={priceVnd ?? price}
         coverImage={coverImage.src}
-        defaultSize={defaultSize}
+        colorOptions={colorOptions}
+        stockQuantity={stockQuantity}
+        dict={dict}
       />
     </>
   );
@@ -176,7 +184,7 @@ export function MobileStickyBar({
       </div>
 
       {/* VN bar — hidden by default, shown for VN users */}
-      {affiliateLinkVn && (
+      {zaloUrl && (
         <div className="geo-show-vn w-full">
           {renderVnBar()}
         </div>

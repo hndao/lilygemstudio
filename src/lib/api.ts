@@ -79,7 +79,7 @@ const CARD_FIELDS = [
 const DETAIL_FIELDS = [
   ...CARD_FIELDS.split(','),
   'description', 'description_vi', 'brand_story', 'brand_story_vi', 'images', 'category',
-  'tags', 'metadata', 'artisan',
+  'tags', 'metadata', 'artisan', 'custom_fields', 'blocks', 'video_path',
 ].join(',');
 
 const ARTISAN_CARD_FIELDS = [
