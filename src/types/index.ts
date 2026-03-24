@@ -29,6 +29,8 @@ export interface ProductImage {
   width: number;
   height: number;
   blurDataURL?: string;  // base64 LQIP — eliminates CLS during image load
+  /** Optional tag for color-based gallery filtering — matches ColorOption.image_tags */
+  tag?: string;
 }
 
 // ── Review (lean shape — list context) ────────────────────────────────────────
@@ -57,6 +59,49 @@ export interface Review {
 export interface ProductSchemaData {
   category: string;   // e.g. "Home Security" — maps to Product.category in JSON-LD
   material: string;   // e.g. "Agate, Stainless Steel" — maps to Product.material
+}
+
+// ── Custom field types (category-driven product attributes) ───────────────────
+
+/** Value shape for a single-color field (multiple: false or absent) */
+export interface ColorFieldValue {
+  name: string;  // e.g. "Gold"
+  hex: string;   // e.g. "#FFD700"
+}
+
+/**
+ * Value shape for one option inside a multi-color field (multiple: true).
+ * slug is the stable URL key used in ?color= params and cart selected_options.
+ */
+export interface ColorOption {
+  name: string;           // "Amber honey"
+  slug: string;           // "amber-honey" — stable URL + cart key
+  hex: string;            // primary swatch hex
+  hex_secondary?: string; // second hex for gradient swatch; absent = solid circle
+  in_stock?: boolean;     // default true; false = swatch dimmed + disabled
+  image_tags?: string[];  // filters gallery to images whose tag matches any value here
+}
+
+/** A single custom field definition set on a Category — drives the product edit form and frontend display */
+export interface CustomFieldDefinition {
+  name: string;                                    // snake_case key stored in custom_fields JSON
+  label: string;                                   // human-readable UI label
+  type: 'text' | 'number' | 'boolean' | 'color';
+  unit?: string;                                   // only present for type=number (e.g. "mm", "cm")
+  group?: string;                                  // grouping label used for section headers
+  required?: boolean;
+  /** Only for type=color. When true, value is ColorOption[] (multi-swatch picker). Default false. */
+  multiple?: boolean;
+  /** Controls render zone on the product detail page. Default "specs_box". */
+  display_position?: 'above_cart' | 'specs_box' | 'below_specs' | 'hidden';
+  /** Populated at render time for single color fields — hex used to draw the swatch dot in SpecsBox */
+  hex?: string;
+}
+
+/** A resolved field definition paired with its product value — used by SpecsBox / page assembly */
+export interface FieldWithValue {
+  definition: CustomFieldDefinition;
+  value: string | number | boolean;
 }
 
 export interface SeoMeta {
@@ -147,6 +192,8 @@ export interface ProductCard {
   affiliateLinkVn?: AffiliateLink;
   reviewSummary: ReviewSummary;
   badge?: 'new' | 'bestseller' | 'sale' | 'limited';
+  /** null = unlimited / not tracked; 0 = out of stock; >0 = available quantity */
+  quantity?: number | null;
   /** Full CDN URL for the product demo/review video — null when no video uploaded */
   videoUrl?: string;
 }
@@ -158,10 +205,14 @@ export interface ProductDetail extends ProductCard {
   brandStoryVi?: string;
   images: ProductImage[];   // full gallery (cover + extras)
   category: { slug: string; name: string; nameVi?: string };
+  /** All categories this product belongs to (many-to-many) — used for display and filter links */
+  categories?: Array<{ id: string; slug: string; name: string; nameVi?: string }>;
   tags: string[];
   metadata: ProductMetadata; // specs + AI-generated SEO fields (seo.meta_title, seo.meta_description, seo.keywords)
   /** Category-driven custom fields — key/value pairs defined per category (specs, affiliate data, SEO signals) */
-  customFields?: Record<string, string | number | boolean>;
+  customFields?: Record<string, string | number | boolean | ColorFieldValue | ColorOption[]>;
+  /** Field definitions from the assigned category — used to display labels, units, groups, and color swatches */
+  customFieldDefinitions?: CustomFieldDefinition[];
   artisan?: ArtisanCard;    // optional — not all products have an artisan profile
   /** AI-generated expert verdict — rendered by ExpertVerdict.tsx */
   verdict?: ProductVerdict;
@@ -306,6 +357,8 @@ export interface SiteSettings {
     social_facebook: string;
     social_twitter: string;
     social_pinterest: string;
+    social_zalo?: string;
+    social_messenger?: string;
     social_youtube: string;
   };
   hero: {

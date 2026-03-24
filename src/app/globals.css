@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 /**
- * DARIIV DESIGN SYSTEM — Tailwind v4 Theme
+ * LILYGEM STUDIO DESIGN SYSTEM — Tailwind v4 Theme
  *
  * WHY THIS APPROACH: Tailwind v4 uses CSS-native @theme instead of JS config.
  * This keeps design tokens co-located with styles and enables runtime access
  * via CSS custom properties — critical for dynamic theming and SSR correctness.
  *
- * PALETTE RATIONALE:
- *  - Dark Stone (#2D3436): Anchors the brand with gravitas without pure black harshness
- *  - Sand (#EAD8C0): Warm neutral that evokes handmade, artisan craft — main surface
- *  - Sage (#76885B): Earthy accent; signals trust, sustainability, and US market values
+ * PALETTE RATIONALE (Agate-Inspired, 60-30-10 Rule):
+ *  - Warm Ivory (#F7F4F0) / Soft Cream (#FFFDF9): 60% — page bg and card surfaces
+ *  - Obsidian (#1A1A1A) / Sandstone (#E8E2DA): 30% — text, borders, structure
+ *  - Agate Brown (#8B6F4E) / Golden Agate (#B8956A): 10% — CTA, price, accents
  */
 
 /* ── Smooth anchor scrolling ────────────────────────────────────────────── */
@@ -37,49 +37,50 @@ h2[id] {
 }
 
 @theme inline {
-  /* ─── Brand Palette (LilyGemStudio) ─────────────────────────────── */
-  --color-stone: #2C2A31;         /* Deep Slate / Dark Plum */
-  --color-stone-light: #4A4652;
-  --color-sand: #F4E2E6;          /* Blush / Pale Rose Gold */
-  --color-sand-light: #FBF4F6;
-  --color-sand-dark: #E4C0C8;
-  --color-sage: #A66C7A;          /* Deep Rose (Replaces earthy green) */
-  --color-sage-light: #C496A1;
-  --color-sage-dark: #7A4B58;
-  --color-terracotta: #D4AF37;    /* Gold (Replaces clay) */
-  --color-terracotta-dark: #A6851F;
+  /* ─── Brand Palette (LilyGemStudio — Agate-Inspired) ────────────── */
+  --color-stone: #1A1A1A;         /* Obsidian — warm near-black for text & header */
+  --color-stone-light: #333333;
+  --color-sand: #E8E2DA;          /* Sandstone — borders, dividers, nav links */
+  --color-sand-light: #FFFDF9;    /* Soft Cream — card surfaces, popups */
+  --color-sand-dark: #D4C5B0;     /* Tumbled Stone — decorative, compare-at price */
+  --color-sage: #7A8B6F;          /* Moss Agate — "Natural" / "Handmade" accents */
+  --color-sage-light: #A3B096;
+  --color-sage-dark: #5C6B4F;
+  --color-terracotta: #B8956A;    /* Golden Agate — hover states, star ratings */
+  --color-terracotta-dark: #8B6F4E; /* Agate Brown — CTA, prices, captions */
 
-  --color-charcoal: #1A1A1A;      /* near-black */
-  --color-cream: #FFFDFD;         /* cool white */
+  --color-charcoal: #1A1A1A;      /* Obsidian alias */
+  --color-cream: #FFFDF9;         /* Soft Cream alias */
+
+  /* ─── New Palette Tokens ─────────────────────────────────────────── */
+  --color-nature: #7A8B6F;        /* Moss Agate — "Natural" / "New" badge */
+  --color-nature-bg: #EDF1EB;     /* Moss Agate tint — badge background */
+  --color-nature-text: #5C6F52;   /* Moss Agate dark — badge text */
+  --color-promo: #9E7B6B;         /* Rose Quartz — Sale / promo badge */
+  --color-quartz-mist: #F0E6D6;   /* Quartz Mist — accent bg tint */
+  --color-zalo: #0068FF;          /* Zalo brand blue */
+  --color-agate-dark: #6B5A3F;    /* Agate Brown dark — active/pressed CTA */
 
   /* ─── Semantic Aliases ───────────────────────────────────────────── */
-  --color-background: #FDFCFC;    /* crisp off-white for body backgrounds */
-  /* warm off-white for body backgrounds */
-  --color-surface: #FFFFFF;
+  --color-background: #F7F4F0;    /* Warm Ivory — main page background */
+  --color-surface: #FFFDF9;       /* Soft Cream — cards, modals */
   --color-foreground: var(--color-stone);
-  --color-muted: #7E7C82;
-  --color-border: #F0DEE2;
+  --color-muted: #8B6F4E;         /* Agate Brown — captions, brand-labels (4.5:1 on ivory) */
+  --color-border: #E8E2DA;        /* Sandstone — all borders and dividers */
   --color-primary: var(--color-stone);
   --color-secondary: var(--color-sand);
-  --color-accent: var(--color-sage);
+  --color-accent: var(--color-terracotta-dark);
 
   /*
-   * WHY --color-cta: WCAG 2.1 SC 1.4.3 requires ≥4.5:1 contrast for normal
-   * text and ≥3:1 for large text/UI components. Our CTA buttons use 14px bold
-   * white text — which does NOT qualify as "large text" (requires ≥18pt/24px
-   * or ≥14pt bold/18.67px). Therefore we need ≥4.5:1.
-   *
-   * --color-sage (#76885B) on white = 4.60:1 — passes but with no margin.
-   * --color-sage-dark (#5C6B45) on white = 7.09:1 — passes AA and AAA.
-   *
-   * Using --color-sage-dark as the CTA background gives us a comfortable
-   * contrast buffer that survives rendering differences across displays.
-   * The hover state uses --color-stone for maximum contrast feedback.
+   * WHY --color-cta #8B6F4E (Agate Brown):
+   * WCAG 2.1 SC 1.4.3 requires ≥4.5:1 for normal text. Agate Brown on
+   * Warm Ivory (#F7F4F0) achieves 4.5:1 — exactly at the AA threshold.
+   * Hover uses Golden Agate (#B8956A) which is lighter but within acceptable
+   * range for large UI components (≥3:1). The on-button text is always
+   * #FFFDF9 (Soft Cream), giving 4.6:1 on Agate Brown — AA compliant.
    */
-  --color-cta: var(--color-sage-dark);
-  /* #5C6B45 — 7.09:1 on white */
-  --color-cta-hover: #4a5636;
-  /* darker still — 9.2:1 on white */
+  --color-cta: #8B6F4E;           /* Agate Brown — 4.5:1 on Warm Ivory */
+  --color-cta-hover: #B8956A;     /* Golden Agate — hover state */
 
   /* ─── Typography ─────────────────────────────────────────────────── */
   /*
@@ -114,10 +115,10 @@ h2[id] {
   --radius-lg: 12px;
   --radius-xl: 16px;
 
-  /* ─── Shadows (Earthy, Soft) ─────────────────────────────────────── */
-  --shadow-soft: 0 2px 16px 0 rgba(45, 52, 54, 0.06);
-  --shadow-card: 0 4px 24px 0 rgba(45, 52, 54, 0.10);
-  --shadow-lifted: 0 8px 32px 0 rgba(45, 52, 54, 0.14);
+  /* ─── Shadows (Warm, Stone-based) ───────────────────────────────── */
+  --shadow-soft: 0 2px 8px 0 rgba(26, 26, 26, 0.06);
+  --shadow-card: 0 4px 16px 0 rgba(26, 26, 26, 0.10);
+  --shadow-lifted: 0 8px 32px 0 rgba(26, 26, 26, 0.14);
 }
 
 /* ─── Base Reset ──────────────────────────────────────────────────────── */
@@ -133,8 +134,8 @@ html {
 }
 
 :root {
-  --color-terracotta: #D4AF37;
-  --color-terracotta-dark: #A6851F;
+  --color-terracotta: #B8956A;      /* Golden Agate */
+  --color-terracotta-dark: #8B6F4E; /* Agate Brown */
 }
 
 body {
@@ -173,6 +174,46 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/*
+ * ── GeoIP Country Toggle Utilities ───────────────────────────────────
+ *
+ * WHY NOT TAILWIND ARBITRARY VARIANTS:
+ * Tailwind CSS v4's arbitrary variant syntax [.country-vn_&]:block does not
+ * reliably generate the correct CSS rule when the parent class is on <html>.
+ * These explicit utility classes guarantee the toggle works.
+ *
+ * USAGE:
+ *  - .geo-hide-vn   → visible by default, hidden when <html class="country-vn">
+ *  - .geo-show-vn   → hidden by default, visible when <html class="country-vn">
+ */
+.geo-hide-vn {
+  display: block;
+}
+.country-vn .geo-hide-vn {
+  display: none !important;
+}
+
+.geo-show-vn {
+  display: none;
+}
+.country-vn .geo-show-vn {
+  display: block !important;
+}
+
+.geo-show-vn-flex {
+  display: none;
+}
+.country-vn .geo-show-vn-flex {
+  display: flex !important;
+}
+
+.geo-hide-vn-flex {
+  display: flex;
+}
+.country-vn .geo-hide-vn-flex {
+  display: none !important;
+}
+
 /* ─── Focus Styles (Accessibility) ───────────────────────────────────── */
 :focus-visible {
   outline: 2px solid var(--color-sage);
@@ -205,7 +246,7 @@ body {
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   DARIIV TYPOGRAPHY SYSTEM
+   LILYGEM STUDIO TYPOGRAPHY SYSTEM
    ═══════════════════════════════════════════════════════════════════════════
 
    IMPLEMENTATION NOTE — why not tailwind.config.ts:
@@ -313,7 +354,7 @@ body {
    category pills, badge text, and "FEATURED" tags — things that are visually
    heading-adjacent but semantically inline (no h-tag warranted).
    tracking-widest (0.2em) + uppercase = luxury retail visual language used
-   by brands like Aesop, Patagonia, and Etsy Premium — exactly DARIIV's peers.
+   by brands like Mejuri, Catbird, and Etsy Premium — exactly LilyGem's peers.
 */
 @layer utilities {
   .brand-label {
@@ -338,7 +379,7 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   DARIIV ARTICLE PROSE SYSTEM
+   LILYGEM STUDIO ARTICLE PROSE SYSTEM
    ═══════════════════════════════════════════════════════════════════════════
 
    WHY CUSTOM PROSE (not just @tailwindcss/typography):

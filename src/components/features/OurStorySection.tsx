@@ -77,7 +77,7 @@ export function OurStorySection() {
           >
             <div className="relative aspect-[4/5] overflow-hidden rounded-xl">
               <Image
-                src="https://images.unsplash.com/photo-1611080775929-231a403bd2f6?w=800&q=80"
+                src="/images/agate-slice.avif"
                 alt="Close-up of a natural agate gemstone slice revealing intricate banding patterns"
                 fill
                 sizes="(max-width: 1279px) 50vw, 640px"

@@ -78,7 +78,17 @@ export function AffiliateCTA({
     );
   };
 
-  // Always show global CTA (VN detection temporarily disabled)
-  return renderCTA(affiliateLink, price, false);
+  return (
+    <>
+      <div className="geo-hide-vn w-full">
+        {renderCTA(affiliateLink, price, false)}
+      </div>
+      {affiliateLinkVn && (
+        <div className="geo-show-vn w-full">
+          {renderCTA(affiliateLinkVn, priceVnd, true)}
+        </div>
+      )}
+    </>
+  );
 }
 

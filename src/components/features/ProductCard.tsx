@@ -45,7 +45,7 @@ export function ProductCard({
   const displayTagline = lang === 'vi' && taglineVi ? taglineVi : tagline;
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-lg bg-(--color-surface) shadow-(--shadow-soft) transition-shadow duration-200 hover:shadow-(--shadow-card)">
+    <article className="group flex flex-col overflow-hidden rounded-xl border border-(--color-border) bg-(--color-surface) shadow-(--shadow-soft) transition-shadow duration-200 hover:shadow-(--shadow-card)">
       {/* Image wrapper — aspect-ratio locks height, prevents CLS */}
       <Link href={`/${lang}/shop/${slug}`} className="relative block aspect-square overflow-hidden bg-(--color-sand-light)">
         <Image
@@ -69,21 +69,12 @@ export function ProductCard({
 
       {/* Content area: Name, Tagline, Price, Rating */}
       <div className="flex flex-1 flex-col p-4">
-        {/* Row 1: Name and Rating (Name truncates with ellipsis) */}
-        <div className="flex items-start justify-between gap-3">
-          <Link href={`/${lang}/shop/${slug}`} className="line-clamp-2 flex-1 outline-none">
-            <h3 className="font-heading text-base font-semibold text-(--color-foreground) transition-colors group-hover:text-(--color-terracotta)">
-              {displayName}
-            </h3>
-          </Link>
-          <div className="shrink-0 pt-0.5">
-            <StarRating
-              rating={reviewSummary.averageRating}
-              count={reviewSummary.totalCount}
-              size="sm"
-            />
-          </div>
-        </div>
+        {/* Row 1: Name */}
+        <Link href={`/${lang}/shop/${slug}`} className="outline-none">
+          <h3 className="line-clamp-2 font-heading text-base font-semibold text-(--color-foreground) transition-colors group-hover:text-(--color-terracotta)">
+            {displayName}
+          </h3>
+        </Link>
 
         {/* Optional Tagline */}
         {displayTagline && (

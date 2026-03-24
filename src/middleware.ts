@@ -37,10 +37,23 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Detect Country from Vercel edge header (fallback to GLOBAL for local dev)
+  // Detect Country from Vercel edge header.
+  // For local testing without Vercel Edge, allow a ?geo=VN query parameter
+  // and persist it across navigations.
   const ipCountry = req.headers.get('x-vercel-ip-country');
-  const countryCode = 'GLOBAL'; // Temporarily disable VN IP detection
+  const isDev = process.env.NODE_ENV === 'development';
   const currentCountryCookie = req.cookies.get('NEXT_COUNTRY')?.value;
+  const geoQuery = isDev ? req.nextUrl.searchParams.get('geo') : null;
+  
+  let countryCode = ipCountry === 'VN' ? 'VN' : 'GLOBAL';
+  if (isDev) {
+    // In dev, respect ?geo override, otherwise stick to current cookie to survive next/link prefetches
+    if (geoQuery === 'VN' || geoQuery === 'GLOBAL') {
+      countryCode = geoQuery;
+    } else {
+      countryCode = currentCountryCookie === 'VN' ? 'VN' : 'GLOBAL';
+    }
+  }
   
   let response: NextResponse | undefined;
 
@@ -53,8 +66,11 @@ export function middleware(req: NextRequest) {
     response = NextResponse.next();
   } else {
     // Redirect to locale-prefixed URL
-    // Temporarily force English default, ignoring cookies and browser headers
-    const locale = 'en';
+    const cookieLocale = req.cookies.get('NEXT_LOCALE')?.value as Locale | undefined;
+    const locale =
+      cookieLocale && SUPPORTED_LOCALES.includes(cookieLocale)
+        ? cookieLocale
+        : getLocaleFromRequest(req);
 
     const url = req.nextUrl.clone();
     url.pathname = `/${locale}${pathname}`;

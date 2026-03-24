@@ -52,5 +52,26 @@
   "lang_switcher": {
     "en": "English",
     "vi": "Tiếng Việt"
+  },
+  "buybox": {
+    "specs_title": "Specifications",
+    "color_label": "Stone Color",
+    "quantity": "Quantity",
+    "decrease_qty": "Decrease quantity",
+    "increase_qty": "Increase quantity",
+    "add_to_cart": "Add to Cart",
+    "add_to_cart_short": "Add to Cart",
+    "added_to_cart": "✓ Added to cart",
+    "contact_zalo": "Contact via Zalo",
+    "message": "Message",
+    "wishlist_add": "Save",
+    "wishlist_remove": "Saved",
+    "close": "Close",
+    "sheet_title": "Select color and quantity",
+    "confirm": "Confirm",
+    "zalo_text": "Hello, I'm interested in \"%s\". Please advise.",
+    "email_subject": "Question about %s",
+    "out_of_stock": "Out of Stock",
+    "only_x_left": "Only %d left"
   }
 }

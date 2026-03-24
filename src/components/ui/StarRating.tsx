@@ -43,7 +43,7 @@ export function StarRating({ rating, count, size = 'sm', className = '' }: StarR
                 className="absolute inset-0 overflow-hidden"
                 style={{ width: filled ? '100%' : '50%' }}
               >
-                <Star className={`${starSize} fill-(--color-sage) text-(--color-sage)`} />
+                <Star className={`${starSize} fill-(--color-terracotta) text-(--color-terracotta)`} />
               </span>
             )}
           </span>
