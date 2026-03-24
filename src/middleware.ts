@@ -37,10 +37,15 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Detect Country from Vercel edge header.
+  // Detect Country from geo headers.
+  // WHY cf-ipcountry first: Cloudflare proxies all traffic to Vercel, so
+  // Vercel sees a Cloudflare edge IP (US) instead of the real user IP.
+  // x-vercel-ip-country would always return 'US', breaking VN geo detection.
+  // Cloudflare sets cf-ipcountry based on the actual client IP, so we use
+  // that when available, falling back to x-vercel-ip-country for non-CF traffic.
   // For local testing without Vercel Edge, allow a ?geo=VN query parameter
   // and persist it across navigations.
-  const ipCountry = req.headers.get('x-vercel-ip-country');
+  const ipCountry = req.headers.get('cf-ipcountry') ?? req.headers.get('x-vercel-ip-country');
   const isDev = process.env.NODE_ENV === 'development';
   const currentCountryCookie = req.cookies.get('NEXT_COUNTRY')?.value;
   const geoQuery = isDev ? req.nextUrl.searchParams.get('geo') : null;
