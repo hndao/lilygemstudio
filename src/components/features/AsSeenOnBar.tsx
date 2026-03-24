@@ -17,12 +17,13 @@ import { motion } from 'framer-motion';
 import type { SiteSettings } from '@/types';
 
 /** Display metadata for each social key the admin can configure */
-const PLATFORM_META: Record<keyof SiteSettings['social'], { name: string; icon: string }> = {
+const PLATFORM_META: Partial<Record<keyof SiteSettings['social'], { name: string; icon: string }>> = {
   social_instagram: { name: 'Instagram', icon: '📷' },
   social_facebook:  { name: 'Facebook',  icon: '👥' },
   social_twitter:   { name: 'X / Twitter', icon: '🐦' },
   social_pinterest: { name: 'Pinterest', icon: '📌' },
   social_youtube:   { name: 'YouTube',   icon: '▶️' },
+  // social_zalo / social_messenger are contact channels, not "As Seen On" platforms
 };
 
 interface AsSeenOnBarProps {
@@ -32,8 +33,8 @@ interface AsSeenOnBarProps {
 export function AsSeenOnBar({ social }: AsSeenOnBarProps) {
   // Build the list of platforms that have a URL set in admin Settings
   const platforms = (Object.entries(social ?? {}) as [keyof SiteSettings['social'], string][])
-    .filter(([, url]) => !!url)
-    .map(([key, url]) => ({ ...PLATFORM_META[key], url }));
+    .filter(([key, url]) => !!url && !!PLATFORM_META[key])
+    .map(([key, url]) => ({ ...PLATFORM_META[key]!, url }));
 
   // Don't render the bar at all if no social links are configured
   if (platforms.length === 0) return null;
