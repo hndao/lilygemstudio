@@ -53,6 +53,39 @@
     "en": "English",
     "vi": "Tiếng Việt"
   },
+  "auth": {
+    "sign_in": "Đăng Nhập",
+    "sign_up": "Tạo Tài Khoản",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "name": "Tên của bạn",
+    "continue_with_google": "Tiếp tục với Google",
+    "continue_with_facebook": "Tiếp tục với Facebook",
+    "logout": "Đăng Xuất",
+    "welcome_back": "Chào mừng trở lại",
+    "create_account": "Tạo tài khoản của bạn",
+    "already_have_account": "Đã có tài khoản?",
+    "no_account": "Chưa có tài khoản?",
+    "or": "hoặc",
+    "confirm_password": "Xác nhận mật khẩu"
+  },
+  "review": {
+    "write_review": "Viết Đánh Giá",
+    "your_rating": "Đánh giá của bạn",
+    "your_name": "Tên của bạn",
+    "review_title": "Tiêu đề đánh giá",
+    "review_body": "Chia sẻ trải nghiệm của bạn",
+    "submit_review": "Gửi Đánh Giá",
+    "review_submitted": "Cảm ơn! Đánh giá của bạn đang chờ xét duyệt.",
+    "sign_in_to_review": "Đăng nhập để viết đánh giá",
+    "review_min_chars": "Đánh giá phải có ít nhất 10 ký tự",
+    "already_reviewed": "Bạn đã gửi đánh giá cho sản phẩm này rồi."
+  },
+  "like": {
+    "like": "Thích",
+    "unlike": "Bỏ thích",
+    "likes_count": "người đã thích"
+  },
   "buybox": {
     "specs_title": "Thông số chi tiết",
     "color_label": "Màu đá",

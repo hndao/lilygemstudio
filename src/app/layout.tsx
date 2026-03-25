@@ -10,6 +10,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GoogleAnalytics } from '@next/third-parties/google';
 import { CookieBanner } from '@/components/features/CookieBanner';
+import { AuthProvider } from '@/context/AuthContext';
 import "./globals.css";
 
 const inter = Inter({
@@ -94,7 +95,9 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased bg-(--color-background) text-(--color-foreground)">
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
         <CookieBanner />
         <Analytics />
         <SpeedInsights />

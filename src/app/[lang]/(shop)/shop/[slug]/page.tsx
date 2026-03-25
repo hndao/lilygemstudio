@@ -28,6 +28,9 @@ import { ExpertVerdict } from '@/components/features/ExpertVerdict';
 import { FeatureAnalysis } from '@/components/features/FeatureAnalysis';
 import { BlocksRenderer } from '@/components/features/BlocksRenderer';
 import { MobileStickyBar } from '@/components/features/MobileStickyBar';
+import { ReviewGrid } from '@/components/features/ReviewGrid';
+import { LikeButton } from '@/components/features/LikeButton';
+import { ReviewForm } from '@/components/features/ReviewForm';
 import { StarRating } from '@/components/ui/StarRating';
 import { PriceLine } from '@/components/ui/PriceLine';
 import { Badge } from '@/components/ui/Badge';
@@ -219,11 +222,18 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
             />
           )}
 
-          <StarRating
-            rating={product.reviewSummary.averageRating}
-            count={product.reviewSummary.totalCount}
-            size="md"
-          />
+          <div className="flex flex-wrap items-center gap-3">
+            <StarRating
+              rating={product.reviewSummary.averageRating}
+              count={product.reviewSummary.totalCount}
+              size="md"
+            />
+            <LikeButton
+              productSlug={slug}
+              initialCount={product.likesCount ?? 0}
+              dict={dict.like}
+            />
+          </div>
 
           {product.verdict && <ExpertVerdict verdict={product.verdict} />}
 
@@ -282,6 +292,14 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         Every piece featured on LilyGem Studio is carefully crafted and verified for quality.
         When you shop with us, you support independent artisans. No middlemen, no mystery — just authentic beauty you can trust.
       </blockquote>
+
+      {/* ── Reviews section ────────────────────────────────────────────────── */}
+      <section className="mt-16" aria-labelledby="reviews-heading">
+        <ReviewGrid reviews={reviews} totalCount={reviewsRes.meta.total} />
+        <div className="mt-8">
+          <ReviewForm productSlug={slug} dict={dict.review} />
+        </div>
+      </section>
 
       {relatedProducts.length > 0 && (
         <section className="mt-16" aria-labelledby="related-heading">

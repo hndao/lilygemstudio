@@ -53,6 +53,39 @@
     "en": "English",
     "vi": "Tiếng Việt"
   },
+  "auth": {
+    "sign_in": "Sign In",
+    "sign_up": "Create Account",
+    "email": "Email",
+    "password": "Password",
+    "name": "Your Name",
+    "continue_with_google": "Continue with Google",
+    "continue_with_facebook": "Continue with Facebook",
+    "logout": "Sign Out",
+    "welcome_back": "Welcome back",
+    "create_account": "Create your account",
+    "already_have_account": "Already have an account?",
+    "no_account": "Don't have an account?",
+    "or": "or",
+    "confirm_password": "Confirm Password"
+  },
+  "review": {
+    "write_review": "Write a Review",
+    "your_rating": "Your Rating",
+    "your_name": "Your Name",
+    "review_title": "Review Title",
+    "review_body": "Tell us about your experience",
+    "submit_review": "Submit Review",
+    "review_submitted": "Thank you! Your review is pending approval.",
+    "sign_in_to_review": "Sign in to write a review",
+    "review_min_chars": "Review must be at least 10 characters",
+    "already_reviewed": "You have already submitted a review for this product."
+  },
+  "like": {
+    "like": "Like",
+    "unlike": "Unlike",
+    "likes_count": "people liked this"
+  },
   "buybox": {
     "specs_title": "Specifications",
     "color_label": "Stone Color",

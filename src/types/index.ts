@@ -176,6 +176,15 @@ export type ProductBlock =
  * related products. Fetching them for 24 grid cards = 24× wasted bytes.
  * ProductCard gets the lean shape; ProductDetail gets the full shape.
  */
+// ── Customer (storefront auth) ─────────────────────────────────────────────────
+
+export interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string | null;
+}
+
 export interface ProductCard {
   id: string;
   slug: string;
@@ -194,6 +203,8 @@ export interface ProductCard {
   badge?: 'new' | 'bestseller' | 'sale' | 'limited';
   /** null = unlimited / not tracked; 0 = out of stock; >0 = available quantity */
   quantity?: number | null;
+  /** Total number of likes from all customers */
+  likesCount?: number;
   /** Full CDN URL for the product demo/review video — null when no video uploaded */
   videoUrl?: string;
 }
