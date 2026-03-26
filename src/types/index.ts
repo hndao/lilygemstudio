@@ -431,3 +431,162 @@ export interface PostListParams {
   category?: string;
 }
 
+// ── Commerce ───────────────────────────────────────────────────────────────────
+
+export interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string | null;
+  site: string | null;
+  isBlocked: boolean;
+}
+
+export interface CartItemListing {
+  id: number;
+  resolvedTitle: string;
+  sku: string | null;
+  coverImage: ProductImage | null;
+  products: { id: number; name: string }[];
+}
+
+export interface CartItem {
+  id: number;
+  listingId: number;
+  quantity: number;
+  priceSnapshotCents: number | null;
+  priceSnapshotCentsVnd: number | null;
+  listing: CartItemListing;
+}
+
+export interface CartCoupon {
+  code: string;
+  type: string;
+  value: number;
+  discountCents: number;
+}
+
+export interface Cart {
+  id: number;
+  sessionToken: string | null;
+  items: CartItem[];
+  coupon: CartCoupon | null;
+  subtotalCents: number;
+  itemCount: number;
+}
+
+export interface Address {
+  id: number;
+  label: string | null;
+  recipientName: string;
+  phone: string | null;
+  line1: string;
+  line2: string | null;
+  city: string;
+  state: string | null;
+  postalCode: string | null;
+  countryCode: string;
+  isDefault: boolean;
+}
+
+export interface AddressInput {
+  recipient_name: string;
+  phone?: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  state?: string;
+  postal_code?: string;
+  country_code: string;
+  label?: string;
+  is_default?: boolean;
+}
+
+export interface ShippingRate {
+  id: number;
+  name: string;
+  rateCents: number;
+  estimatedDaysMin: number | null;
+  estimatedDaysMax: number | null;
+  minOrderCents: number | null;
+}
+
+export interface OrderItem {
+  id: number;
+  listingId: number;
+  quantity: number;
+  unitPriceCents: number;
+  totalPriceCents: number;
+  listingSnapshot: {
+    id: number;
+    resolvedTitle: string;
+    price_cents: number;
+    price_cents_vnd: number | null;
+    cover_image: ProductImage | null;
+    sku: string | null;
+    platforms: string[];
+    bundleProducts: { id: number; name: string; pivotQuantity: number }[];
+  };
+}
+
+export interface OrderShipment {
+  trackingNumber: string | null;
+  carrier: string | null;
+  shippedAt: string | null;
+  estimatedDelivery: string | null;
+}
+
+export interface OrderStatusHistory {
+  status: string;
+  note: string | null;
+  createdAt: string | null;
+}
+
+export interface Order {
+  id: number;
+  orderNumber: string;
+  status: string;
+  currency: string;
+  subtotalCents: number;
+  discountCents: number;
+  shippingCents: number;
+  totalCents: number;
+  formattedTotal: string;
+  couponCode: string | null;
+  shippingAddress: Omit<Address, 'id' | 'isDefault' | 'label'>;
+  notes: string | null;
+  paidAt: string | null;
+  createdAt: string;
+  items: OrderItem[];
+  payment: { provider: string; status: string; paidAt: string | null } | null;
+  shipment: OrderShipment | null;
+  statusHistories: OrderStatusHistory[];
+}
+
+export interface ListingCard {
+  id: number;
+  resolvedTitle: string;
+  sku: string | null;
+  platforms: string[];
+  platformLinks: { platform: string; url: string }[];
+  formattedPrice: string | null;
+  formattedPriceVnd: string | null;
+  priceCents: number | null;
+  priceCentsVnd: number | null;
+  comparePriceCents: number | null;
+  comparePriceCentsVnd: number | null;
+  coverImage: ProductImage | null;
+  quantity: number | null;
+  isLive: boolean;
+  validFrom: string | null;
+  validUntil: string | null;
+  bundleProducts: { id: number; name: string; pivotQuantity: number }[];
+}
+
+export interface CheckoutPayload {
+  currency: 'USD' | 'VND';
+  shipping_rate_cents: number;
+  shipping_address: AddressInput;
+  notes?: string;
+}
+

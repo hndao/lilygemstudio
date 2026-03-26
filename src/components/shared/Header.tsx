@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Menu } from 'lucide-react';
+import { Menu, ShoppingBag } from 'lucide-react';
 import { MobileMenu } from './MobileMenu';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { useCart } from '@/context/CartContext';
 import type { Locale } from '@/middleware';
 import type { Dictionary } from '@/lib/i18n';
 
@@ -16,6 +17,7 @@ interface HeaderProps {
 export function Header({ dict, lang }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { itemCount, openCart } = useCart();
 
   const base = `/${lang}`;
 
@@ -64,8 +66,23 @@ export function Header({ dict, lang }: HeaderProps) {
             ))}
           </nav>
 
-          {/* ── Right-side: Hamburger ────────────────────────────────── */}
-          <div className="flex items-center gap-3">
+          {/* ── Right-side: Cart + Hamburger ─────────────────────────── */}
+          <div className="flex items-center gap-1">
+            {/* Cart badge */}
+            <button
+              type="button"
+              onClick={openCart}
+              className="relative flex h-10 w-10 items-center justify-center rounded-md text-(--color-sand) transition-colors hover:bg-white/10 hover:text-(--color-cream)"
+              aria-label="Giỏ hàng"
+            >
+              <ShoppingBag className="h-5 w-5" />
+              {itemCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-(--color-cta) px-1 text-[10px] font-700 text-white leading-none">
+                  {itemCount > 99 ? '99+' : itemCount}
+                </span>
+              )}
+            </button>
+
             <button
               onClick={() => setMenuOpen(true)}
               className="xl:hidden flex items-center justify-center rounded-md p-2 text-(--color-sand) transition-colors hover:bg-white/10 hover:text-(--color-cream)"

@@ -18,7 +18,7 @@ import { ColorSwatches } from './ColorSwatches';
 import { SpecsBox } from './SpecsBox';
 import { ProductBuyBox } from './ProductBuyBox';
 import type { Dictionary } from '@/lib/i18n';
-import type { ColorOption, FieldWithValue, Money } from '@/types';
+import type { ColorOption, FieldWithValue, ListingCard, Money } from '@/types';
 
 interface ProductVNPanelProps {
   colorOptions?: ColorOption[];
@@ -34,6 +34,7 @@ interface ProductVNPanelProps {
   coverImage: string;
   stockQuantity?: number | null;
   dict: Dictionary['buybox'];
+  listing?: ListingCard | null;
 }
 
 export function ProductVNPanel({
@@ -50,6 +51,7 @@ export function ProductVNPanel({
   coverImage,
   stockQuantity,
   dict,
+  listing,
 }: ProductVNPanelProps) {
   // Default to first in-stock color
   const [selectedColor, setSelectedColor] = useState<ColorOption | null>(
@@ -81,6 +83,7 @@ export function ProductVNPanel({
         selectedColor={selectedColor}
         stockQuantity={stockQuantity}
         dict={dict}
+        listing={listing}
       />
     </div>
   );

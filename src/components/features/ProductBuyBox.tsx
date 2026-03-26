@@ -20,9 +20,9 @@
 import { useState, useCallback } from 'react';
 import Image from 'next/image';
 import { Heart, ShoppingCart } from 'lucide-react';
-import { addToCart } from '@/lib/cart';
+import { useCart } from '@/context/CartContext';
 import type { Dictionary } from '@/lib/i18n';
-import type { ColorOption, Money } from '@/types';
+import type { ColorOption, Money, ListingCard } from '@/types';
 
 interface ProductBuyBoxProps {
   productId: string;
@@ -38,6 +38,12 @@ interface ProductBuyBoxProps {
   /** null = unlimited; 0 = out of stock; >0 = capped at this value */
   stockQuantity?: number | null;
   dict: Dictionary['buybox'];
+  /**
+   * Active direct listing for this product.
+   * null  = no active listing → "Currently unavailable"
+   * present = use listing price + call API cart
+   */
+  listing?: ListingCard | null;
 }
 
 export function ProductBuyBox({
@@ -52,28 +58,41 @@ export function ProductBuyBox({
   selectedColor,
   stockQuantity,
   dict,
+  listing,
 }: ProductBuyBoxProps) {
-  const maxQty = stockQuantity != null ? stockQuantity : 99;
-  const isOutOfStock = stockQuantity === 0;
-  const [quantity, setQuantity] = useState(isOutOfStock ? 0 : 1);
-  const [wishlisted, setWishlisted] = useState(false);
-  const [showToast, setShowToast] = useState(false);
+  const { addItem } = useCart();
 
+  // Listing-aware stock: listing.quantity overrides product stockQuantity when present
+  const listingStock = listing !== undefined
+    ? (listing?.quantity ?? null)
+    : stockQuantity;
+  const maxQty = listingStock != null ? listingStock : 99;
+  const isUnavailable = listing === null; // no active listing
+  const isOutOfStock  = listing !== undefined
+    ? (listing?.quantity === 0)
+    : (stockQuantity === 0);
+
+  const [quantity, setQuantity]   = useState((isUnavailable || isOutOfStock) ? 0 : 1);
+  const [wishlisted, setWishlisted] = useState(false);
+  const [addBusy, setAddBusy]     = useState(false);
+
+  // Display price: prefer listing price → VND product price → product price
+  const listingPriceDisplay = listing
+    ? (listing.formattedPriceVnd ?? listing.formattedPrice)
+    : null;
   const displayPrice = priceVnd ?? price;
 
-  const handleAddToCart = useCallback(() => {
-    addToCart({
-      productId,
-      slug: productSlug,
-      name: productName,
-      colorSlug: selectedColor?.slug,
-      quantity,
-      price: displayPrice,
-      image: coverImage,
-    });
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
-  }, [quantity, productId, productSlug, productName, selectedColor, displayPrice, coverImage]);
+  const handleAddToCart = useCallback(async () => {
+    if (!listing || isUnavailable || isOutOfStock) return;
+    setAddBusy(true);
+    try {
+      await addItem(listing.id, quantity);
+    } catch {
+      // CartContext rolls back optimistic update on error; no extra handling needed
+    } finally {
+      setAddBusy(false);
+    }
+  }, [listing, isUnavailable, isOutOfStock, addItem, quantity]);
 
   const handleWishlist = useCallback(() => {
     setWishlisted((prev) => !prev);
@@ -125,12 +144,21 @@ export function ProductBuyBox({
       <button
         type="button"
         onClick={handleAddToCart}
-        disabled={isOutOfStock}
+        disabled={isUnavailable || isOutOfStock || addBusy}
         className="flex h-[52px] w-full items-center justify-center gap-2.5 rounded-[12px] bg-(--color-cta) text-[16px] font-600 tracking-[0.02em] text-(--color-cream) transition-all hover:-translate-y-px hover:bg-(--color-cta-hover) hover:shadow-[0_4px_16px_rgba(139,111,78,0.25)] active:translate-y-0 active:bg-(--color-agate-dark) disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
-        aria-label={isOutOfStock ? dict.out_of_stock : `${dict.add_to_cart} ${productName}`}
+        aria-label={isUnavailable ? 'Currently unavailable' : isOutOfStock ? dict.out_of_stock : `${dict.add_to_cart} ${productName}`}
       >
         <ShoppingCart className="h-5 w-5" aria-hidden="true" />
-        {isOutOfStock ? dict.out_of_stock : dict.add_to_cart}
+        {isUnavailable
+          ? 'Hiện không có hàng'
+          : isOutOfStock
+          ? dict.out_of_stock
+          : addBusy
+          ? '...'
+          : listingPriceDisplay
+          ? `${dict.add_to_cart} — ${listingPriceDisplay}`
+          : dict.add_to_cart
+        }
       </button>
 
       {/* ── Secondary Row: Zalo / Messenger / Yêu thích ──────────────── */}
@@ -180,12 +208,7 @@ export function ProductBuyBox({
         </button>
       </div>
 
-      {/* ── Success Toast ──────────────────────────────────────────────── */}
-      {showToast && (
-        <div className="fixed bottom-24 left-1/2 z-[200] -translate-x-1/2 animate-[slideUp_0.3s_ease-out] rounded-[12px] border border-(--color-border) bg-(--color-surface) px-5 py-3 text-sm font-600 text-(--color-stone) shadow-lg md:bottom-8">
-          {dict.added_to_cart}
-        </div>
-      )}
+      {/* Cart drawer opens automatically via CartContext.addItem → setIsOpen(true) */}
     </div>
   );
 }

@@ -1,0 +1,377 @@
+'use client';
+
+/**
+ * CartDrawer — Slide-in cart panel.
+ *
+ * DESKTOP (md+):  Fixed right panel, 380px wide. Slides in from right.
+ * MOBILE  (<md):  Bottom sheet, max 80vh. Slides up from bottom.
+ *
+ * Uses Framer Motion for the animation.
+ * Rendered inside CartProvider — reads from useCart().
+ */
+
+import { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { X, ShoppingBag, Minus, Plus, Trash2, Tag, ChevronRight, Lock } from 'lucide-react';
+import { useCart } from '@/context/CartContext';
+import type { CartItem } from '@/types';
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function formatVnd(cents: number): string {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+  }).format(cents);
+}
+
+function formatUsd(cents: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(cents / 100);
+}
+
+// ── Line item ──────────────────────────────────────────────────────────────────
+
+function CartLineItem({ item, isVn }: { item: CartItem; isVn: boolean }) {
+  const { updateItem, removeItem } = useCart();
+  const [busy, setBusy] = useState(false);
+
+  const priceCents = isVn
+    ? (item.priceSnapshotCentsVnd ?? item.priceSnapshotCents ?? 0)
+    : (item.priceSnapshotCents ?? 0);
+  const unitPrice = isVn ? formatVnd(priceCents) : formatUsd(priceCents);
+
+  const handleQty = async (delta: number) => {
+    const next = item.quantity + delta;
+    if (next < 1) return;
+    setBusy(true);
+    try { await updateItem(item.id, next); }
+    finally { setBusy(false); }
+  };
+
+  const handleRemove = async () => {
+    setBusy(true);
+    try { await removeItem(item.id); }
+    finally { setBusy(false); }
+  };
+
+  const coverSrc = item.listing.coverImage?.src ?? null;
+
+  return (
+    <div className="flex gap-3 py-4 border-b border-(--color-border) last:border-none">
+      {/* Thumbnail */}
+      <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-[10px] bg-(--color-quartz-mist)">
+        {coverSrc ? (
+          <Image
+            src={coverSrc}
+            alt={item.listing.resolvedTitle}
+            fill
+            sizes="72px"
+            className="object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            <ShoppingBag className="h-6 w-6 text-(--color-sand-dark)" />
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="flex flex-1 flex-col gap-1 min-w-0">
+        <p className="text-[13px] font-600 text-(--color-stone) leading-snug line-clamp-2">
+          {item.listing.resolvedTitle}
+        </p>
+        {item.listing.sku && (
+          <p className="text-[11px] text-(--color-sand-dark)">SKU: {item.listing.sku}</p>
+        )}
+        <div className="mt-auto flex items-center justify-between gap-2">
+          {/* Qty picker */}
+          <div className="inline-flex items-center rounded-[8px] border border-(--color-border)">
+            <button
+              type="button"
+              onClick={() => handleQty(-1)}
+              disabled={busy || item.quantity <= 1}
+              className="flex h-8 w-8 items-center justify-center text-(--color-stone-light) hover:bg-(--color-quartz-mist) disabled:opacity-40"
+              aria-label="Decrease"
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </button>
+            <span className="flex h-8 w-8 items-center justify-center border-x border-(--color-border) text-[13px] font-600">
+              {item.quantity}
+            </span>
+            <button
+              type="button"
+              onClick={() => handleQty(1)}
+              disabled={busy}
+              className="flex h-8 w-8 items-center justify-center text-(--color-stone-light) hover:bg-(--color-quartz-mist) disabled:opacity-40"
+              aria-label="Increase"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          {/* Unit price */}
+          <span className="text-[14px] font-700 text-(--color-terracotta-dark)">{unitPrice}</span>
+
+          {/* Remove */}
+          <button
+            type="button"
+            onClick={handleRemove}
+            disabled={busy}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-(--color-sand-dark) hover:bg-red-50 hover:text-red-500 disabled:opacity-40"
+            aria-label="Remove"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Coupon row ─────────────────────────────────────────────────────────────────
+
+function CouponRow() {
+  const { cart, applyCouponCode, removeCouponCode } = useCart();
+  const [expanded, setExpanded] = useState(false);
+  const [code, setCode]         = useState('');
+  const [busy, setBusy]         = useState(false);
+  const [error, setError]       = useState('');
+
+  const handleApply = async () => {
+    if (!code.trim()) return;
+    setBusy(true);
+    setError('');
+    try {
+      await applyCouponCode(code.trim());
+      setCode('');
+      setExpanded(false);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Invalid coupon');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (cart?.coupon) {
+    return (
+      <div className="flex items-center gap-2 rounded-[10px] bg-green-50 px-3 py-2 text-[13px]">
+        <Tag className="h-4 w-4 text-green-600" />
+        <span className="flex-1 font-500 text-green-700">
+          {cart.coupon.code} — {formatVnd(cart.coupon.discountCents)} off
+        </span>
+        <button
+          type="button"
+          onClick={() => removeCouponCode()}
+          className="text-[12px] text-green-600 underline"
+        >
+          Remove
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setExpanded((e) => !e)}
+        className="flex items-center gap-1.5 text-[13px] text-(--color-cta) font-500"
+      >
+        <Tag className="h-4 w-4" />
+        Have a coupon?
+      </button>
+      {expanded && (
+        <div className="mt-2 flex gap-2">
+          <input
+            type="text"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            placeholder="Coupon code"
+            className="flex-1 rounded-[8px] border border-(--color-border) px-3 py-2 text-[13px] outline-none focus:border-(--color-cta)"
+            onKeyDown={(e) => e.key === 'Enter' && handleApply()}
+          />
+          <button
+            type="button"
+            onClick={handleApply}
+            disabled={busy}
+            className="rounded-[8px] bg-(--color-cta) px-4 py-2 text-[13px] font-600 text-white disabled:opacity-50"
+          >
+            Apply
+          </button>
+        </div>
+      )}
+      {error && <p className="mt-1 text-[12px] text-red-500">{error}</p>}
+    </div>
+  );
+}
+
+// ── Main CartDrawer ────────────────────────────────────────────────────────────
+
+export function CartDrawer() {
+  const { cart, isOpen, closeCart, itemCount } = useCart();
+  const pathname = usePathname();
+  // Detect locale from URL segment: /vi/... → isVn = true
+  const lang = pathname.split('/')[1] ?? 'en';
+  const isVn = lang === 'vi';
+
+  // Lock body scroll when open
+  useEffect(() => {
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
+
+  const subtotal = cart?.subtotalCents ?? 0;
+  const subtotalFormatted = isVn ? formatVnd(subtotal) : formatUsd(subtotal);
+
+  // Mobile (< md): bottom sheet — Desktop (md+): right panel
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Overlay */}
+          <motion.div
+            key="cart-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[200] bg-black/50 md:bg-black/40"
+            onClick={closeCart}
+            aria-hidden="true"
+          />
+
+          {/* Panel — right side on desktop, bottom on mobile */}
+          <motion.div
+            key="cart-panel"
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 32, stiffness: 300 }}
+            className={[
+              'fixed top-0 right-0 z-[201] flex h-full w-full flex-col bg-(--color-surface)',
+              'md:w-[390px] md:shadow-[-4px_0_24px_rgba(0,0,0,0.12)]',
+              // Mobile override: bottom sheet
+              'max-md:top-auto max-md:bottom-0 max-md:h-[82svh] max-md:rounded-t-[20px]',
+            ].join(' ')}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Shopping cart"
+          >
+            {/* Mobile drag handle */}
+            <div className="mx-auto mt-3 mb-0 h-1 w-10 shrink-0 rounded-full bg-(--color-border) md:hidden" />
+
+            {/* Header */}
+            <div className="flex h-14 shrink-0 items-center justify-between border-b border-(--color-border) px-5">
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="h-5 w-5 text-(--color-cta)" />
+                <span className="font-heading text-[16px] font-700 text-(--color-stone)">
+                  Giỏ hàng
+                </span>
+                {itemCount > 0 && (
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-(--color-cta) px-1.5 text-[11px] font-700 text-white">
+                    {itemCount}
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={closeCart}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-(--color-stone-light) hover:bg-(--color-quartz-mist)"
+                aria-label="Đóng"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto px-5">
+              {!cart || cart.items.length === 0 ? (
+                /* Empty state */
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-(--color-quartz-mist)">
+                    <ShoppingBag className="h-10 w-10 text-(--color-sand-dark)" />
+                  </div>
+                  <p className="font-heading text-[16px] font-700 text-(--color-stone) mb-1">
+                    Giỏ hàng trống
+                  </p>
+                  <p className="text-[13px] text-(--color-sand-dark) mb-6">
+                    Hãy chọn sản phẩm bạn yêu thích
+                  </p>
+                  <Link
+                    href="/vi/shop"
+                    onClick={closeCart}
+                    className="inline-flex items-center gap-1.5 rounded-[10px] bg-(--color-cta) px-5 py-2.5 text-[14px] font-600 text-white"
+                  >
+                    Xem sản phẩm <ChevronRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              ) : (
+                <div>
+                  {cart.items.map((item) => (
+                    <CartLineItem key={item.id} item={item} isVn={isVn} />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer (only shown when cart has items) */}
+            {cart && cart.items.length > 0 && (
+              <div className="shrink-0 border-t border-(--color-border) px-5 pt-4 pb-[max(20px,env(safe-area-inset-bottom))]">
+                {/* Coupon */}
+                <div className="mb-3">
+                  <CouponRow />
+                </div>
+
+                {/* Totals */}
+                <div className="mb-4 space-y-1.5 text-[13px]">
+                  <div className="flex justify-between text-(--color-stone-light)">
+                    <span>Tạm tính</span>
+                    <span className="font-600 text-(--color-stone)">{subtotalFormatted}</span>
+                  </div>
+                  {cart.coupon && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Giảm giá ({cart.coupon.code})</span>
+                      <span className="font-600">
+                        −{isVn ? formatVnd(cart.coupon.discountCents) : formatUsd(cart.coupon.discountCents)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-[11px] text-(--color-sand-dark)">
+                    <span>Phí vận chuyển</span>
+                    <span>Tính khi thanh toán</span>
+                  </div>
+                </div>
+
+                {/* CTA */}
+                <Link
+                  href={lang ? `/${lang}/checkout` : '/checkout'}
+                  onClick={closeCart}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-(--color-cta) text-[15px] font-700 text-white shadow-sm transition-all hover:bg-(--color-cta-hover) active:scale-[0.98]"
+                >
+                  <Lock className="h-4 w-4" />
+                  Thanh toán an toàn
+                </Link>
+
+                {/* Trust badges */}
+                <div className="mt-3 flex items-center justify-center gap-3 text-[11px] text-(--color-sand-dark)">
+                  <span>🔒 SSL</span>
+                  <span>·</span>
+                  <span>📦 Đổi trả 7 ngày</span>
+                  <span>·</span>
+                  <span>💳 Thanh toán an toàn</span>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}

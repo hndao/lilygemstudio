@@ -15,6 +15,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getProduct, getReviews, getProductsBySlugs, getSiteSettings } from '@/lib/api';
+import { getProductListings } from '@/lib/commerceApi';
 import { getDictionary } from '@/lib/i18n';
 import { productJsonLd, breadcrumbJsonLd, generateProductMeta } from '@/lib/seo';
 import { ProductImageGallery } from '@/components/features/ProductImageGallery';
@@ -62,12 +63,18 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   const { slug, lang } = await params;
   const { preview_token: token } = await searchParams;
 
-  const [productRes, reviewsRes, dict, settings] = await Promise.all([
+  const [productRes, reviewsRes, dict, settings, listings] = await Promise.all([
     getProduct(slug, token).catch(() => null),
     getReviews(slug, 1).catch(() => ({ data: [], meta: { total: 0, currentPage: 1, lastPage: 1, perPage: 12 } })),
     getDictionary(lang),
     getSiteSettings().catch(() => null),
+    getProductListings(slug).catch(() => []),
   ]);
+
+  // Active direct listing — VN buy box shows listing price + adds to API cart
+  const directListing = listings.find(
+    (l) => l.platforms.includes('direct') && l.isLive,
+  ) ?? null;
 
   const zaloUrl = settings?.social?.social_zalo;
   const messengerUrl = settings?.social?.social_messenger;
@@ -255,6 +262,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
               coverImage={galleryImages[0].src}
               stockQuantity={product.quantity}
               dict={dict.buybox}
+              listing={directListing}
             />
           </div>
 
@@ -320,6 +328,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         colorOptions={colorOptions}
         stockQuantity={product.quantity}
         dict={dict.buybox}
+        listing={directListing}
       />
     </main>
   );

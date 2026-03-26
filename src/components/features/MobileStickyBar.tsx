@@ -28,7 +28,7 @@ import { trackAffiliateClick } from '@/lib/analytics';
 import { AFFILIATE_LINK_PROPS } from '@/lib/ftc';
 import { MobileCartSheet } from '@/components/features/MobileCartSheet';
 import type { Dictionary } from '@/lib/i18n';
-import type { AffiliateLink, ColorOption, Money, ProductImage } from '@/types';
+import type { AffiliateLink, ColorOption, ListingCard, Money, ProductImage } from '@/types';
 
 interface MobileStickyBarProps {
   productId: string;
@@ -44,6 +44,7 @@ interface MobileStickyBarProps {
   stockQuantity?: number | null;
   scrollThreshold?: number;
   dict: Dictionary['buybox'];
+  listing?: ListingCard | null;
 }
 
 export function MobileStickyBar({
@@ -59,6 +60,7 @@ export function MobileStickyBar({
   stockQuantity,
   scrollThreshold = 600,
   dict,
+  listing,
 }: MobileStickyBarProps) {
   const [visible, setVisible] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -157,11 +159,11 @@ export function MobileStickyBar({
         productId={productId}
         productSlug={productSlug}
         productName={productName}
-        price={priceVnd ?? price}
         coverImage={coverImage.src}
         colorOptions={colorOptions}
         stockQuantity={stockQuantity}
         dict={dict}
+        listing={listing}
       />
     </>
   );

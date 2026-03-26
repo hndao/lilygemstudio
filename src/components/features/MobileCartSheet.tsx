@@ -11,10 +11,10 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { addToCart } from '@/lib/cart';
+import { useCart } from '@/context/CartContext';
 import { ColorSwatches } from './ColorSwatches';
 import type { Dictionary } from '@/lib/i18n';
-import type { ColorOption, Money } from '@/types';
+import type { ColorOption, ListingCard } from '@/types';
 
 interface MobileCartSheetProps {
   isOpen: boolean;
@@ -22,12 +22,13 @@ interface MobileCartSheetProps {
   productId: string;
   productSlug: string;
   productName: string;
-  price: Money;
   coverImage: string;
   colorOptions?: ColorOption[];
   /** null = unlimited; 0 = out of stock; >0 = capped */
   stockQuantity?: number | null;
   dict: Dictionary['buybox'];
+  /** Active direct listing — required for API cart. null = unavailable. */
+  listing?: ListingCard | null;
 }
 
 export function MobileCartSheet({
@@ -36,18 +37,23 @@ export function MobileCartSheet({
   productId,
   productSlug,
   productName,
-  price,
   coverImage,
   colorOptions,
   stockQuantity,
   dict,
+  listing,
 }: MobileCartSheetProps) {
-  const maxQty = stockQuantity != null ? stockQuantity : 99;
-  const isOutOfStock = stockQuantity === 0;
+  const { addItem } = useCart();
+  const listingStock   = listing !== undefined ? (listing?.quantity ?? null) : stockQuantity;
+  const maxQty         = listingStock != null ? listingStock : 99;
+  const isUnavailable  = listing === null;
+  const isOutOfStock   = listing !== undefined ? (listing?.quantity === 0) : (stockQuantity === 0);
+
   const [selectedColor, setSelectedColor] = useState<ColorOption | null>(
     colorOptions?.find((c) => c.in_stock !== false) ?? null,
   );
-  const [quantity, setQuantity] = useState(isOutOfStock ? 0 : 1);
+  const [quantity, setQuantity] = useState((isUnavailable || isOutOfStock) ? 0 : 1);
+  const [addBusy, setAddBusy]   = useState(false);
 
   // Lock body scroll when open
   useEffect(() => {
@@ -55,18 +61,18 @@ export function MobileCartSheet({
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
-  const handleConfirm = useCallback(() => {
-    addToCart({
-      productId,
-      slug: productSlug,
-      name: productName,
-      colorSlug: selectedColor?.slug,
-      quantity,
-      price,
-      image: coverImage,
-    });
-    onClose();
-  }, [selectedColor, quantity, productId, productSlug, productName, price, coverImage, onClose]);
+  const handleConfirm = useCallback(async () => {
+    if (!listing || isUnavailable || isOutOfStock) return;
+    setAddBusy(true);
+    try {
+      await addItem(listing.id, quantity);
+      onClose();
+    } catch {
+      // CartContext handles optimistic rollback
+    } finally {
+      setAddBusy(false);
+    }
+  }, [listing, isUnavailable, isOutOfStock, addItem, quantity, onClose]);
 
   if (!isOpen) return null;
 
@@ -149,10 +155,19 @@ export function MobileCartSheet({
         <button
           type="button"
           onClick={handleConfirm}
-          disabled={isOutOfStock}
+          disabled={isUnavailable || isOutOfStock || addBusy}
           className="flex h-12 w-full items-center justify-center rounded-[12px] bg-(--color-cta) text-sm font-600 text-(--color-cream) transition-all hover:bg-(--color-cta-hover) active:bg-(--color-agate-dark) disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isOutOfStock ? dict.out_of_stock : `${dict.confirm} — ${price.formatted}`}
+          {isUnavailable
+            ? 'Hiện không có hàng'
+            : isOutOfStock
+            ? dict.out_of_stock
+            : addBusy
+            ? '...'
+            : listing
+            ? `${dict.confirm} — ${listing.formattedPriceVnd ?? listing.formattedPrice ?? ''}`
+            : dict.confirm
+          }
         </button>
       </div>
     </>
