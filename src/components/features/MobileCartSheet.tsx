@@ -12,9 +12,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
-import { ColorSwatches } from './ColorSwatches';
+import { VariantPicker } from './VariantPicker';
 import type { Dictionary } from '@/lib/i18n';
-import type { ColorOption, ListingCard } from '@/types';
+import type { ListingCard } from '@/types';
 
 interface MobileCartSheetProps {
   isOpen: boolean;
@@ -23,7 +23,6 @@ interface MobileCartSheetProps {
   productSlug: string;
   productName: string;
   coverImage: string;
-  colorOptions?: ColorOption[];
   /** null = unlimited; 0 = out of stock; >0 = capped */
   stockQuantity?: number | null;
   dict: Dictionary['buybox'];
@@ -38,7 +37,6 @@ export function MobileCartSheet({
   productSlug,
   productName,
   coverImage,
-  colorOptions,
   stockQuantity,
   dict,
   listing,
@@ -47,10 +45,13 @@ export function MobileCartSheet({
   const listingStock   = listing !== undefined ? (listing?.quantity ?? null) : stockQuantity;
   const maxQty         = listingStock != null ? listingStock : 99;
   const isUnavailable  = listing === null;
-  const isOutOfStock   = listing !== undefined ? (listing?.quantity === 0) : (stockQuantity === 0);
+  const isOutOfStock   = listing !== undefined
+    ? (listing?.quantity === 0 || listing?.productsActive === false)
+    : (stockQuantity === 0);
 
-  const [selectedColor, setSelectedColor] = useState<ColorOption | null>(
-    colorOptions?.find((c) => c.in_stock !== false) ?? null,
+  const allOptions = listing?.bundleProducts.flatMap((p) => p.options ?? []) ?? [];
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() =>
+    Object.fromEntries(allOptions.map((opt) => [opt.slug, opt.values[0]?.slug ?? '']))
   );
   const [quantity, setQuantity] = useState((isUnavailable || isOutOfStock) ? 0 : 1);
   const [addBusy, setAddBusy]   = useState(false);
@@ -106,16 +107,15 @@ export function MobileCartSheet({
           <X className="h-5 w-5" />
         </button>
 
-        {/* Color swatches (sm size for mobile) */}
-        {colorOptions && colorOptions.length > 1 && (
-          <ColorSwatches
-            label={dict.color_label}
-            colors={colorOptions}
-            selected={selectedColor}
-            onSelect={setSelectedColor}
-            size="sm"
-            className="mb-5"
-          />
+        {/* Variant picker */}
+        {allOptions.length > 0 && (
+          <div className="mb-5">
+            <VariantPicker
+              options={allOptions}
+              selected={selectedOptions}
+              onChange={(slug, val) => setSelectedOptions((prev) => ({ ...prev, [slug]: val }))}
+            />
+          </div>
         )}
 
         {/* Quantity */}
@@ -159,7 +159,7 @@ export function MobileCartSheet({
           className="flex h-12 w-full items-center justify-center rounded-[12px] bg-(--color-cta) text-sm font-600 text-(--color-cream) transition-all hover:bg-(--color-cta-hover) active:bg-(--color-agate-dark) disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isUnavailable
-            ? 'Hiện không có hàng'
+            ? dict.unavailable
             : isOutOfStock
             ? dict.out_of_stock
             : addBusy

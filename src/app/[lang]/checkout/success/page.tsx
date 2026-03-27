@@ -11,7 +11,7 @@
  *  - Track Order + Keep Shopping CTAs
  */
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams, usePathname } from 'next/navigation';
@@ -219,7 +219,7 @@ function SuccessSkeleton() {
 
 // ── Page ──────────────────────────────────────────────────────────────────
 
-export default function CheckoutSuccessPage() {
+function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const pathname     = usePathname();
   const lang         = pathname.split('/')[1] ?? 'vi';
@@ -418,5 +418,13 @@ export default function CheckoutSuccessPage() {
         </a>
       </div>
     </main>
+  );
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-(--color-background)" />}>
+      <CheckoutSuccessContent />
+    </Suspense>
   );
 }

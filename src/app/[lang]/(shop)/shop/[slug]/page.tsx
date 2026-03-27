@@ -14,17 +14,15 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { getProduct, getReviews, getProductsBySlugs, getSiteSettings } from '@/lib/api';
-import { getProductListings } from '@/lib/commerceApi';
+import { getProduct, getReviews, getProductsBySlugs, getSiteSettings, getListingBySlug } from '@/lib/api';
 import { getDictionary } from '@/lib/i18n';
 import { productJsonLd, breadcrumbJsonLd, generateProductMeta } from '@/lib/seo';
 import { ProductImageGallery } from '@/components/features/ProductImageGallery';
+import { ProductColorProvider } from '@/context/ProductColorContext';
 import { ProductTabs } from '@/components/features/ProductTabs';
 import { ProductGrid } from '@/components/features/ProductGrid';
-import { ArtisanSpotlight } from '@/components/features/ArtisanSpotlight';
 import { AffiliateCTA } from '@/components/features/AffiliateCTA';
 import { ProductVNPanel } from '@/components/features/ProductVNPanel';
-import { SpecsBox } from '@/components/features/SpecsBox';
 import { ExpertVerdict } from '@/components/features/ExpertVerdict';
 import { FeatureAnalysis } from '@/components/features/FeatureAnalysis';
 import { BlocksRenderer } from '@/components/features/BlocksRenderer';
@@ -35,7 +33,6 @@ import { ReviewForm } from '@/components/features/ReviewForm';
 import { StarRating } from '@/components/ui/StarRating';
 import { PriceLine } from '@/components/ui/PriceLine';
 import { Badge } from '@/components/ui/Badge';
-import type { ColorOption, FieldWithValue } from '@/types';
 
 export const revalidate = 3600; // 1h ISR — matches PRODUCT_DETAIL TTL
 
@@ -45,11 +42,15 @@ interface ProductPageProps {
 }
 
 export async function generateMetadata({ params, searchParams }: ProductPageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug, lang } = await params;
   const { preview_token: token } = await searchParams;
   try {
-    const { data: product } = await getProduct(slug, token);
-    const meta = generateProductMeta(product);
+    // slug is a listing slug — resolve to product slug first
+    const { data: listing } = await getListingBySlug(slug);
+    const productSlug = listing.bundleProducts[0]?.slug;
+    if (!productSlug) return { title: 'Product Not Found' };
+    const { data: product } = await getProduct(productSlug, token);
+    const meta = generateProductMeta(product, { listingSlug: slug, lang });
     if (token) {
       return { ...meta, robots: { index: false, follow: false } };
     }
@@ -63,18 +64,20 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   const { slug, lang } = await params;
   const { preview_token: token } = await searchParams;
 
-  const [productRes, reviewsRes, dict, settings, listings] = await Promise.all([
-    getProduct(slug, token).catch(() => null),
-    getReviews(slug, 1).catch(() => ({ data: [], meta: { total: 0, currentPage: 1, lastPage: 1, perPage: 12 } })),
+  // slug is a listing slug — resolve listing first, then fetch product by product slug
+  const listingRes = await getListingBySlug(slug).catch(() => null);
+  if (!listingRes) notFound();
+
+  const directListing = listingRes.data;
+  const productSlug = directListing.bundleProducts[0]?.slug;
+  if (!productSlug) notFound();
+
+  const [productRes, reviewsRes, dict, settings] = await Promise.all([
+    getProduct(productSlug, token).catch(() => null),
+    getReviews(productSlug, 1).catch(() => ({ data: [], meta: { total: 0, currentPage: 1, lastPage: 1, perPage: 12 } })),
     getDictionary(lang),
     getSiteSettings().catch(() => null),
-    getProductListings(slug).catch(() => []),
   ]);
-
-  // Active direct listing — VN buy box shows listing price + adds to API cart
-  const directListing = listings.find(
-    (l) => l.platforms.includes('direct') && l.isLive,
-  ) ?? null;
 
   const zaloUrl = settings?.social?.social_zalo;
   const messengerUrl = settings?.social?.social_messenger;
@@ -84,74 +87,35 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   const product = productRes.data;
   const reviews = reviewsRes.data;
 
-  const relatedSlugs = product.tags.slice(0, 4).filter((t) => t !== slug);
+  const relatedSlugs = product.tags.slice(0, 4).filter((t) => t !== productSlug);
   const relatedProducts = relatedSlugs.length > 0
     ? await getProductsBySlugs(relatedSlugs)
     : [];
 
-  const galleryImages = product.images?.length > 0 ? product.images : [product.coverImage];
+  // Listing images take precedence over product images when available
+  const galleryImages = directListing?.images?.length
+    ? directListing.images
+    : product.images?.length > 0 ? product.images : [product.coverImage];
+
+  // Listing prices override product prices when explicitly set on the listing
+  const listingPrice = directListing?.priceCents
+    ? { amount: directListing.priceCents, currency: 'USD' as const, formatted: directListing.formattedPrice ?? '' }
+    : null;
+  const listingCompareAtPrice = directListing?.comparePriceCents
+    ? { amount: directListing.comparePriceCents, currency: 'USD' as const, formatted: directListing.formattedCompareAtPrice ?? '' }
+    : null;
+  const listingPriceVnd = directListing?.priceCentsVnd
+    ? { amount: directListing.priceCentsVnd, currency: 'USD' as const, formatted: directListing.formattedPriceVnd ?? '' }
+    : null;
+  const listingCompareAtPriceVnd = directListing?.comparePriceCentsVnd
+    ? { amount: directListing.comparePriceCentsVnd, currency: 'USD' as const, formatted: directListing.formattedCompareAtPriceVnd ?? '' }
+    : null;
 
   const displayName = lang === 'vi' && product.nameVi ? product.nameVi : product.name;
   const displayTagline = lang === 'vi' && product.taglineVi ? product.taglineVi : product.tagline;
   const displayCategoryName = lang === 'vi' && product.category?.nameVi ? product.category.nameVi : product.category?.name;
   const displayDescription = lang === 'vi' && product.descriptionVi ? product.descriptionVi : product.description;
 
-
-  // ── Split custom fields by display_position ────────────────────────────────
-  const defs = product.customFieldDefinitions ?? [];
-  const fieldValues = product.customFields ?? {};
-
-  // Specs box: non-color fields routed to specs_box (or unset, which defaults to specs_box).
-  // FALLBACK: when the category has no definitions yet, auto-label every value
-  // from customFields. Single ColorFieldValue objects ({ name, hex }) are shown
-  // as text (name only); arrays (multi-color) are skipped here and handled below.
-  const specsBoxFields: FieldWithValue[] = defs.length > 0
-    ? defs
-        .filter((def) => {
-          const pos = def.display_position ?? 'specs_box';
-          // Multi-color above_cart fields go to ColorSwatches, not SpecsBox
-          if (def.type === 'color' && def.multiple && pos === 'above_cart') return false;
-          return pos === 'specs_box';
-        })
-        .flatMap((def) => {
-          const value = fieldValues[def.name];
-          if (value == null || value === '') return [];
-          // Single color: extract name for display and attach hex for the swatch dot
-          if (def.type === 'color' && typeof value === 'object' && !Array.isArray(value)) {
-            const cv = value as { name: string; hex: string };
-            return [{ definition: { ...def, hex: cv.hex }, value: cv.name }];
-          }
-          return [{ definition: def, value: value as string | number | boolean }];
-        })
-    : Object.entries(fieldValues)
-        .filter(([, v]) => {
-          if (v === null || v === undefined || v === '') return false;
-          if (Array.isArray(v)) return false; // skip ColorOption[] arrays
-          return true;
-        })
-        .map(([key, value]) => {
-          const isColor = typeof value === 'object' && value !== null;
-          const cv = isColor ? (value as { name: string; hex: string }) : null;
-          return {
-            definition: {
-              name: key,
-              label: key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-              type: isColor ? 'color' as const : 'text' as const,
-              ...(cv ? { hex: cv.hex } : {}),
-            },
-            value: cv ? cv.name : value as string | number | boolean,
-          };
-        });
-
-  // Above-cart color field (multi-color picker)
-  const colorDef = defs.find(
-    (def) => def.type === 'color' && def.display_position === 'above_cart' && def.multiple,
-  );
-  const colorOptions: ColorOption[] | undefined =
-    colorDef && Array.isArray(fieldValues[colorDef.name])
-      ? (fieldValues[colorDef.name] as ColorOption[])
-      : undefined;
-  const colorLabel = colorDef?.label;
 
   // ── Breadcrumbs ────────────────────────────────────────────────────────────
   const crumbs = [
@@ -165,7 +129,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     <main className="mx-auto max-w-[1280px] px-4 py-8 md:px-6 md:py-10 lg:px-8">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd(product, reviews)) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd(product, reviews, directListing, lang)) }}
       />
       <script
         type="application/ld+json"
@@ -194,6 +158,8 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       </nav>
 
       {/* Split layout: image left, info right */}
+      {/* ProductColorProvider bridges color swatch selection → gallery image filtering */}
+      <ProductColorProvider>
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-12 lg:gap-16">
         <ProductImageGallery images={galleryImages} productName={displayName} videoUrl={product.videoUrl} />
 
@@ -215,16 +181,16 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
           <h1 className="text-2xl leading-tight md:text-3xl lg:text-4xl">{displayName}</h1>
           <p className="text-[13px] font-500 text-(--color-cta)">{displayTagline}</p>
 
-          {product.price.amount === 0 ? (
+          {(listingPrice ?? product.price).amount === 0 ? (
             <p className="font-heading text-lg font-700 text-(--color-cta)">
               Invaluable Peace of Mind
             </p>
           ) : (
             <PriceLine
-              price={product.price}
-              compareAtPrice={product.compareAtPrice}
-              priceVnd={product.priceVnd}
-              compareAtPriceVnd={product.compareAtPriceVnd}
+              price={listingPrice ?? product.price}
+              compareAtPrice={listingCompareAtPrice ?? product.compareAtPrice}
+              priceVnd={listingPriceVnd ?? product.priceVnd}
+              compareAtPriceVnd={listingCompareAtPriceVnd ?? product.compareAtPriceVnd}
               size="lg"
             />
           )}
@@ -236,7 +202,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
               size="md"
             />
             <LikeButton
-              productSlug={slug}
+              productSlug={productSlug}
               initialCount={product.likesCount ?? 0}
               dict={dict.like}
             />
@@ -246,14 +212,11 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
 
           <div className="h-px bg-(--color-border)" aria-hidden="true" />
 
-          {/* ── VN: ColorSwatches + SpecsBox + BuyBox (in ProductVNPanel) ── */}
+          {/* ── VN: VariantPicker + BuyBox ── */}
           <div className="geo-show-vn w-full">
             <ProductVNPanel
-              colorOptions={colorOptions}
-              colorLabel={colorLabel}
-              specsBoxFields={specsBoxFields}
               productId={product.id}
-              productSlug={slug}
+              productSlug={productSlug}
               productName={displayName}
               price={product.price}
               priceVnd={product.priceVnd}
@@ -266,23 +229,39 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
             />
           </div>
 
-          {/* ── Global: SpecsBox + AffiliateCTA ────────────────────────── */}
+          {/* ── Global: VariantPicker + BuyBox (USD, no Zalo); no listing → AffiliateCTA ── */}
           <div className="geo-hide-vn w-full flex flex-col gap-5">
-            <SpecsBox fields={specsBoxFields} title={dict.buybox.specs_title} />
-            <AffiliateCTA
-              affiliateLink={product.affiliateLink}
-              affiliateLinkVn={product.affiliateLinkVn}
-              productId={product.id}
-              productSlug={slug}
-              productName={displayName}
-              price={product.price}
-              priceVnd={product.priceVnd}
-            />
+            {directListing ? (
+              <ProductVNPanel
+                productId={product.id}
+                productSlug={productSlug}
+                productName={displayName}
+                price={product.price}
+                priceVnd={product.priceVnd}
+                coverImage={galleryImages[0].src}
+                stockQuantity={product.quantity}
+                dict={dict.buybox}
+                listing={directListing}
+                preferVnd={false}
+              />
+            ) : (
+              <>
+                <AffiliateCTA
+                  affiliateLink={product.affiliateLink}
+                  affiliateLinkVn={product.affiliateLinkVn}
+                  productId={product.id}
+                  productSlug={productSlug}
+                  productName={displayName}
+                  price={product.price}
+                  priceVnd={product.priceVnd}
+                />
+              </>
+            )}
           </div>
 
-          {product.artisan && <ArtisanSpotlight artisan={product.artisan} />}
         </div>
       </div>
+      </ProductColorProvider>
 
       {/* ── Below-the-fold ─────────────────────────────────────────────────── */}
 
@@ -305,7 +284,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       <section className="mt-16" aria-labelledby="reviews-heading">
         <ReviewGrid reviews={reviews} totalCount={reviewsRes.meta.total} />
         <div className="mt-8">
-          <ReviewForm productSlug={slug} dict={dict.review} />
+          <ReviewForm productSlug={productSlug} dict={dict.review} />
         </div>
       </section>
 
@@ -318,14 +297,13 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
 
       <MobileStickyBar
         productId={product.id}
-        productSlug={slug}
+        productSlug={productSlug}
         productName={displayName}
         price={product.price}
         priceVnd={product.priceVnd}
         coverImage={galleryImages[0]}
         affiliateLink={product.affiliateLink}
         zaloUrl={zaloUrl}
-        colorOptions={colorOptions}
         stockQuantity={product.quantity}
         dict={dict.buybox}
         listing={directListing}

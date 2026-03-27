@@ -25,6 +25,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
+import { useProductColor } from '@/context/ProductColorContext';
 import type { ProductImage } from '@/types';
 
 // ── Media slide types ──────────────────────────────────────────────────────────
@@ -78,6 +79,19 @@ export function ProductImageGallery({ images, productName, videoUrl }: ProductIm
     if (!carousel) return;
     (carousel.children[i] as HTMLElement)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
   }, []);
+
+  // Jump to first image matching the active color tag when selection changes
+  const { activeTag } = useProductColor();
+  useEffect(() => {
+    if (!activeTag) return;
+    const matchIndex = slides.findIndex(
+      (s) => s.type === 'image' && s.image.tag === activeTag,
+    );
+    if (matchIndex >= 0) {
+      setActiveIndex(matchIndex);
+      scrollToSlide(matchIndex);
+    }
+  }, [activeTag, slides, scrollToSlide]);
 
   return (
     <div className="flex flex-col gap-3">

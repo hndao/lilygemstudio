@@ -2,11 +2,11 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { X } from 'lucide-react';
+import { X, User, Package, MapPin, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/hooks/useAuth';
 import type { Locale } from '@/middleware';
 import type { Dictionary } from '@/lib/i18n';
-import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -17,6 +17,7 @@ interface MobileMenuProps {
 
 export function MobileMenu({ isOpen, onClose, dict, lang }: MobileMenuProps) {
   const base = `/${lang}`;
+  const { customer, logout, openAuthModal } = useAuth();
 
   const NAV_LINKS = [
     { href: base, label: dict.nav.home },
@@ -25,10 +26,26 @@ export function MobileMenu({ isOpen, onClose, dict, lang }: MobileMenuProps) {
     { href: `${base}/contact`, label: dict.nav.contact },
   ];
 
+  const ACCOUNT_LINKS = [
+    { href: `${base}/account`, label: dict.header.my_account, icon: User },
+    { href: `${base}/account/orders`, label: dict.header.my_orders, icon: Package },
+    { href: `${base}/account/addresses`, label: dict.header.my_addresses, icon: MapPin },
+  ];
+
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
+
+  const handleSignIn = () => {
+    onClose();
+    openAuthModal();
+  };
+
+  const handleLogout = async () => {
+    onClose();
+    await logout();
+  };
 
   return (
     <AnimatePresence>
@@ -89,6 +106,56 @@ export function MobileMenu({ isOpen, onClose, dict, lang }: MobileMenuProps) {
               ))}
             </ul>
 
+            {/* Profile section */}
+            <div className="mt-auto border-t border-(--color-border) p-4">
+              {customer ? (
+                <>
+                  {/* Logged-in: name + links */}
+                  <div className="mb-3 flex items-center gap-3 px-2">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--color-cta) text-[13px] font-700 text-white">
+                      {customer.name.charAt(0).toUpperCase()}
+                    </span>
+                    <span className="truncate text-sm font-600 text-(--color-stone)">
+                      {customer.name}
+                    </span>
+                  </div>
+                  <ul className="flex flex-col gap-0.5">
+                    {ACCOUNT_LINKS.map(({ href, label, icon: Icon }) => (
+                      <li key={href}>
+                        <Link
+                          href={href}
+                          onClick={onClose}
+                          className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm text-(--color-stone) transition-colors hover:bg-(--color-sand)"
+                        >
+                          <Icon className="h-4 w-4 text-(--color-muted)" />
+                          {label}
+                        </Link>
+                      </li>
+                    ))}
+                    <li>
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm text-red-600 transition-colors hover:bg-red-50"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        {dict.header.sign_out}
+                      </button>
+                    </li>
+                  </ul>
+                </>
+              ) : (
+                /* Not logged in: Sign in button */
+                <button
+                  type="button"
+                  onClick={handleSignIn}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-(--color-cta) px-4 py-3 text-sm font-600 text-white transition-colors hover:bg-(--color-cta-hover)"
+                >
+                  <User className="h-4 w-4" />
+                  {dict.header.sign_in}
+                </button>
+              )}
+            </div>
           </motion.nav>
         </>
       )}

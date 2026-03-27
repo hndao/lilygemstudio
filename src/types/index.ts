@@ -224,38 +224,12 @@ export interface ProductDetail extends ProductCard {
   customFields?: Record<string, string | number | boolean | ColorFieldValue | ColorOption[]>;
   /** Field definitions from the assigned category — used to display labels, units, groups, and color swatches */
   customFieldDefinitions?: CustomFieldDefinition[];
-  artisan?: ArtisanCard;    // optional — not all products have an artisan profile
   /** AI-generated expert verdict — rendered by ExpertVerdict.tsx */
   verdict?: ProductVerdict;
   /** AI-generated pros/cons — rendered by FeatureAnalysis.tsx */
   pros_cons?: ProductProsCons;
   /** AI-generated content blocks — rendered by BlocksRenderer.tsx */
   blocks?: ProductBlock[];
-}
-
-// ── Artisan (two shapes: card vs full profile) ────────────────────────────────
-
-/**
- * WHY TWO SHAPES: The artisan grid only needs avatar + name + location + bio.
- * The full profile page needs all three story sections. Same pattern as Product.
- */
-export interface ArtisanCard {
-  id: string;
-  slug: string;
-  name: string;
-  location: string;
-  avatar: ProductImage;     // square image — reuses ProductImage shape
-  bioShort: string;
-  productCount?: number;    // present on list endpoint, absent when embedded in ProductDetail
-}
-
-export interface Artisan extends ArtisanCard {
-  coverImage: ProductImage; // wide hero image for the profile page
-  storyOrigin: string;      // Markdown — "Where I come from"
-  storyCraft: string;       // Markdown — "How I make things"
-  storyPhilosophy: string;  // Markdown — "Why I make things"
-  publishedAt: string;      // ISO 8601
-  products: ProductCard[];  // artisan's active products
 }
 
 // ── Journal / Blog (two shapes: card vs full article) ────────────────────────
@@ -565,12 +539,16 @@ export interface Order {
 
 export interface ListingCard {
   id: number;
+  slug: string;
+  title: string | null;
   resolvedTitle: string;
   sku: string | null;
   platforms: string[];
   platformLinks: { platform: string; url: string }[];
   formattedPrice: string | null;
+  formattedCompareAtPrice: string | null;
   formattedPriceVnd: string | null;
+  formattedCompareAtPriceVnd: string | null;
   priceCents: number | null;
   priceCentsVnd: number | null;
   comparePriceCents: number | null;
@@ -578,9 +556,35 @@ export interface ListingCard {
   coverImage: ProductImage | null;
   quantity: number | null;
   isLive: boolean;
+  /** False when one or more bundle products have is_active=false. Show "Out of Stock". */
+  productsActive: boolean;
   validFrom: string | null;
   validUntil: string | null;
-  bundleProducts: { id: number; name: string; pivotQuantity: number }[];
+  bundleProducts: {
+    id: number;
+    name: string;
+    slug: string;
+    pivotQuantity: number;
+    options: {
+      slug: string;
+      name: string;
+      displayType: 'color_swatch' | 'text_pill' | 'image_swatch' | 'dropdown';
+      values: { slug: string; label: string; metadata: Record<string, string> }[];
+    }[];
+  }[];
+  /** Present when fetched via detail endpoint (showBySlug / show) */
+  images?: ProductImage[];
+  description?: string | null;
+  descriptionVi?: string | null;
+  titleVi?: string | null;
+}
+
+export interface ListingListParams {
+  page?: number;
+  perPage?: number;
+  sort?: 'newest' | 'price_asc' | 'price_desc';
+  platform?: string;
+  query?: string;
 }
 
 export interface CheckoutPayload {

@@ -15,8 +15,8 @@ import type {
   PaginatedResponse,
   ApiResponse,
   ProductListParams,
-  ArtisanCard,
-  Artisan,
+  ListingCard,
+  ListingListParams,
   PostCard,
   Post,
   SiteSettings,
@@ -79,16 +79,7 @@ const CARD_FIELDS = [
 const DETAIL_FIELDS = [
   ...CARD_FIELDS.split(','),
   'description', 'description_vi', 'brand_story', 'brand_story_vi', 'images', 'category',
-  'tags', 'metadata', 'artisan', 'custom_fields', 'blocks', 'video_path',
-].join(',');
-
-const ARTISAN_CARD_FIELDS = [
-  'id', 'slug', 'name', 'location', 'avatar', 'bio_short', 'product_count',
-].join(',');
-
-const ARTISAN_DETAIL_FIELDS = [
-  ...ARTISAN_CARD_FIELDS.split(','),
-  'cover_image', 'story_origin', 'story_craft', 'story_philosophy', 'published_at',
+  'tags', 'metadata', 'custom_fields', 'blocks', 'video_path',
 ].join(',');
 
 const POST_CARD_FIELDS = [
@@ -187,26 +178,39 @@ export async function getProductsBySlugs(slugs: string[]): Promise<ProductCard[]
   return res.data;
 }
 
-// ── Artisan API ────────────────────────────────────────────────────────────────
+// ── Listings API ──────────────────────────────────────────────────────────────
 
-/** Paginated list of published artisans for the /artisans grid. */
-export async function getArtisans(page = 1): Promise<PaginatedResponse<ArtisanCard>> {
-  const qs = new URLSearchParams({ fields: ARTISAN_CARD_FIELDS, page: String(page) });
-  return apiFetch<PaginatedResponse<ArtisanCard>>(`/artisans?${qs}`, {
-    revalidate: REVALIDATION.ARTISANS,
-    tags: [CACHE_TAGS.ARTISANS],
+/**
+ * Fetch paginated live listings for the shop grid and homepage featured section.
+ *
+ * WHY LISTINGS NOT PRODUCTS: Listings are the sellable unit — they carry the
+ * active price, stock state, and channel (platform=direct for VN direct-sell).
+ * Products are the catalog/SEO layer. The shop should show only items that are
+ * currently for sale with a real price.
+ */
+export async function getListings(
+  params: ListingListParams = {},
+): Promise<PaginatedResponse<ListingCard>> {
+  const qs = new URLSearchParams({
+    site: SITE_KEY,
+    platform: params.platform ?? 'direct',
+    page: String(params.page ?? 1),
+    per_page: String(params.perPage ?? 24),
+    ...(params.sort && { sort: params.sort }),
+    ...(params.query && { q: params.query }),
+  });
+
+  return apiFetch<PaginatedResponse<ListingCard>>(`/listings?${qs}`, {
+    revalidate: REVALIDATION.LISTING_LIST,
+    tags: [CACHE_TAGS.LISTINGS],
   });
 }
 
-/** Full artisan profile for /artisans/[slug]. */
-export async function getArtisan(slug: string, previewToken?: string): Promise<ApiResponse<Artisan>> {
-  const qs = previewToken
-    ? `fields=${ARTISAN_DETAIL_FIELDS}&preview_token=${previewToken}`
-    : `fields=${ARTISAN_DETAIL_FIELDS}`;
-  return apiFetch<ApiResponse<Artisan>>(`/artisans/${slug}?${qs}`, {
-    revalidate: REVALIDATION.ARTISANS,
-    tags: [CACHE_TAGS.ARTISANS, CACHE_TAGS.artisan(slug)],
-    noCache: !!previewToken,
+/** Fetch a single listing by its slug — used by the shop detail page. */
+export async function getListingBySlug(slug: string): Promise<ApiResponse<ListingCard>> {
+  return apiFetch<ApiResponse<ListingCard>>(`/listings/slug/${encodeURIComponent(slug)}`, {
+    revalidate: REVALIDATION.PRODUCT_DETAIL,
+    tags: [CACHE_TAGS.LISTINGS, `listing:${slug}`],
   });
 }
 

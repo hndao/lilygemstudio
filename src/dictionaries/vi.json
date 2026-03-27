@@ -10,7 +10,15 @@
   "header": {
     "logo_alt": "LilyGem Studio",
     "open_menu": "Mở menu",
-    "close_menu": "Đóng menu"
+    "close_menu": "Đóng menu",
+    "search_label": "Tìm kiếm",
+    "search_placeholder": "Tìm sản phẩm...",
+    "profile": "Tài khoản",
+    "sign_in": "Đăng nhập",
+    "my_account": "Tài khoản của tôi",
+    "my_orders": "Đơn hàng",
+    "my_addresses": "Địa chỉ",
+    "sign_out": "Đăng xuất"
   },
   "footer": {
     "tagline": "Vòng tay và nhẫn thủ công làm từ mã não, thạch anh và đá tự nhiên.",
@@ -195,6 +203,8 @@
     "zalo_text": "Xin chào, tôi quan tâm đến sản phẩm \"%s\". Vui lòng tư vấn thêm.",
     "email_subject": "Hỏi về %s",
     "out_of_stock": "Hết hàng",
-    "only_x_left": "Còn %d sản phẩm"
+    "only_x_left": "Còn %d sản phẩm",
+    "unavailable": "Hiện không có hàng",
+    "buy_on": "Mua trên %s"
   }
 }

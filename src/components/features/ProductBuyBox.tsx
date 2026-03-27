@@ -19,7 +19,7 @@
 
 import { useState, useCallback } from 'react';
 import Image from 'next/image';
-import { Heart, ShoppingCart } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import type { Dictionary } from '@/lib/i18n';
 import type { ColorOption, Money, ListingCard } from '@/types';
@@ -44,6 +44,11 @@ interface ProductBuyBoxProps {
    * present = use listing price + call API cart
    */
   listing?: ListingCard | null;
+  /**
+   * When true (default), the Add to Cart button shows VND price.
+   * Set to false for global (non-VN) users to show USD price.
+   */
+  preferVnd?: boolean;
 }
 
 export function ProductBuyBox({
@@ -59,6 +64,7 @@ export function ProductBuyBox({
   stockQuantity,
   dict,
   listing,
+  preferVnd = true,
 }: ProductBuyBoxProps) {
   const { addItem } = useCart();
 
@@ -69,18 +75,24 @@ export function ProductBuyBox({
   const maxQty = listingStock != null ? listingStock : 99;
   const isUnavailable = listing === null; // no active listing
   const isOutOfStock  = listing !== undefined
-    ? (listing?.quantity === 0)
+    ? (listing?.quantity === 0 || listing?.productsActive === false)
     : (stockQuantity === 0);
 
   const [quantity, setQuantity]   = useState((isUnavailable || isOutOfStock) ? 0 : 1);
-  const [wishlisted, setWishlisted] = useState(false);
   const [addBusy, setAddBusy]     = useState(false);
 
-  // Display price: prefer listing price → VND product price → product price
+  // Display price: respect preferVnd flag — VN users see ₫, global users see $
   const listingPriceDisplay = listing
-    ? (listing.formattedPriceVnd ?? listing.formattedPrice)
+    ? (preferVnd
+        ? (listing.formattedPriceVnd ?? listing.formattedPrice)
+        : (listing.formattedPrice ?? listing.formattedPriceVnd))
     : null;
-  const displayPrice = priceVnd ?? price;
+  const displayPrice = preferVnd ? (priceVnd ?? price) : price;
+
+  // Platform links for non-direct channels (e.g. Etsy)
+  const externalLinks = (listing?.platformLinks ?? []).filter(
+    (l) => l.platform !== 'direct' && l.url,
+  );
 
   const handleAddToCart = useCallback(async () => {
     if (!listing || isUnavailable || isOutOfStock) return;
@@ -93,10 +105,6 @@ export function ProductBuyBox({
       setAddBusy(false);
     }
   }, [listing, isUnavailable, isOutOfStock, addItem, quantity]);
-
-  const handleWishlist = useCallback(() => {
-    setWishlisted((prev) => !prev);
-  }, []);
 
   const zaloHref = zaloUrl
     ? `${zaloUrl}?text=${encodeURIComponent(dict.zalo_text.replace('%s', productName))}`
@@ -133,9 +141,9 @@ export function ProductBuyBox({
         {/* Stock badge */}
         {isOutOfStock ? (
           <span className="text-[12px] font-600 text-red-500">{dict.out_of_stock}</span>
-        ) : stockQuantity != null && stockQuantity <= 10 ? (
+        ) : listingStock != null && listingStock <= 10 ? (
           <span className="text-[12px] font-500 text-(--color-promo)">
-            {dict.only_x_left.replace('%d', String(stockQuantity))}
+            {dict.only_x_left.replace('%d', String(listingStock))}
           </span>
         ) : null}
       </div>
@@ -146,11 +154,11 @@ export function ProductBuyBox({
         onClick={handleAddToCart}
         disabled={isUnavailable || isOutOfStock || addBusy}
         className="flex h-[52px] w-full items-center justify-center gap-2.5 rounded-[12px] bg-(--color-cta) text-[16px] font-600 tracking-[0.02em] text-(--color-cream) transition-all hover:-translate-y-px hover:bg-(--color-cta-hover) hover:shadow-[0_4px_16px_rgba(139,111,78,0.25)] active:translate-y-0 active:bg-(--color-agate-dark) disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
-        aria-label={isUnavailable ? 'Currently unavailable' : isOutOfStock ? dict.out_of_stock : `${dict.add_to_cart} ${productName}`}
+        aria-label={isUnavailable ? dict.unavailable : isOutOfStock ? dict.out_of_stock : `${dict.add_to_cart} ${productName}`}
       >
         <ShoppingCart className="h-5 w-5" aria-hidden="true" />
         {isUnavailable
-          ? 'Hiện không có hàng'
+          ? dict.unavailable
           : isOutOfStock
           ? dict.out_of_stock
           : addBusy
@@ -189,24 +197,27 @@ export function ProductBuyBox({
           </a>
         )}
 
-        <button
-          type="button"
-          onClick={handleWishlist}
-          className={[
-            'flex flex-1 items-center justify-center gap-2 rounded-[12px] border-[1.5px] py-3 text-[13px] font-600 transition-all',
-            wishlisted
-              ? 'border-(--color-promo) bg-(--color-promo)/10 text-(--color-promo)'
-              : 'border-(--color-border) text-(--color-stone) hover:border-(--color-cta-hover) hover:bg-(--color-quartz-mist)',
-          ].join(' ')}
-          aria-label={wishlisted ? dict.wishlist_remove : dict.wishlist_add}
-        >
-          <Heart
-            className={`h-[18px] w-[18px] text-(--color-promo) transition-transform ${wishlisted ? 'scale-110 fill-(--color-promo)' : ''}`}
-            aria-hidden="true"
-          />
-          {wishlisted ? dict.wishlist_remove : dict.wishlist_add}
-        </button>
       </div>
+
+      {/* ── External Platform Links (Etsy, etc.) ──────────────────────── */}
+      {externalLinks.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {externalLinks.map((link) => {
+            const label = dict.buy_on.replace('%s', link.platform.charAt(0).toUpperCase() + link.platform.slice(1));
+            return (
+              <a
+                key={link.platform}
+                href={link.url}
+                target="_blank"
+                rel="nofollow noopener noreferrer sponsored"
+                className="flex h-[48px] w-full items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-(--color-border) text-[14px] font-600 text-(--color-stone) transition-all hover:border-(--color-cta-hover) hover:bg-(--color-quartz-mist)"
+              >
+                {label}
+              </a>
+            );
+          })}
+        </div>
+      )}
 
       {/* Cart drawer opens automatically via CartContext.addItem → setIsOpen(true) */}
     </div>

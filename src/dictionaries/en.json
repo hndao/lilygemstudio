@@ -10,7 +10,15 @@
   "header": {
     "logo_alt": "LilyGem Studio",
     "open_menu": "Open menu",
-    "close_menu": "Close menu"
+    "close_menu": "Close menu",
+    "search_label": "Search",
+    "search_placeholder": "Search products...",
+    "profile": "Account",
+    "sign_in": "Sign In",
+    "my_account": "My Account",
+    "my_orders": "My Orders",
+    "my_addresses": "Addresses",
+    "sign_out": "Sign Out"
   },
   "footer": {
     "tagline": "Handcrafted bracelets and rings made from agate, quartz, and natural gemstones.",
@@ -195,6 +203,8 @@
     "zalo_text": "Hello, I'm interested in \"%s\". Please advise.",
     "email_subject": "Question about %s",
     "out_of_stock": "Out of Stock",
-    "only_x_left": "Only %d left"
+    "only_x_left": "Only %d left",
+    "unavailable": "Currently unavailable",
+    "buy_on": "Buy on %s"
   }
 }

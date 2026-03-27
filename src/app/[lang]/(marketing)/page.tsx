@@ -12,10 +12,10 @@
 
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { getProducts, getSiteSettings } from '@/lib/api';
+import { getListings, getSiteSettings } from '@/lib/api';
 import { HeroSection } from '@/components/features/HeroSection';
 import { AsSeenOnBar } from '@/components/features/AsSeenOnBar';
-import { ProductGrid } from '@/components/features/ProductGrid';
+import { ListingGrid } from '@/components/features/ListingGrid';
 import { OurStorySection } from '@/components/features/OurStorySection';
 
 // ISR: revalidate every 24h — matches PRODUCT_LIST and SETTINGS TTL in cache.ts
@@ -24,13 +24,13 @@ export const revalidate = 86400;
 export default async function HomePage() {
   // Fetch settings and products in parallel — no sequential waterfall.
   // Both calls are ISR-cached (24h) so they add zero DB load on repeat visits.
-  const [settingsResult, productsResult] = await Promise.allSettled([
+  const [settingsResult, listingsResult] = await Promise.allSettled([
     getSiteSettings(),
-    getProducts({ sort: 'top_rated', perPage: 8 }),
+    getListings({ perPage: 8, platform: 'direct' }),
   ]);
 
   const settings = settingsResult.status === 'fulfilled' ? settingsResult.value : null;
-  const featuredProducts = productsResult.status === 'fulfilled' ? productsResult.value.data : [];
+  const featuredListings = listingsResult.status === 'fulfilled' ? listingsResult.value.data : [];
 
   // Use the first hero slide from settings; HeroSection has its own fallback
   const heroSlide = settings?.hero?.hero_slides?.[0];
@@ -77,8 +77,8 @@ export default async function HomePage() {
           </div>
 
           <Suspense fallback={<ProductGridSkeleton />}>
-            <ProductGrid
-              products={featuredProducts}
+            <ListingGrid
+              listings={featuredListings}
               priorityCount={4}
             />
           </Suspense>

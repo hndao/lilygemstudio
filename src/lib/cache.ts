@@ -31,9 +31,6 @@ export const REVALIDATION = {
   /** Category metadata — changes only when admin updates taxonomy */
   CATEGORIES: 60 * 60 * 24,    // 24h
 
-  /** Artisan list — profiles change infrequently; 3d TTL reduces DB load */
-  ARTISANS: 60 * 60 * 24 * 3,  // 3 days
-
   /** Journal articles — content is editorial; 6h balances freshness vs CDN hit rate */
   JOURNAL: 60 * 60 * 6,        // 6h
 
@@ -46,6 +43,9 @@ export const REVALIDATION = {
    * Busted via revalidateTag(CACHE_TAGS.SETTINGS) when admin saves.
    */
   SETTINGS: 60 * 60 * 24,         // 24h
+
+  /** Listings grid — same cadence as product list; busted by ListingObserver */
+  LISTING_LIST: 60 * 60 * 24,     // 24h
 } as const;
 
 // ── Cache tag helpers ─────────────────────────────────────────────────────────
@@ -70,12 +70,6 @@ export const CACHE_TAGS = {
   /** Broad tag — invalidates the full category list */
   CATEGORIES: 'categories',
 
-  /** Broad tag — invalidates all artisan-related cache */
-  ARTISANS: 'artisans',
-
-  /** Narrow tag — invalidates one artisan's profile page */
-  artisan: (slug: string) => `artisan:${slug}`,
-
   /** Broad tag — invalidates all journal posts */
   JOURNAL: 'journal',
 
@@ -84,6 +78,12 @@ export const CACHE_TAGS = {
 
   /** Site-wide settings — hero, social links, metadata */
   SETTINGS: 'settings',
+
+  /** Broad tag — invalidates all listing-related cache */
+  LISTINGS: 'listings',
+
+  /** Narrow tag — invalidates one listing */
+  listing: (id: number) => `listing:${id}`,
 } as const;
 
 // ── unstable_cache wrappers ───────────────────────────────────────────────────
