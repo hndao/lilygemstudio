@@ -42,10 +42,11 @@ function CartLineItem({ item, isVn }: { item: CartItem; isVn: boolean }) {
   const { updateItem, removeItem } = useCart();
   const [busy, setBusy] = useState(false);
 
-  const priceCents = isVn
+  const unitCents = isVn
     ? (item.priceSnapshotCentsVnd ?? item.priceSnapshotCents ?? 0)
     : (item.priceSnapshotCents ?? 0);
-  const unitPrice = isVn ? formatVnd(priceCents) : formatUsd(priceCents);
+  const lineCents = unitCents * item.quantity;
+  const unitPrice = isVn ? formatVnd(lineCents) : formatUsd(lineCents);
 
   const handleQty = async (delta: number) => {
     const next = item.quantity + delta;
@@ -61,10 +62,11 @@ function CartLineItem({ item, isVn }: { item: CartItem; isVn: boolean }) {
     finally { setBusy(false); }
   };
 
-  const coverSrc = item.listing.coverImage?.src ?? null;
+  // Prefer the variant-specific image stored in selectedOptions._image_src
+  const coverSrc = item.selectedOptions?.['_image_src'] ?? item.listing.coverImage?.src ?? null;
 
   return (
-    <div className="flex gap-3 py-4 border-b border-(--color-border) last:border-none">
+    <div className={['flex gap-3 py-4 border-b border-(--color-border) last:border-none', item.outOfStock ? 'opacity-70' : ''].join(' ')}>
       {/* Thumbnail */}
       <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-[10px] bg-(--color-quartz-mist)">
         {coverSrc ? (
@@ -84,11 +86,26 @@ function CartLineItem({ item, isVn }: { item: CartItem; isVn: boolean }) {
 
       {/* Info */}
       <div className="flex flex-1 flex-col gap-1 min-w-0">
-        <p className="text-[13px] font-600 text-(--color-stone) leading-snug line-clamp-2">
-          {item.listing.resolvedTitle}
-        </p>
+        <div className="flex items-start gap-2">
+          <p className="text-[13px] font-600 text-(--color-stone) leading-snug line-clamp-2 flex-1">
+            {item.listing.resolvedTitle}
+          </p>
+          {item.outOfStock && (
+            <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-700 text-red-600">
+              Hết hàng
+            </span>
+          )}
+        </div>
         {item.listing.sku && (
           <p className="text-[11px] text-(--color-sand-dark)">SKU: {item.listing.sku}</p>
+        )}
+        {item.selectedOptions && Object.keys(item.selectedOptions).some((k) => !k.startsWith('_')) && (
+          <p className="text-[11px] text-(--color-cta) font-500">
+            {Object.entries(item.selectedOptions)
+              .filter(([k]) => !k.startsWith('_'))
+              .map(([k, v]) => `${k.charAt(0).toUpperCase() + k.slice(1)}: ${v}`)
+              .join(' · ')}
+          </p>
         )}
         <div className="mt-auto flex items-center justify-between gap-2">
           {/* Qty picker */}
@@ -220,6 +237,7 @@ export function CartDrawer() {
   // Detect locale from URL segment: /vi/... → isVn = true
   const lang = pathname.split('/')[1] ?? 'en';
   const isVn = lang === 'vi';
+  const hasOutOfStock = cart?.items.some((i) => i.outOfStock) ?? false;
 
   // Lock body scroll when open
   useEffect(() => {
@@ -227,7 +245,7 @@ export function CartDrawer() {
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
-  const subtotal = cart?.subtotalCents ?? 0;
+  const subtotal = isVn ? (cart?.subtotalCentsVnd ?? 0) : (cart?.subtotalCents ?? 0);
   const subtotalFormatted = isVn ? formatVnd(subtotal) : formatUsd(subtotal);
 
   // Mobile (< md): bottom sheet — Desktop (md+): right panel
@@ -349,15 +367,29 @@ export function CartDrawer() {
                   </div>
                 </div>
 
+                {/* OOS warning */}
+                {hasOutOfStock && (
+                  <div className="mb-3 rounded-[10px] bg-red-50 border border-red-200 px-3 py-2.5 text-[12px] text-red-600">
+                    Một số sản phẩm đã hết hàng. Vui lòng xoá chúng trước khi thanh toán.
+                  </div>
+                )}
+
                 {/* CTA */}
-                <Link
-                  href={lang ? `/${lang}/checkout` : '/checkout'}
-                  onClick={closeCart}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-(--color-cta) text-[15px] font-700 text-white shadow-sm transition-all hover:bg-(--color-cta-hover) active:scale-[0.98]"
-                >
-                  <Lock className="h-4 w-4" />
-                  Thanh toán an toàn
-                </Link>
+                {hasOutOfStock ? (
+                  <div className="flex h-12 w-full cursor-not-allowed items-center justify-center gap-2 rounded-[12px] bg-(--color-border) text-[15px] font-700 text-(--color-sand-dark)">
+                    <Lock className="h-4 w-4" />
+                    Thanh toán an toàn
+                  </div>
+                ) : (
+                  <Link
+                    href={lang ? `/${lang}/checkout` : '/checkout'}
+                    onClick={closeCart}
+                    className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-(--color-cta) text-[15px] font-700 text-white shadow-sm transition-all hover:bg-(--color-cta-hover) active:scale-[0.98]"
+                  >
+                    <Lock className="h-4 w-4" />
+                    Thanh toán an toàn
+                  </Link>
+                )}
 
                 {/* Trust badges */}
                 <div className="mt-3 flex items-center justify-center gap-3 text-[11px] text-(--color-sand-dark)">

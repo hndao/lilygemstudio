@@ -199,7 +199,7 @@ export default function CheckoutPage() {
   function applyAddress(addr: Address) {
     setForm({
       recipientName: addr.recipientName,
-      email: form.email,
+      email: addr.email ?? form.email,
       phone: addr.phone ?? '',
       line1: addr.line1,
       line2: addr.line2 ?? '',
@@ -214,15 +214,18 @@ export default function CheckoutPage() {
   function validateStep1(): FieldErrors {
     const e: FieldErrors = {};
     if (!form.recipientName.trim()) e.recipientName = 'Vui lòng nhập họ tên';
-    if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email)) e.email = 'Email không hợp lệ';
+    if (!form.phone.trim()) e.phone = 'Vui lòng nhập số điện thoại';
     if (!form.line1.trim()) e.line1 = 'Vui lòng nhập địa chỉ';
     if (!form.city.trim()) e.city = 'Vui lòng nhập thành phố';
     if (!form.countryCode.trim()) e.countryCode = 'Vui lòng chọn quốc gia';
     return e;
   }
 
+  const hasOutOfStock = cart?.items.some((i) => i.outOfStock) ?? false;
+
   // ── Step 1 submit ───────────────────────────────────────────────────────────
   const handleStep1Continue = useCallback(() => {
+    if (hasOutOfStock) return;
     const e = validateStep1();
     if (Object.keys(e).length > 0) {
       setErrors(e);
@@ -236,7 +239,7 @@ export default function CheckoutPage() {
     setErrors({});
     setStep(1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [form]);
+  }, [form, hasOutOfStock]);
 
   // ── Fetch shipping rates on step 2 ──────────────────────────────────────────
   useEffect(() => {
@@ -253,22 +256,24 @@ export default function CheckoutPage() {
 
   // ── Step 2 submit ───────────────────────────────────────────────────────────
   const handleStep2Continue = useCallback(() => {
-    if (!selectedRateId) return;
+    if (selectedRateId === null) return;
     setStep(2);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [selectedRateId]);
 
   // ── Place order ─────────────────────────────────────────────────────────────
   const handlePlaceOrder = useCallback(async () => {
+    if (selectedRateId === null) return;
+    // selectedRateId === -1 means "contact us" fallback with 0 shipping
     const selectedRate = shippingRates.find((r) => r.id === selectedRateId);
-    if (!selectedRate) return;
 
     setPlacing(true);
     setPlaceError('');
 
     const shippingAddress: AddressInput = {
       recipient_name: form.recipientName,
-      phone: form.phone || undefined,
+      phone: form.phone,
+      email: form.email || undefined,
       line1: form.line1,
       line2: form.line2 || undefined,
       city: form.city,
@@ -279,7 +284,7 @@ export default function CheckoutPage() {
 
     const payload: CheckoutPayload = {
       currency: isVn ? 'VND' : 'USD',
-      shipping_rate_cents: selectedRate.rateCents,
+      shipping_rate_cents: selectedRate?.rateCents ?? 0,
       shipping_address: shippingAddress,
       notes: paymentMethod === 'cod'
         ? 'Thanh toán khi nhận hàng (COD)'
@@ -288,6 +293,10 @@ export default function CheckoutPage() {
 
     try {
       const order: Order = await checkout(payload);
+      // Cache in sessionStorage so the success page can display the order
+      // immediately without an API round-trip. This is the only reliable path
+      // for guest orders (no customer_id → API's auth-protected endpoint returns 404).
+      sessionStorage.setItem('lily_last_order', JSON.stringify(order));
       router.push(`/${lang}/checkout/success?order=${order.orderNumber}`);
     } catch (e: unknown) {
       setPlaceError(e instanceof Error ? e.message : 'Đã có lỗi xảy ra. Vui lòng thử lại.');
@@ -297,7 +306,7 @@ export default function CheckoutPage() {
   }, [form, paymentMethod, selectedRateId, shippingRates, isVn, lang, router]);
 
   // ── Computed totals ─────────────────────────────────────────────────────────
-  const subtotal     = cart?.subtotalCents ?? 0;
+  const subtotal     = isVn ? (cart?.subtotalCentsVnd ?? 0) : (cart?.subtotalCents ?? 0);
   const discountAmt  = cart?.coupon?.discountCents ?? 0;
   const selectedRate = shippingRates.find((r) => r.id === selectedRateId);
   const shippingAmt  = selectedRate?.rateCents ?? 0;
@@ -390,25 +399,27 @@ export default function CheckoutPage() {
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <Field
-                label="Email"
-                name="email"
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                onBlur={() => (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email)) && setErrors((e) => ({ ...e, email: 'Email không hợp lệ' }))}
-                error={errors.email}
-                placeholder="email@example.com"
-                autoComplete="email"
-                required
-              />
-              <Field
                 label="Số điện thoại"
                 name="phone"
                 type="tel"
                 value={form.phone}
                 onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                onBlur={() => form.phone.trim() || setErrors((e) => ({ ...e, phone: 'Vui lòng nhập số điện thoại' }))}
+                error={errors.phone}
                 placeholder="0912 345 678"
                 autoComplete="tel"
+                required
+              />
+              <Field
+                label="Email"
+                name="email"
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                onBlur={() => form.email.trim() && !/\S+@\S+\.\S+/.test(form.email) && setErrors((e) => ({ ...e, email: 'Email không hợp lệ' }))}
+                error={errors.email}
+                placeholder="email@example.com"
+                autoComplete="email"
               />
             </div>
 
@@ -487,10 +498,17 @@ export default function CheckoutPage() {
               </div>
             </div>
 
+            {hasOutOfStock && (
+              <div className="rounded-[10px] bg-red-50 border border-red-200 px-4 py-3 text-[13px] text-red-600">
+                Một số sản phẩm trong giỏ hàng đã hết hàng. Vui lòng quay lại giỏ hàng và xoá chúng trước khi tiếp tục.
+              </div>
+            )}
+
             <button
               type="button"
               onClick={handleStep1Continue}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-(--color-cta) font-heading text-[15px] font-700 text-white transition-all hover:bg-(--color-cta-hover) active:scale-[0.98]"
+              disabled={hasOutOfStock}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-(--color-cta) font-heading text-[15px] font-700 text-white transition-all hover:bg-(--color-cta-hover) active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Tiếp tục <ArrowRight className="h-4 w-4" />
             </button>
@@ -512,12 +530,32 @@ export default function CheckoutPage() {
             {ratesLoading ? (
               <ShippingSkeletons />
             ) : shippingRates.length === 0 ? (
-              <div className="rounded-[12px] border border-(--color-border) p-5 text-center">
-                <Truck className="mx-auto mb-2 h-8 w-8 text-(--color-sand-dark)" />
-                <p className="text-[14px] text-(--color-sand-dark)">
-                  Vui lòng liên hệ để biết phí vận chuyển
-                </p>
-              </div>
+              /* No rates configured — offer a free "will arrange" fallback so checkout isn't blocked */
+              <button
+                type="button"
+                onClick={() => setSelectedRateId(-1)}
+                className={[
+                  'flex w-full items-center gap-4 rounded-[12px] border-[1.5px] p-4 text-left transition-all',
+                  selectedRateId === -1
+                    ? 'border-(--color-cta) bg-(--color-quartz-mist)'
+                    : 'border-(--color-border) bg-white hover:border-(--color-cta)/50',
+                ].join(' ')}
+              >
+                <div className={[
+                  'h-5 w-5 shrink-0 rounded-full border-2 flex items-center justify-center',
+                  selectedRateId === -1 ? 'border-(--color-cta)' : 'border-(--color-border)',
+                ].join(' ')}>
+                  {selectedRateId === -1 && <div className="h-2.5 w-2.5 rounded-full bg-(--color-cta)" />}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <Truck className="h-4 w-4 text-(--color-sand-dark)" />
+                    <span className="text-[14px] font-600 text-(--color-stone)">Giao hàng tiêu chuẩn</span>
+                  </div>
+                  <p className="text-[12px] text-(--color-sand-dark)">Phí vận chuyển sẽ được xác nhận qua Zalo / email</p>
+                </div>
+                <span className="text-[14px] font-700 text-(--color-sand-dark)">Liên hệ</span>
+              </button>
             ) : (
               <div className="flex flex-col gap-3">
                 {shippingRates.map((rate) => {
@@ -578,7 +616,7 @@ export default function CheckoutPage() {
               <button
                 type="button"
                 onClick={handleStep2Continue}
-                disabled={!selectedRateId || ratesLoading}
+                disabled={selectedRateId === null || ratesLoading}
                 className="flex h-12 flex-[2] items-center justify-center gap-2 rounded-[12px] bg-(--color-cta) font-heading text-[15px] font-700 text-white transition-all hover:bg-(--color-cta-hover) disabled:opacity-50"
               >
                 Tiếp tục <ArrowRight className="h-4 w-4" />
@@ -605,9 +643,9 @@ export default function CheckoutPage() {
                 {cart?.items.map((item) => (
                   <div key={item.id} className="flex items-center gap-3 px-4 py-3">
                     <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-[8px] bg-(--color-quartz-mist)">
-                      {item.listing.coverImage?.src && (
+                      {(item.selectedOptions?.['_image_src'] ?? item.listing.coverImage?.src) && (
                         <Image
-                          src={item.listing.coverImage.src}
+                          src={item.selectedOptions?.['_image_src'] ?? item.listing.coverImage!.src}
                           alt={item.listing.resolvedTitle}
                           fill sizes="40px"
                           className="object-cover"
@@ -620,6 +658,10 @@ export default function CheckoutPage() {
                       </p>
                       <p className="text-[12px] text-(--color-sand-dark)">
                         × {item.quantity}
+                        {Object.entries(item.selectedOptions ?? {})
+                          .filter(([k]) => !k.startsWith('_'))
+                          .map(([k, v]) => ` · ${k.charAt(0).toUpperCase() + k.slice(1)}: ${v}`)
+                          .join('')}
                       </p>
                     </div>
                     <span className="text-[13px] font-700 text-(--color-stone)">

@@ -42,12 +42,11 @@ export function MobileCartSheet({
   listing,
 }: MobileCartSheetProps) {
   const { addItem } = useCart();
-  const listingStock   = listing !== undefined ? (listing?.quantity ?? null) : stockQuantity;
-  const maxQty         = listingStock != null ? listingStock : 99;
+  const effectiveMax   = Math.min(listing?.quantity ?? Infinity, stockQuantity ?? Infinity);
+  const maxQty         = isFinite(effectiveMax) ? effectiveMax : 99;
+  const hasKnownStock  = isFinite(effectiveMax);
   const isUnavailable  = listing === null;
-  const isOutOfStock   = listing !== undefined
-    ? (listing?.quantity === 0 || listing?.productsActive === false)
-    : (stockQuantity === 0);
+  const isOutOfStock   = hasKnownStock && maxQty === 0;
 
   const allOptions = listing?.bundleProducts.flatMap((p) => p.options ?? []) ?? [];
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() =>
@@ -144,9 +143,9 @@ export function MobileCartSheet({
           </div>
           {isOutOfStock ? (
             <span className="text-[12px] font-600 text-red-500">{dict.out_of_stock}</span>
-          ) : stockQuantity != null && stockQuantity <= 10 ? (
+          ) : hasKnownStock && maxQty <= 10 ? (
             <span className="text-[12px] font-500 text-(--color-promo)">
-              {dict.only_x_left.replace('%d', String(stockQuantity))}
+              {dict.only_x_left.replace('%d', String(maxQty))}
             </span>
           ) : null}
         </div>

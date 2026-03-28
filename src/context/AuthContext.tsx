@@ -27,7 +27,7 @@ export interface AuthContextValue {
   token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, passwordConfirmation: string) => Promise<void>;
+  register: (name: string, email: string, password: string, passwordConfirmation: string, turnstileToken: string) => Promise<void>;
   loginWithSocial: (provider: 'google' | 'facebook') => void;
   logout: () => Promise<void>;
   setAuth: (token: string, customer: Customer) => void;
@@ -85,9 +85,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [setAuth]);
 
   const register = useCallback(async (
-    name: string, email: string, password: string, passwordConfirmation: string,
+    name: string, email: string, password: string, passwordConfirmation: string, turnstileToken: string,
   ) => {
-    const { customer: c, token: t } = await apiRegister(name, email, password, passwordConfirmation);
+    const { customer: c, token: t } = await apiRegister(name, email, password, passwordConfirmation, turnstileToken);
     setAuth(t, c);
   }, [setAuth]);
 

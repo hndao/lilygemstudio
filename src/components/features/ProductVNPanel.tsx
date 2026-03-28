@@ -13,7 +13,7 @@ import { VariantPicker } from './VariantPicker';
 import { ProductBuyBox } from './ProductBuyBox';
 import { useProductColor } from '@/context/ProductColorContext';
 import type { Dictionary } from '@/lib/i18n';
-import type { ColorOption, ListingCard, Money } from '@/types';
+import type { ListingCard, Money } from '@/types';
 
 interface ProductVNPanelProps {
   productId: string;
@@ -28,9 +28,6 @@ interface ProductVNPanelProps {
   dict: Dictionary['buybox'];
   listing?: ListingCard | null;
   preferVnd?: boolean;
-  /** Still accepted for ColorSwatches compat — unused when options come from listing */
-  colorOptions?: ColorOption[];
-  colorLabel?: string;
 }
 
 export function ProductVNPanel({
@@ -47,8 +44,15 @@ export function ProductVNPanel({
   listing,
   preferVnd = true,
 }: ProductVNPanelProps) {
-  // Collect all option types from all bundle products (typically 1 product per listing)
-  const allOptions = listing?.bundleProducts.flatMap((p) => p.options ?? []) ?? [];
+  // Collect option types from all bundle products, deduplicated by slug.
+  // (Multiple bundle products may share the same option type slug, e.g. "color".)
+  const allOptions = listing
+    ? Array.from(
+        new Map(
+          listing.bundleProducts.flatMap((p) => p.options ?? []).map((opt) => [opt.slug, opt]),
+        ).values(),
+      )
+    : [];
 
   // selectedOptions: { [optionTypeSlug]: valueSlug }
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
@@ -97,6 +101,7 @@ export function ProductVNPanel({
         dict={dict}
         listing={listing}
         preferVnd={preferVnd}
+        selectedOptions={selectedOptions}
       />
     </div>
   );

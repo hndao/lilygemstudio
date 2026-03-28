@@ -34,7 +34,7 @@ export interface CartContextValue {
   isOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
-  addItem: (listingId: number, quantity?: number) => Promise<void>;
+  addItem: (listingId: number, quantity?: number, selectedOptions?: Record<string, string>) => Promise<void>;
   updateItem: (itemId: number, quantity: number) => Promise<void>;
   removeItem: (itemId: number) => Promise<void>;
   applyCouponCode: (code: string) => Promise<void>;
@@ -79,11 +79,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const openCart  = useCallback(() => setIsOpen(true),  []);
   const closeCart = useCallback(() => setIsOpen(false), []);
 
-  const addItem = useCallback(async (listingId: number, quantity = 1) => {
+  const addItem = useCallback(async (listingId: number, quantity = 1, selectedOptions?: Record<string, string>) => {
     // Optimistic badge increment — feels instant
     setOptimisticCount((n) => n + quantity);
     try {
-      const updated = await addCartItem(listingId, quantity);
+      const updated = await addCartItem(listingId, quantity, selectedOptions);
       setCart(updated);
       setOptimisticCount(updated.itemCount);
       setIsOpen(true);

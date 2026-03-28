@@ -1,14 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import Script from 'next/script';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Extend window with the Turnstile API
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (container: HTMLElement, options: Record<string, unknown>) => string;
+      remove: (widgetId: string) => void;
+      reset: (widgetId: string) => void;
+    };
+  }
+}
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, passwordConfirmation: string) => Promise<void>;
+  register: (name: string, email: string, password: string, passwordConfirmation: string, turnstileToken: string) => Promise<void>;
   loginWithSocial: (provider: 'google' | 'facebook') => void;
 }
 
@@ -18,13 +30,19 @@ const INPUT_CLASS =
   'w-full rounded-xl border border-(--color-border) bg-(--color-background) px-4 py-3 text-sm text-(--color-stone) placeholder:text-(--color-muted) outline-none transition-colors focus:border-(--color-cta) focus:ring-2 focus:ring-(--color-cta)/20';
 
 export function AuthModal({ isOpen, onClose, login, register, loginWithSocial }: AuthModalProps) {
-  const [tab, setTab]               = useState<Tab>('signin');
-  const [name, setName]             = useState('');
-  const [email, setEmail]           = useState('');
-  const [password, setPassword]     = useState('');
-  const [confirm, setConfirm]       = useState('');
-  const [error, setError]           = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [tab, setTab]                   = useState<Tab>('signin');
+  const [name, setName]                 = useState('');
+  const [email, setEmail]               = useState('');
+  const [password, setPassword]         = useState('');
+  const [confirm, setConfirm]           = useState('');
+  const [error, setError]               = useState<string | null>(null);
+  const [submitting, setSubmitting]     = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const [turnstileReady, setTurnstileReady] = useState(false);
+  const turnstileContainerRef = useRef<HTMLDivElement>(null);
+  const widgetIdRef           = useRef<string | undefined>(undefined);
+
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '';
 
   // Lock body scroll when open
   useEffect(() => {
@@ -40,8 +58,38 @@ export function AuthModal({ isOpen, onClose, login, register, loginWithSocial }:
     return () => document.removeEventListener('keydown', handler);
   }, [isOpen, onClose]);
 
+  // Render Turnstile widget when signup tab is active and script is loaded
+  useEffect(() => {
+    if (tab !== 'signup' || !turnstileReady || !turnstileContainerRef.current || !siteKey) return;
+    if (!window.turnstile) return;
+
+    if (widgetIdRef.current !== undefined) {
+      window.turnstile.remove(widgetIdRef.current);
+      widgetIdRef.current = undefined;
+    }
+
+    widgetIdRef.current = window.turnstile.render(turnstileContainerRef.current, {
+      sitekey: siteKey,
+      callback: (token: string) => setTurnstileToken(token),
+      'expired-callback': () => setTurnstileToken(''),
+      'error-callback': () => setTurnstileToken(''),
+      theme: 'light',
+      language: 'vi',
+    });
+
+    return () => {
+      if (widgetIdRef.current !== undefined && window.turnstile) {
+        window.turnstile.remove(widgetIdRef.current);
+        widgetIdRef.current = undefined;
+      }
+    };
+  }, [tab, turnstileReady, siteKey]);
+
+  // Reset token when switching tabs
+  useEffect(() => { setTurnstileToken(''); }, [tab]);
+
   function resetForm() {
-    setName(''); setEmail(''); setPassword(''); setConfirm(''); setError(null);
+    setName(''); setEmail(''); setPassword(''); setConfirm(''); setError(null); setTurnstileToken('');
   }
 
   function switchTab(t: Tab) { setTab(t); resetForm(); }
@@ -49,15 +97,26 @@ export function AuthModal({ isOpen, onClose, login, register, loginWithSocial }:
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (tab === 'signup' && siteKey && !turnstileToken) {
+      setError('Vui lòng hoàn thành xác minh bảo mật bên dưới.');
+      return;
+    }
+
     setSubmitting(true);
     try {
       if (tab === 'signin') {
         await login(email, password);
       } else {
-        await register(name, email, password, confirm);
+        await register(name, email, password, confirm, turnstileToken);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+      // Reset widget on failure so user can retry
+      if (widgetIdRef.current !== undefined && window.turnstile) {
+        window.turnstile.reset(widgetIdRef.current);
+        setTurnstileToken('');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -69,6 +128,15 @@ export function AuthModal({ isOpen, onClose, login, register, loginWithSocial }:
   }
 
   return (
+    <>
+    {/* Load Turnstile script once — explicit mode prevents auto-rendering */}
+    {siteKey && (
+      <Script
+        src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+        strategy="afterInteractive"
+        onLoad={() => setTurnstileReady(true)}
+      />
+    )}
     <AnimatePresence>
       {isOpen && (
         <>
@@ -249,6 +317,16 @@ export function AuthModal({ isOpen, onClose, login, register, loginWithSocial }:
                   </div>
                 )}
 
+                {/* Cloudflare Turnstile — only shown on signup when site key is configured */}
+                {tab === 'signup' && siteKey && (
+                  <div className="flex flex-col gap-1.5">
+                    <div ref={turnstileContainerRef} />
+                    {!turnstileReady && (
+                      <p className="text-xs text-(--color-muted)">Đang tải xác minh bảo mật…</p>
+                    )}
+                  </div>
+                )}
+
                 {error && (
                   <div className="flex items-start gap-2 rounded-xl bg-red-50 px-4 py-3 text-xs text-red-600">
                     <span className="mt-px shrink-0">⚠️</span>
@@ -283,5 +361,6 @@ export function AuthModal({ isOpen, onClose, login, register, loginWithSocial }:
         </>
       )}
     </AnimatePresence>
+    </>
   );
 }

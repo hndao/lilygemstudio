@@ -11,7 +11,7 @@
  *  - Track Order + Keep Shopping CTAs
  */
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams, usePathname } from 'next/navigation';
@@ -230,17 +230,43 @@ function CheckoutSuccessContent() {
   const [error, setError]     = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [visible, setVisible] = useState(false);
+  // Guard against React Strict Mode double-invocation: the first effect run
+  // consumes the sessionStorage entry; without this ref the second run would
+  // fall through to the API and get a 404 for guest orders.
+  const fetchStarted = useRef(false);
 
   useEffect(() => {
+    if (fetchStarted.current) return;
+    fetchStarted.current = true;
+
     if (!orderNumber) {
       setError('Không tìm thấy mã đơn hàng.');
       setLoading(false);
       return;
     }
+
+    // 1. Try sessionStorage first (set immediately after checkout — works for guests too)
+    if (typeof window !== 'undefined') {
+      const cached = sessionStorage.getItem('lily_last_order');
+      if (cached) {
+        try {
+          const parsed: Order = JSON.parse(cached);
+          if (parsed.orderNumber === orderNumber) {
+            setOrder(parsed);
+            sessionStorage.removeItem('lily_last_order'); // consume once
+            setLoading(false);
+            setTimeout(() => setVisible(true), 50);
+            return;
+          }
+        } catch { /* invalid cache, fall through */ }
+      }
+    }
+
+    // 2. Fall back to API (works for logged-in users re-visiting the page,
+    //    and for guests — the show endpoint now allows guest orders by order number)
     getOrder(orderNumber)
       .then((o) => {
         setOrder(o);
-        // Trigger entrance animation after data load
         setTimeout(() => setVisible(true), 50);
       })
       .catch(() => setError('Không thể tải thông tin đơn hàng. Vui lòng kiểm tra email xác nhận.'))
@@ -305,24 +331,47 @@ function CheckoutSuccessContent() {
             const snap  = item.listingSnapshot;
             const cover = snap.cover_image;
             const priceVnd = snap.price_cents_vnd ?? snap.price_cents;
+            const productHref = snap.slug ? `/${lang}/shop/${snap.slug}` : null;
 
             return (
               <div key={item.id} className="flex items-center gap-3">
                 {cover?.src ? (
-                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[10px] bg-(--color-quartz-mist)">
-                    <Image
-                      src={cover.src}
-                      alt={cover.alt || snap.resolvedTitle}
-                      fill
-                      sizes="56px"
-                      className="object-cover"
-                    />
-                  </div>
+                  productHref ? (
+                    <Link href={productHref} className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[10px] bg-(--color-quartz-mist) block">
+                      <Image
+                        src={cover.src}
+                        alt={cover.alt || snap.resolvedTitle}
+                        fill
+                        sizes="56px"
+                        className="object-cover"
+                      />
+                    </Link>
+                  ) : (
+                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[10px] bg-(--color-quartz-mist)">
+                      <Image
+                        src={cover.src}
+                        alt={cover.alt || snap.resolvedTitle}
+                        fill
+                        sizes="56px"
+                        className="object-cover"
+                      />
+                    </div>
+                  )
                 ) : (
-                  <div className="h-14 w-14 shrink-0 rounded-[10px] bg-(--color-quartz-mist)" />
+                  <div className="h-14 w-14 shrink-0 rounded-[10px] bg-(--color-quartz-mist) flex items-center justify-center">
+                    <span className="text-[11px] font-700 text-(--color-cta) uppercase leading-none text-center px-1">
+                      {snap.resolvedTitle.slice(0, 2)}
+                    </span>
+                  </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="truncate text-sm font-600 text-(--color-stone)">{snap.resolvedTitle}</p>
+                  {productHref ? (
+                    <Link href={productHref} className="truncate text-sm font-600 text-(--color-stone) block hover:text-(--color-cta) transition-colors">
+                      {snap.resolvedTitle}
+                    </Link>
+                  ) : (
+                    <p className="truncate text-sm font-600 text-(--color-stone)">{snap.resolvedTitle}</p>
+                  )}
                   {snap.sku && (
                     <p className="text-[11px] text-(--color-sand-dark)">SKU: {snap.sku}</p>
                   )}

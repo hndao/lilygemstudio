@@ -100,10 +100,18 @@ export async function getCart(): Promise<Cart | null> {
   }
 }
 
-export async function addCartItem(listingId: number, quantity = 1): Promise<Cart> {
+export async function addCartItem(
+  listingId: number,
+  quantity = 1,
+  selectedOptions?: Record<string, string>,
+): Promise<Cart> {
   const res = await commerceFetch<{ data: Cart }>('/cart/items', {
     method: 'POST',
-    body: { listing_id: listingId, quantity },
+    body: {
+      listing_id: listingId,
+      quantity,
+      ...(selectedOptions && Object.keys(selectedOptions).length > 0 && { selected_options: selectedOptions }),
+    },
     ensureCartToken: true,
   });
   return res.data;
@@ -148,6 +156,7 @@ export async function calculateShipping(
   const qs = new URLSearchParams({
     country_code: countryCode,
     subtotal_cents: String(subtotalCents),
+    site: 'lilygemstudio',
   });
   const res = await commerceFetch<{ data: ShippingRate[] }>(`/shipping/rates?${qs}`);
   return res.data;
@@ -160,7 +169,13 @@ export async function checkout(payload: CheckoutPayload): Promise<Order> {
     method: 'POST',
     body: payload,
   });
-  return res.data;
+  const order = res.data;
+  // Cache in sessionStorage so the success page can display it without re-fetching.
+  // This also works for guest checkouts where the API requires auth to re-read the order.
+  if (typeof window !== 'undefined') {
+    sessionStorage.setItem('lily_last_order', JSON.stringify(order));
+  }
+  return order;
 }
 
 // ── Orders ─────────────────────────────────────────────────────────────────────

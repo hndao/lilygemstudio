@@ -151,16 +151,12 @@ export default function OrderDetailPage() {
   }, [customer, orderNumber]);
 
   if (isLoading || !customer || loading) {
-    return (
-      <div className="max-w-lg mx-auto px-4 py-8">
-        <OrderDetailSkeleton />
-      </div>
-    );
+    return <OrderDetailSkeleton />;
   }
 
   if (error || !order) {
     return (
-      <div className="max-w-lg mx-auto px-4 py-8">
+      <div>
         <p className="text-sm text-red-600 mb-4">{error ?? 'Lỗi tải đơn hàng.'}</p>
         <Link href={`/${lang}/account/orders`} className="text-sm text-(--color-cta)">
           ← Đơn hàng
@@ -174,13 +170,12 @@ export default function OrderDetailPage() {
     order.status === 'pending' && (order.notes ?? '').toLowerCase().includes('bank');
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-8">
+    <div>
       {/* Back link */}
       <Link
         href={`/${lang}/account/orders`}
         className="inline-flex items-center gap-1 text-sm text-(--color-sand-dark) hover:text-(--color-stone) transition-colors mb-6"
       >
-        {/* ← Orders */}
         ← Đơn hàng
       </Link>
 
@@ -243,28 +238,52 @@ export default function OrderDetailPage() {
           {order.items.map((item) => {
             const snap = item.listingSnapshot;
             const cover = snap.cover_image;
+            const productHref = snap.slug ? `/${lang}/shop/${snap.slug}` : null;
             return (
               <li key={item.id} className="px-5 py-4 flex items-start gap-3">
-                {/* Thumbnail */}
+                {/* Thumbnail — links to product page when slug available */}
                 {cover ? (
-                  <div className="shrink-0 w-14 h-14 rounded-[10px] overflow-hidden border border-(--color-border) bg-(--color-background)">
-                    <Image
-                      src={cover.src}
-                      alt={cover.alt}
-                      width={56}
-                      height={56}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+                  productHref ? (
+                    <Link href={productHref} className="shrink-0 w-14 h-14 rounded-[10px] overflow-hidden border border-(--color-border) bg-(--color-background) block">
+                      <Image
+                        src={cover.src}
+                        alt={cover.alt ?? snap.resolvedTitle}
+                        width={56}
+                        height={56}
+                        className="w-full h-full object-cover"
+                      />
+                    </Link>
+                  ) : (
+                    <div className="shrink-0 w-14 h-14 rounded-[10px] overflow-hidden border border-(--color-border) bg-(--color-background)">
+                      <Image
+                        src={cover.src}
+                        alt={cover.alt ?? snap.resolvedTitle}
+                        width={56}
+                        height={56}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )
                 ) : (
-                  <div className="shrink-0 w-14 h-14 rounded-[10px] bg-(--color-quartz-mist) border border-(--color-border)" />
+                  /* No cover image in snapshot (older order) — show initials placeholder */
+                  <div className="shrink-0 w-14 h-14 rounded-[10px] bg-(--color-quartz-mist) border border-(--color-border) flex items-center justify-center">
+                    <span className="text-[11px] font-700 text-(--color-cta) uppercase leading-none text-center px-1">
+                      {snap.resolvedTitle.slice(0, 2)}
+                    </span>
+                  </div>
                 )}
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-600 text-(--color-stone) leading-tight truncate">
-                    {snap.resolvedTitle}
-                  </p>
+                  {productHref ? (
+                    <Link href={productHref} className="text-sm font-600 text-(--color-stone) leading-tight truncate block hover:text-(--color-cta) transition-colors">
+                      {snap.resolvedTitle}
+                    </Link>
+                  ) : (
+                    <p className="text-sm font-600 text-(--color-stone) leading-tight truncate">
+                      {snap.resolvedTitle}
+                    </p>
+                  )}
                   {snap.sku && (
                     <p className="text-[11px] text-(--color-sand-dark) mt-0.5">
                       SKU: {snap.sku}

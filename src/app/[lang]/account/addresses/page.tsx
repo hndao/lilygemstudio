@@ -18,6 +18,7 @@ import type { Address, AddressInput } from '@/types';
 const EMPTY_FORM: AddressInput = {
   recipient_name: '',
   phone: '',
+  email: '',
   line1: '',
   line2: '',
   city: '',
@@ -104,6 +105,19 @@ function AddressForm({
           placeholder="0901 234 567"
           autoComplete="tel"
           inputMode="tel"
+        />
+      </div>
+
+      {/* Email */}
+      <div>
+        <label className={labelCls}>Email</label>
+        <input
+          className={inputCls}
+          type="email"
+          value={form.email ?? ''}
+          onChange={(e) => set('email', e.target.value)}
+          placeholder="email@example.com"
+          autoComplete="email"
         />
       </div>
 
@@ -240,6 +254,7 @@ function AddressCard({
   const initial: AddressInput = {
     recipient_name: address.recipientName,
     phone: address.phone ?? '',
+    email: address.email ?? '',
     line1: address.line1,
     line2: address.line2 ?? '',
     city: address.city,
@@ -422,33 +437,13 @@ export default function AddressesPage() {
     }
   }
 
-  if (isLoading || !customer) {
-    return (
-      <div className="max-w-lg mx-auto px-4 py-8">
-        <div className="space-y-4 animate-pulse">
-          {[0, 1].map((i) => (
-            <div key={i} className="h-36 rounded-[14px] bg-(--color-border)" />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  if (isLoading || !customer) return null;
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-8">
-      {/* Back link */}
-      <Link
-        href={`/${lang}/account`}
-        className="inline-flex items-center gap-1 text-sm text-(--color-sand-dark) hover:text-(--color-stone) transition-colors mb-6"
-      >
-        {/* ← Account */}
-        ← Tài khoản
-      </Link>
-
+    <div>
       {/* Page header */}
       <div className="flex items-center justify-between mb-5">
         <h1 className="font-heading text-[20px] font-700 text-(--color-stone)">
-          {/* Addresses */}
           Địa chỉ của tôi
         </h1>
         {!showAddForm && (
@@ -496,9 +491,8 @@ export default function AddressesPage() {
           ))}
         </div>
       ) : addresses.length === 0 ? (
-        <div className="rounded-[14px] border border-(--color-border) bg-(--color-surface) py-12 text-center text-sm text-(--color-sand-dark)">
-          {/* No addresses */}
-          Chưa có địa chỉ nào
+        <div className="rounded-[14px] border border-(--color-border) bg-(--color-surface) py-14 text-center text-sm text-(--color-sand-dark)">
+          Chưa có địa chỉ nào. Hãy thêm địa chỉ giao hàng đầu tiên của bạn.
         </div>
       ) : (
         <ul className="space-y-3">

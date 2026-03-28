@@ -77,10 +77,18 @@ export async function apiRegister(
   email: string,
   password: string,
   passwordConfirmation: string,
+  turnstileToken: string,
 ): Promise<AuthResponse> {
   return authFetch<AuthResponse>('/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ name, email, password, password_confirmation: passwordConfirmation }),
+    body: JSON.stringify({
+      name,
+      email,
+      password,
+      password_confirmation: passwordConfirmation,
+      site: 'lilygemstudio',
+      cf_turnstile_token: turnstileToken,
+    }),
   });
 }
 
