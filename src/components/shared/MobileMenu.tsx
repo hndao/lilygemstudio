@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { X, User, Package, MapPin, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { LanguageSwitcher } from './LanguageSwitcher';
 import { useAuth } from '@/hooks/useAuth';
 import type { Locale } from '@/middleware';
 import type { Dictionary } from '@/lib/i18n';
@@ -75,7 +76,7 @@ export function MobileMenu({ isOpen, onClose, dict, lang }: MobileMenuProps) {
             {/* Drawer header */}
             <div className="flex items-center justify-between border-b border-(--color-border) px-6 py-4">
               <span className="font-heading text-lg font-700 text-(--color-stone)">
-                🌸 LilyGem
+                🌸 LilyGem Studio
               </span>
               <button
                 onClick={onClose}
@@ -105,6 +106,11 @@ export function MobileMenu({ isOpen, onClose, dict, lang }: MobileMenuProps) {
                 </motion.li>
               ))}
             </ul>
+
+            {/* Language switcher */}
+            <div className="border-t border-(--color-border) px-6 py-3">
+              <LanguageSwitcher currentLang={lang} dict={dict} />
+            </div>
 
             {/* Profile section */}
             <div className="mt-auto border-t border-(--color-border) p-4">

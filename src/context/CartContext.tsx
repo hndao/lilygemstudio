@@ -66,10 +66,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (initRef.current) return;
     initRef.current = true;
 
-    getCart().then((c) => {
-      setCart(c);
-      setOptimisticCount(c?.itemCount ?? 0);
-    });
+    setIsLoading(true);
+    getCart()
+      .then((c) => { setCart(c); setOptimisticCount(c?.itemCount ?? 0); })
+      .finally(() => setIsLoading(false));
   }, []);
 
   const itemCount = optimisticCount;

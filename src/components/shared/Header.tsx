@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Menu, ShoppingBag, Search, UserCircle, X, LogOut, Package, MapPin, User } from 'lucide-react';
 import { MobileMenu } from './MobileMenu';
+import { LanguageSwitcher } from './LanguageSwitcher';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/hooks/useAuth';
 import type { Locale } from '@/middleware';
@@ -115,7 +116,7 @@ export function Header({ dict, lang }: HeaderProps) {
             className="font-heading text-xl font-bold tracking-tight text-(--color-cream) transition-opacity hover:opacity-80"
             aria-label="LilyGem Studio — Home"
           >
-            🌸 LilyGem
+            🌸 LilyGem Studio
           </Link>
 
           {/* ── Desktop nav (≥ 1280px) ───────────────────────────────── */}
@@ -225,6 +226,9 @@ export function Header({ dict, lang }: HeaderProps) {
                 </div>
               )}
             </div>
+
+            {/* Language switcher */}
+            <LanguageSwitcher currentLang={lang} dict={dict} />
 
             {/* Cart badge */}
             <button
