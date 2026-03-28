@@ -430,6 +430,8 @@ export interface CartItem {
   quantity: number;
   priceSnapshotCents: number | null;
   priceSnapshotCentsVnd: number | null;
+  selectedOptions: Record<string, string>;
+  outOfStock: boolean;
   listing: CartItemListing;
 }
 
@@ -446,6 +448,7 @@ export interface Cart {
   items: CartItem[];
   coupon: CartCoupon | null;
   subtotalCents: number;
+  subtotalCentsVnd: number;
   itemCount: number;
 }
 
@@ -454,6 +457,7 @@ export interface Address {
   label: string | null;
   recipientName: string;
   phone: string | null;
+  email: string | null;
   line1: string;
   line2: string | null;
   city: string;
@@ -466,6 +470,7 @@ export interface Address {
 export interface AddressInput {
   recipient_name: string;
   phone?: string;
+  email?: string;
   line1: string;
   line2?: string;
   city: string;
@@ -493,6 +498,7 @@ export interface OrderItem {
   totalPriceCents: number;
   listingSnapshot: {
     id: number;
+    slug?: string;
     resolvedTitle: string;
     price_cents: number;
     price_cents_vnd: number | null;
@@ -577,6 +583,9 @@ export interface ListingCard {
   description?: string | null;
   descriptionVi?: string | null;
   titleVi?: string | null;
+  /** Social proof — from first bundle product's review aggregates */
+  averageRating?: number | null;
+  reviewCount?: number | null;
 }
 
 export interface ListingListParams {
@@ -585,6 +594,8 @@ export interface ListingListParams {
   sort?: 'newest' | 'price_asc' | 'price_desc';
   platform?: string;
   query?: string;
+  category?: string;
+  badge?: string;
 }
 
 export interface CheckoutPayload {

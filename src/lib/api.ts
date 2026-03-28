@@ -198,6 +198,8 @@ export async function getListings(
     per_page: String(params.perPage ?? 24),
     ...(params.sort && { sort: params.sort }),
     ...(params.query && { q: params.query }),
+    ...(params.category && { category: params.category }),
+    ...(params.badge && { badge: params.badge }),
   });
 
   return apiFetch<PaginatedResponse<ListingCard>>(`/listings?${qs}`, {

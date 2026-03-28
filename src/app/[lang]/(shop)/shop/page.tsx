@@ -14,10 +14,12 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { getListings, getCategories } from '@/lib/api';
+import { getDictionary } from '@/lib/i18n';
 import { ListingGrid } from '@/components/features/ListingGrid';
 import { CatalogFilters } from '@/components/features/CatalogFilters';
 import { CatalogSort } from '@/components/features/CatalogSort';
 import { Pagination } from '@/components/features/Pagination';
+import { MobileFilterButton } from '@/components/features/MobileFilterButton';
 import type { ListingListParams } from '@/types';
 
 export const revalidate = 86400; // 24h ISR — matches LISTING_LIST TTL
@@ -28,28 +30,40 @@ export const metadata: Metadata = {
 };
 
 interface ShopPageProps {
+  params: Promise<{ lang: string }>;
   searchParams: Promise<{
     page?: string;
     sort?: string;
     q?: string;
+    category?: string;
+    badge?: string;
   }>;
 }
 
-export default async function ShopPage({ searchParams }: ShopPageProps) {
+export default async function ShopPage({ params, searchParams }: ShopPageProps) {
+  const { lang } = await params;
   const sp = await searchParams;
 
-  const params: ListingListParams = {
+  const listingParams: ListingListParams = {
     page: sp.page ? Number(sp.page) : 1,
     perPage: 24,
     platform: 'direct',
     sort: sp.sort as ListingListParams['sort'],
     ...(sp.q && { query: sp.q }),
+    ...(sp.category && { category: sp.category }),
+    ...(sp.badge && sp.badge !== 'all' && { badge: sp.badge }),
   };
 
-  // Fetch listings and categories in parallel — no waterfall
-  const [result, categories] = await Promise.all([
-    getListings(params).catch(() => null),
+  const activeFilterCount = [
+    sp.category,
+    sp.badge && sp.badge !== 'all' ? sp.badge : undefined,
+  ].filter(Boolean).length;
+
+  // Fetch listings, categories, and dict in parallel — no waterfall
+  const [result, categories, dict] = await Promise.all([
+    getListings(listingParams).catch(() => null),
     getCategories().catch(() => []),
+    getDictionary(lang),
   ]);
   const listings = result?.data ?? [];
   const meta = result?.meta ?? { total: 0, currentPage: 1, lastPage: 1, perPage: 24 };
@@ -82,7 +96,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
         {/* Filter sidebar — tablet+ visible, mobile hidden */}
         <Suspense>
-          <CatalogFilters categories={categories} className="hidden md:block" />
+          <CatalogFilters categories={categories} className="hidden md:block" dict={dict.catalog} />
         </Suspense>
 
         {/* Listing grid */}
@@ -93,7 +107,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               <CatalogSort />
             </Suspense>
             <Suspense>
-              <MobileFilterToggle />
+              <MobileFilterButton categories={categories} activeCount={activeFilterCount} dict={dict.catalog} />
             </Suspense>
           </div>
 
@@ -119,10 +133,3 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   );
 }
 
-function MobileFilterToggle() {
-  return (
-    <button className="flex items-center gap-1.5 rounded-md border border-(--color-border) px-3 py-1.5 text-sm font-500 text-(--color-stone)">
-      Lọc ▼
-    </button>
-  );
-}

@@ -13,6 +13,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { StarRating } from '@/components/ui/StarRating';
 import type { ListingCard as ListingCardType } from '@/types';
 
 interface ListingCardProps {
@@ -79,6 +80,11 @@ export function ListingCard({
             Giảm giá
           </div>
         )}
+        {!isOutOfStock && !isOnSale && isLowStock && (
+          <div className="absolute left-2 top-2 rounded-full bg-(--color-cta) px-2 py-0.5 text-[11px] font-600 text-white">
+            Còn {listing.quantity}
+          </div>
+        )}
       </Link>
 
       {/* Content area */}
@@ -88,6 +94,24 @@ export function ListingCard({
             {listing.resolvedTitle}
           </h3>
         </Link>
+
+        {/* Description tagline */}
+        {listing.description && (
+          <p className="mt-1 line-clamp-1 text-xs text-(--color-muted)">
+            {listing.description}
+          </p>
+        )}
+
+        {/* Star ratings */}
+        {listing.averageRating != null && listing.averageRating > 0 && (
+          <div className="mt-1.5">
+            <StarRating
+              rating={listing.averageRating}
+              count={listing.reviewCount ?? undefined}
+              size="sm"
+            />
+          </div>
+        )}
 
         {/* Price row */}
         <div className="mt-auto pt-2 flex flex-wrap items-baseline gap-1.5">
@@ -105,13 +129,6 @@ export function ListingCard({
             </span>
           )}
         </div>
-
-        {/* Low stock indicator */}
-        {isLowStock && (
-          <p className="mt-1 text-[11px] text-(--color-promo) font-500">
-            Còn {listing.quantity} sản phẩm
-          </p>
-        )}
       </div>
     </article>
   );

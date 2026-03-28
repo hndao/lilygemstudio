@@ -38,6 +38,16 @@
     "sort_label": "Sort by",
     "filter_label": "Filter"
   },
+  "catalog": {
+    "filters_heading": "Filters",
+    "category": "Category",
+    "badge": "Badge",
+    "all": "All",
+    "badge_bestseller": "Bestseller",
+    "badge_new": "New",
+    "badge_sale": "Sale",
+    "badge_limited": "Limited"
+  },
   "product": {
     "add_to_cart": "Buy Now",
     "reviews_title": "Customer Reviews",
@@ -205,6 +215,9 @@
     "out_of_stock": "Out of Stock",
     "only_x_left": "Only %d left",
     "unavailable": "Currently unavailable",
-    "buy_on": "Buy on %s"
+    "buy_on": "Buy on %s",
+    "trust_shipping": "Free shipping",
+    "trust_handmade": "Handcrafted",
+    "trust_returns": "7-day returns"
   }
 }

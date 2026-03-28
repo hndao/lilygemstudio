@@ -22,7 +22,7 @@ import Image from 'next/image';
 import { ShoppingCart } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import type { Dictionary } from '@/lib/i18n';
-import type { ColorOption, Money, ListingCard } from '@/types';
+import type { Money, ListingCard } from '@/types';
 
 interface ProductBuyBoxProps {
   productId: string;
@@ -33,8 +33,8 @@ interface ProductBuyBoxProps {
   zaloUrl?: string;
   messengerUrl?: string;
   coverImage: string;
-  /** Selected color from ProductVNPanel — passed into cart payload */
-  selectedColor?: ColorOption | null;
+  /** All selected variants from VariantPicker e.g. { color: 'black', size: 's' } */
+  selectedOptions?: Record<string, string>;
   /** null = unlimited; 0 = out of stock; >0 = capped at this value */
   stockQuantity?: number | null;
   dict: Dictionary['buybox'];
@@ -60,7 +60,7 @@ export function ProductBuyBox({
   zaloUrl,
   messengerUrl,
   coverImage,
-  selectedColor,
+  selectedOptions,
   stockQuantity,
   dict,
   listing,
@@ -68,15 +68,16 @@ export function ProductBuyBox({
 }: ProductBuyBoxProps) {
   const { addItem } = useCart();
 
-  // Listing-aware stock: listing.quantity overrides product stockQuantity when present
-  const listingStock = listing !== undefined
-    ? (listing?.quantity ?? null)
-    : stockQuantity;
-  const maxQty = listingStock != null ? listingStock : 99;
+  // Effective max = min of listing hard cap and product-level stock.
+  // Both are optional caps; missing (null/undefined) means no cap from that source.
+  const effectiveMax = Math.min(
+    listing?.quantity ?? Infinity,
+    stockQuantity ?? Infinity,
+  );
+  const maxQty        = isFinite(effectiveMax) ? effectiveMax : 99;
+  const hasKnownStock = isFinite(effectiveMax); // at least one source has a cap
   const isUnavailable = listing === null; // no active listing
-  const isOutOfStock  = listing !== undefined
-    ? (listing?.quantity === 0 || listing?.productsActive === false)
-    : (stockQuantity === 0);
+  const isOutOfStock  = hasKnownStock && maxQty === 0;
 
   const [quantity, setQuantity]   = useState((isUnavailable || isOutOfStock) ? 0 : 1);
   const [addBusy, setAddBusy]     = useState(false);
@@ -97,14 +98,26 @@ export function ProductBuyBox({
   const handleAddToCart = useCallback(async () => {
     if (!listing || isUnavailable || isOutOfStock) return;
     setAddBusy(true);
+
+    // Build options payload — copy all selected variants
+    const options: Record<string, string> = { ...(selectedOptions ?? {}) };
+
+    // Find the image tagged to the selected color and embed its URL so the cart
+    // can show the right thumbnail without an extra API round-trip.
+    const colorSlug = options['color'];
+    if (colorSlug && listing.images?.length) {
+      const variantImg = listing.images.find((img) => img.tag === colorSlug);
+      if (variantImg?.src) options['_image_src'] = variantImg.src;
+    }
+
     try {
-      await addItem(listing.id, quantity);
+      await addItem(listing.id, quantity, Object.keys(options).length ? options : undefined);
     } catch {
       // CartContext rolls back optimistic update on error; no extra handling needed
     } finally {
       setAddBusy(false);
     }
-  }, [listing, isUnavailable, isOutOfStock, addItem, quantity]);
+  }, [listing, isUnavailable, isOutOfStock, addItem, quantity, selectedOptions]);
 
   const zaloHref = zaloUrl
     ? `${zaloUrl}?text=${encodeURIComponent(dict.zalo_text.replace('%s', productName))}`
@@ -141,9 +154,9 @@ export function ProductBuyBox({
         {/* Stock badge */}
         {isOutOfStock ? (
           <span className="text-[12px] font-600 text-red-500">{dict.out_of_stock}</span>
-        ) : listingStock != null && listingStock <= 10 ? (
+        ) : hasKnownStock && maxQty <= 10 ? (
           <span className="text-[12px] font-500 text-(--color-promo)">
-            {dict.only_x_left.replace('%d', String(listingStock))}
+            {dict.only_x_left.replace('%d', String(maxQty))}
           </span>
         ) : null}
       </div>
@@ -168,6 +181,13 @@ export function ProductBuyBox({
           : dict.add_to_cart
         }
       </button>
+
+      {/* ── Trust Signals ──────────────────────────────────────────────── */}
+      <div className="flex items-center justify-center gap-4 text-xs text-(--color-muted)">
+        <span>🚚 {dict.trust_shipping}</span>
+        <span>✋ {dict.trust_handmade}</span>
+        <span>🔄 {dict.trust_returns}</span>
+      </div>
 
       {/* ── Secondary Row: Zalo / Messenger / Yêu thích ──────────────── */}
       <div className="flex gap-2.5">

@@ -14,13 +14,14 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { getProduct, getReviews, getProductsBySlugs, getSiteSettings, getListingBySlug } from '@/lib/api';
+import { getProduct, getReviews, getProductsBySlugs, getSiteSettings, getListingBySlug, getListings } from '@/lib/api';
 import { getDictionary } from '@/lib/i18n';
 import { productJsonLd, breadcrumbJsonLd, generateProductMeta } from '@/lib/seo';
 import { ProductImageGallery } from '@/components/features/ProductImageGallery';
 import { ProductColorProvider } from '@/context/ProductColorContext';
 import { ProductTabs } from '@/components/features/ProductTabs';
 import { ProductGrid } from '@/components/features/ProductGrid';
+import { ListingGrid } from '@/components/features/ListingGrid';
 import { AffiliateCTA } from '@/components/features/AffiliateCTA';
 import { ProductVNPanel } from '@/components/features/ProductVNPanel';
 import { ExpertVerdict } from '@/components/features/ExpertVerdict';
@@ -89,7 +90,12 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
 
   const relatedSlugs = product.tags.slice(0, 4).filter((t) => t !== productSlug);
   const relatedProducts = relatedSlugs.length > 0
-    ? await getProductsBySlugs(relatedSlugs)
+    ? await getProductsBySlugs(relatedSlugs).catch(() => [])
+    : [];
+  const relatedListings = relatedSlugs.length === 0
+    ? await getListings({ category: product.category?.slug, perPage: 4, platform: 'direct' })
+        .then((r) => r.data.filter((l) => l.slug !== slug))
+        .catch(() => [])
     : [];
 
   // Listing images take precedence over product images when available
@@ -288,10 +294,13 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         </div>
       </section>
 
-      {relatedProducts.length > 0 && (
+      {(relatedProducts.length > 0 || relatedListings.length > 0) && (
         <section className="mt-16" aria-labelledby="related-heading">
-          <h2 id="related-heading" className="mb-6">You May Also Like</h2>
-          <ProductGrid products={relatedProducts} priorityCount={0} />
+          <h2 id="related-heading" className="mb-6">{dict.product.related_products}</h2>
+          {relatedProducts.length > 0
+            ? <ProductGrid products={relatedProducts} priorityCount={0} />
+            : <ListingGrid listings={relatedListings} priorityCount={0} />
+          }
         </section>
       )}
 

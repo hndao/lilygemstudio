@@ -21,14 +21,10 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import type { CategoryWithChildren, ProductCard } from '@/types';
+import type { Dictionary } from '@/lib/i18n';
 
-const BADGES: Array<{ value: NonNullable<ProductCard['badge']> | 'all'; label: string }> = [
-  { value: 'all', label: 'All' },
-  { value: 'bestseller', label: 'Bestseller' },
-  { value: 'new', label: 'New' },
-  { value: 'sale', label: 'Sale' },
-  { value: 'limited', label: 'Limited' },
-];
+type BadgeValue = NonNullable<ProductCard['badge']> | 'all';
+const BADGE_VALUES: BadgeValue[] = ['all', 'bestseller', 'new', 'sale', 'limited'];
 
 interface FilterSectionProps {
   title: string;
@@ -132,14 +128,26 @@ function CategoryRow({ cat, activeCategory, onSelect }: CategoryRowProps) {
 interface CatalogFiltersProps {
   categories?: CategoryWithChildren[];
   className?: string;
+  dict?: Dictionary['catalog'];
 }
 
-export function CatalogFilters({ categories = [], className = '' }: CatalogFiltersProps) {
+export function CatalogFilters({ categories = [], className = '', dict }: CatalogFiltersProps) {
   const router = useRouter();
   const params = useSearchParams();
 
   const activeCategory = params.get('category') ?? '';
   const activeBadge = params.get('badge') ?? 'all';
+
+  // Resolve badge labels from dict when available, else fall back to raw value
+  const badgeLabel = (value: BadgeValue): string => {
+    if (!dict) return value.charAt(0).toUpperCase() + value.slice(1);
+    if (value === 'all') return dict.all;
+    if (value === 'bestseller') return dict.badge_bestseller;
+    if (value === 'new') return dict.badge_new;
+    if (value === 'sale') return dict.badge_sale;
+    if (value === 'limited') return dict.badge_limited;
+    return value;
+  };
 
   function applyFilter(key: string, value: string) {
     const next = new URLSearchParams(params.toString());
@@ -155,11 +163,11 @@ export function CatalogFilters({ categories = [], className = '' }: CatalogFilte
   return (
     <aside className={`w-full md:w-[220px] shrink-0 ${className}`} aria-label="Product filters">
       <h2 className="font-heading text-sm font-700 uppercase tracking-widest text-(--color-stone)">
-        Filters
+        {dict?.filters_heading ?? 'Filters'}
       </h2>
 
       {/* Category filter — 2-level family tree */}
-      <FilterSection title="Category">
+      <FilterSection title={dict?.category ?? 'Category'}>
         <ul className="flex flex-col gap-2">
           {/* "All" option always first */}
           <li>
@@ -172,7 +180,7 @@ export function CatalogFilters({ categories = [], className = '' }: CatalogFilte
                 onChange={() => applyFilter('category', 'all')}
                 className="accent-(--color-sage)"
               />
-              All
+              {dict?.all ?? 'All'}
             </label>
           </li>
           {categories.map((cat) => (
@@ -187,9 +195,9 @@ export function CatalogFilters({ categories = [], className = '' }: CatalogFilte
       </FilterSection>
 
       {/* Badge filter */}
-      <FilterSection title="Badge">
+      <FilterSection title={dict?.badge ?? 'Badge'}>
         <ul className="flex flex-col gap-1.5">
-          {BADGES.map(({ value, label }) => (
+          {BADGE_VALUES.map((value) => (
             <li key={value}>
               <label className="flex cursor-pointer items-center gap-2 text-sm text-(--color-stone)">
                 <input
@@ -200,7 +208,7 @@ export function CatalogFilters({ categories = [], className = '' }: CatalogFilte
                   onChange={() => applyFilter('badge', value)}
                   className="accent-(--color-sage)"
                 />
-                {label}
+                {badgeLabel(value)}
               </label>
             </li>
           ))}

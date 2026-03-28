@@ -55,7 +55,7 @@ export function MobileStickyBar({
   affiliateLink,
   zaloUrl,
   stockQuantity,
-  scrollThreshold = 600,
+  scrollThreshold = 250,
   dict,
   listing,
 }: MobileStickyBarProps) {

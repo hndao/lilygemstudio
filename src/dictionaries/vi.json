@@ -38,6 +38,16 @@
     "sort_label": "Sắp xếp",
     "filter_label": "Lọc"
   },
+  "catalog": {
+    "filters_heading": "Bộ Lọc",
+    "category": "Danh Mục",
+    "badge": "Nhãn",
+    "all": "Tất cả",
+    "badge_bestseller": "Bán Chạy",
+    "badge_new": "Mới",
+    "badge_sale": "Giảm Giá",
+    "badge_limited": "Giới Hạn"
+  },
   "product": {
     "add_to_cart": "Mua Ngay",
     "reviews_title": "Đánh Giá Khách Hàng",
@@ -205,6 +215,9 @@
     "out_of_stock": "Hết hàng",
     "only_x_left": "Còn %d sản phẩm",
     "unavailable": "Hiện không có hàng",
-    "buy_on": "Mua trên %s"
+    "buy_on": "Mua trên %s",
+    "trust_shipping": "Miễn phí vận chuyển",
+    "trust_handmade": "Thủ công mỹ nghệ",
+    "trust_returns": "Đổi trả 7 ngày"
   }
 }
