@@ -23,6 +23,7 @@ interface ReviewFormProps {
 export function ReviewForm({ productSlug, dict }: ReviewFormProps) {
   const { customer, token, openAuthModal } = useAuth();
 
+  const [expanded, setExpanded] = useState(false);
   const [rating, setRating]   = useState(0);
   const [hovered, setHovered] = useState(0);
   const [name, setName]       = useState(customer?.name ?? '');
@@ -88,9 +89,31 @@ export function ReviewForm({ productSlug, dict }: ReviewFormProps) {
     );
   }
 
+  if (!expanded) {
+    return (
+      <button
+        type="button"
+        onClick={() => setExpanded(true)}
+        className="flex items-center gap-2 rounded-2xl border border-(--color-border) bg-(--color-surface) px-5 py-3.5 text-sm font-600 text-(--color-cta) transition-colors hover:bg-(--color-quartz-mist) w-full md:w-auto"
+      >
+        <span className="text-lg leading-none">✏️</span>
+        {dict.write_review} +
+      </button>
+    );
+  }
+
   return (
     <div className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-5">
-      <h3 className="mb-4 text-base font-700 text-(--color-stone)">{dict.write_review}</h3>
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-base font-700 text-(--color-stone)">{dict.write_review}</h3>
+        <button
+          type="button"
+          onClick={() => setExpanded(false)}
+          className="text-[12px] text-(--color-muted) hover:text-(--color-stone)"
+        >
+          Thu gọn ▲
+        </button>
+      </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* Star picker */}

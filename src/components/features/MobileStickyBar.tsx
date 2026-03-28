@@ -21,11 +21,13 @@
  *        safe-area-inset-bottom for iPhone notch.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
 import { Heart, ShoppingCart, ExternalLink } from 'lucide-react';
 import { trackAffiliateClick } from '@/lib/analytics';
 import { AFFILIATE_LINK_PROPS } from '@/lib/ftc';
+import { apiToggleLike, apiGetLikeStatus } from '@/lib/auth';
+import { useAuth } from '@/hooks/useAuth';
 import { MobileCartSheet } from '@/components/features/MobileCartSheet';
 import type { Dictionary } from '@/lib/i18n';
 import type { AffiliateLink, ListingCard, Money, ProductImage } from '@/types';
@@ -59,9 +61,34 @@ export function MobileStickyBar({
   dict,
   listing,
 }: MobileStickyBarProps) {
+  const { customer, token, openAuthModal } = useAuth();
   const [visible, setVisible] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [wishlisted, setWishlisted] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [likeLoading, setLikeLoading] = useState(false);
+
+  // Fetch persisted like status once auth is ready
+  useEffect(() => {
+    if (!customer || !token) return;
+    apiGetLikeStatus(productSlug, token)
+      .then(({ liked: l }) => setLiked(l))
+      .catch(() => {});
+  }, [customer, token, productSlug]);
+
+  const handleWishlistToggle = useCallback(async () => {
+    if (!customer || !token) { openAuthModal(); return; }
+    const prev = liked;
+    setLiked(!liked);
+    setLikeLoading(true);
+    try {
+      const { liked: newLiked } = await apiToggleLike(productSlug, token);
+      setLiked(newLiked);
+    } catch {
+      setLiked(prev);
+    } finally {
+      setLikeLoading(false);
+    }
+  }, [customer, token, liked, productSlug, openAuthModal]);
 
   useEffect(() => {
     const handleScroll = () => setVisible(window.scrollY > scrollThreshold);
@@ -82,17 +109,18 @@ export function MobileStickyBar({
         <div className="flex w-full items-center gap-2.5 px-4 py-3">
           <button
             type="button"
-            onClick={() => setWishlisted((prev) => !prev)}
+            onClick={handleWishlistToggle}
+            disabled={likeLoading}
             className={[
               'flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] border-[1.5px] transition-all',
-              wishlisted
+              liked
                 ? 'border-(--color-promo) bg-(--color-promo)/10'
                 : 'border-(--color-border) hover:bg-(--color-quartz-mist)',
             ].join(' ')}
-            aria-label={wishlisted ? dict.wishlist_remove : dict.wishlist_add}
+            aria-label={liked ? dict.wishlist_remove : dict.wishlist_add}
           >
             <Heart
-              className={`h-5 w-5 text-(--color-promo) ${wishlisted ? 'fill-(--color-promo)' : ''}`}
+              className={`h-5 w-5 text-(--color-promo) ${liked ? 'fill-(--color-promo)' : ''}`}
               aria-hidden="true"
             />
           </button>
@@ -136,9 +164,9 @@ export function MobileStickyBar({
           </div>
           <div className="min-w-0">
             <p className="truncate text-xs font-600 text-(--color-stone)">{productName}</p>
-            <p className="text-xs font-700 text-(--color-cta)">
-              {isFree ? 'Invaluable Peace of Mind' : price.formatted}
-            </p>
+            {!isFree && (
+              <p className="text-xs font-700 text-(--color-cta)">{price.formatted}</p>
+            )}
           </div>
         </div>
         <a
@@ -162,17 +190,18 @@ export function MobileStickyBar({
         {/* Wishlist icon */}
         <button
           type="button"
-          onClick={() => setWishlisted((prev) => !prev)}
+          onClick={handleWishlistToggle}
+            disabled={likeLoading}
           className={[
             'flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] border-[1.5px] transition-all',
-            wishlisted
+            liked
               ? 'border-(--color-promo) bg-(--color-promo)/10'
               : 'border-(--color-border) hover:bg-(--color-quartz-mist)',
           ].join(' ')}
-          aria-label={wishlisted ? dict.wishlist_remove : dict.wishlist_add}
+          aria-label={liked ? dict.wishlist_remove : dict.wishlist_add}
         >
           <Heart
-            className={`h-5 w-5 text-(--color-promo) ${wishlisted ? 'fill-(--color-promo)' : ''}`}
+            className={`h-5 w-5 text-(--color-promo) ${liked ? 'fill-(--color-promo)' : ''}`}
             aria-hidden="true"
           />
         </button>

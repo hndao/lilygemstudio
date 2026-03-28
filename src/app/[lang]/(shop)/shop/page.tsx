@@ -12,6 +12,7 @@
  */
 
 import { Suspense } from 'react';
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getListings, getCategories } from '@/lib/api';
 import { getDictionary } from '@/lib/i18n';
@@ -70,6 +71,15 @@ export default async function ShopPage({ params, searchParams }: ShopPageProps) 
 
   return (
     <main className="mx-auto max-w-[1280px] px-4 py-8 md:px-6 md:py-10 lg:px-8">
+
+      {/* Breadcrumb */}
+      <nav aria-label="Breadcrumb" className="mb-4 text-sm text-(--color-muted)">
+        <ol className="flex items-center gap-1.5">
+          <li><Link href={`/${lang}`} className="hover:text-(--color-stone)">Home</Link></li>
+          <li aria-hidden="true">›</li>
+          <li className="font-500 text-(--color-stone)">Shop</li>
+        </ol>
+      </nav>
 
       {/* Page header */}
       <div className="mb-6 flex items-baseline justify-between">

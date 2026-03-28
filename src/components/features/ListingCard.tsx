@@ -10,10 +10,15 @@
  * For bundle listings (multiple products), the first product's page is canonical.
  */
 
+'use client';
+
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { ShoppingCart } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { StarRating } from '@/components/ui/StarRating';
+import { useCart } from '@/context/CartContext';
 import type { ListingCard as ListingCardType } from '@/types';
 
 interface ListingCardProps {
@@ -29,11 +34,21 @@ export function ListingCard({
 }: ListingCardProps) {
   const params = useParams();
   const lang = (params?.lang as string) || 'vi';
+  const { addItem } = useCart();
+  const [addBusy, setAddBusy] = useState(false);
 
   const href = listing.slug ? `/${lang}/shop/${listing.slug}` : '#';
-
   const image = listing.coverImage;
   const isOutOfStock = listing.quantity === 0;
+
+  const handleQuickAdd = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isOutOfStock || addBusy) return;
+    setAddBusy(true);
+    try { await addItem(listing.id, 1); }
+    catch { /* silent — CartContext shows error state */ }
+    finally { setAddBusy(false); }
+  };
   const isLowStock = listing.quantity != null && listing.quantity > 0 && listing.quantity <= 10;
 
   // VN site shows VND price first; USD price as secondary
@@ -67,6 +82,26 @@ export function ListingCard({
           <div className="flex h-full items-center justify-center bg-(--color-sand-light) text-(--color-sand-dark) text-sm">
             No image
           </div>
+        )}
+
+        {/* Quick-add button — hover on desktop, always visible on mobile */}
+        {!isOutOfStock && (
+          <button
+            type="button"
+            onClick={handleQuickAdd}
+            disabled={addBusy}
+            className={[
+              'absolute bottom-2 left-2 right-2 flex items-center justify-center gap-1.5',
+              'rounded-[10px] bg-(--color-cta)/90 py-2 text-[12px] font-600 text-white backdrop-blur-sm',
+              'transition-all duration-200 disabled:opacity-60',
+              'opacity-100 translate-y-0',
+              'md:opacity-0 md:translate-y-1 md:group-hover:opacity-100 md:group-hover:translate-y-0',
+            ].join(' ')}
+            aria-label={`Thêm ${listing.resolvedTitle} vào giỏ`}
+          >
+            <ShoppingCart className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            {addBusy ? '...' : 'Thêm vào giỏ'}
+          </button>
         )}
 
         {/* Badge overlay */}

@@ -181,14 +181,14 @@ function CouponRow() {
       <div className="flex items-center gap-2 rounded-[10px] bg-green-50 px-3 py-2 text-[13px]">
         <Tag className="h-4 w-4 text-green-600" />
         <span className="flex-1 font-500 text-green-700">
-          {cart.coupon.code} — {formatVnd(cart.coupon.discountCents)} off
+          {cart.coupon.code} — {formatVnd(cart.coupon.discountCents)} giảm
         </span>
         <button
           type="button"
           onClick={() => removeCouponCode()}
           className="text-[12px] text-green-600 underline"
         >
-          Remove
+          Xoá
         </button>
       </div>
     );
@@ -202,7 +202,7 @@ function CouponRow() {
         className="flex items-center gap-1.5 text-[13px] text-(--color-cta) font-500"
       >
         <Tag className="h-4 w-4" />
-        Have a coupon?
+        Bạn có mã giảm giá?
       </button>
       {expanded && (
         <div className="mt-2 flex gap-2">
@@ -210,7 +210,7 @@ function CouponRow() {
             type="text"
             value={code}
             onChange={(e) => setCode(e.target.value)}
-            placeholder="Coupon code"
+            placeholder="Nhập mã giảm giá"
             className="flex-1 rounded-[8px] border border-(--color-border) px-3 py-2 text-[13px] outline-none focus:border-(--color-cta)"
             onKeyDown={(e) => e.key === 'Enter' && handleApply()}
           />
@@ -220,7 +220,7 @@ function CouponRow() {
             disabled={busy}
             className="rounded-[8px] bg-(--color-cta) px-4 py-2 text-[13px] font-600 text-white disabled:opacity-50"
           >
-            Apply
+            Áp dụng
           </button>
         </div>
       )}

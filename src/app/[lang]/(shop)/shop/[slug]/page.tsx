@@ -19,7 +19,6 @@ import { getDictionary } from '@/lib/i18n';
 import { productJsonLd, breadcrumbJsonLd, generateProductMeta } from '@/lib/seo';
 import { ProductImageGallery } from '@/components/features/ProductImageGallery';
 import { ProductColorProvider } from '@/context/ProductColorContext';
-import { ProductTabs } from '@/components/features/ProductTabs';
 import { ProductGrid } from '@/components/features/ProductGrid';
 import { ListingGrid } from '@/components/features/ListingGrid';
 import { AffiliateCTA } from '@/components/features/AffiliateCTA';
@@ -187,11 +186,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
           <h1 className="text-2xl leading-tight md:text-3xl lg:text-4xl">{displayName}</h1>
           <p className="text-[13px] font-500 text-(--color-cta)">{displayTagline}</p>
 
-          {(listingPrice ?? product.price).amount === 0 ? (
-            <p className="font-heading text-lg font-700 text-(--color-cta)">
-              Invaluable Peace of Mind
-            </p>
-          ) : (
+          {(listingPrice ?? product.price).amount > 0 && (
             <PriceLine
               price={listingPrice ?? product.price}
               compareAtPrice={listingCompareAtPrice ?? product.compareAtPrice}
@@ -213,6 +208,19 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
               dict={dict.like}
             />
           </div>
+
+          {/* Social proof micro-signal */}
+          {((product.likesCount ?? 0) > 0 || product.reviewSummary.totalCount > 0) && (
+            <p className="text-[12px] text-(--color-muted)">
+              {(product.likesCount ?? 0) > 0 && (
+                <span>{product.likesCount} {lang === 'vi' ? 'người yêu thích' : 'people loved this'}</span>
+              )}
+              {(product.likesCount ?? 0) > 0 && product.reviewSummary.totalCount > 0 && <span> · </span>}
+              {product.reviewSummary.totalCount > 0 && (
+                <span>{product.reviewSummary.totalCount} {lang === 'vi' ? 'đánh giá' : 'reviews'}</span>
+              )}
+            </p>
+          )}
 
           {product.verdict && <ExpertVerdict verdict={product.verdict} />}
 
@@ -279,7 +287,17 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         <BlocksRenderer blocks={product.blocks} className="mt-10" />
       )}
 
-      <ProductTabs description={displayDescription ?? ''} />
+      {displayDescription && (
+        <div className="mt-12">
+          <h2 className="mb-4 font-heading text-base font-700 text-(--color-stone)">
+            {lang === 'vi' ? 'Mô tả sản phẩm' : 'Description'}
+          </h2>
+          <div
+            className="prose max-w-none text-sm leading-relaxed text-(--color-muted)"
+            dangerouslySetInnerHTML={{ __html: displayDescription }}
+          />
+        </div>
+      )}
 
       <blockquote className="mt-16 border-l-2 border-(--color-sand-dark) pl-5 text-sm italic leading-relaxed text-(--color-muted)">
         Every piece featured on LilyGem Studio is carefully crafted and verified for quality.
