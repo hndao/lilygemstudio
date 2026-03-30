@@ -19,6 +19,7 @@ import { ShoppingCart } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { StarRating } from '@/components/ui/StarRating';
 import { useCart } from '@/context/CartContext';
+import { useDict } from '@/context/DictionaryContext';
 import type { ListingCard as ListingCardType } from '@/types';
 
 interface ListingCardProps {
@@ -33,7 +34,8 @@ export function ListingCard({
   sizes = '(max-width: 767px) 50vw, (max-width: 1279px) 33vw, 25vw',
 }: ListingCardProps) {
   const params = useParams();
-  const lang = (params?.lang as string) || 'vi';
+  const lang = (params?.lang as string) || 'en';
+  const dict = useDict();
   const { addItem } = useCart();
   const [addBusy, setAddBusy] = useState(false);
 
@@ -97,27 +99,27 @@ export function ListingCard({
               'opacity-100 translate-y-0',
               'md:opacity-0 md:translate-y-1 md:group-hover:opacity-100 md:group-hover:translate-y-0',
             ].join(' ')}
-            aria-label={`Thêm ${listing.resolvedTitle} vào giỏ`}
+            aria-label={dict.catalog.add_to_cart_aria.replace('{name}', listing.resolvedTitle)}
           >
             <ShoppingCart className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-            {addBusy ? '...' : 'Thêm vào giỏ'}
+            {addBusy ? '...' : dict.catalog.add_to_cart}
           </button>
         )}
 
         {/* Badge overlay */}
         {isOutOfStock && (
           <div className="absolute left-2 top-2 rounded-full bg-(--color-stone) px-2 py-0.5 text-[11px] font-600 text-white">
-            Hết hàng
+            {dict.catalog.out_of_stock}
           </div>
         )}
         {!isOutOfStock && isOnSale && (
           <div className="absolute left-2 top-2 rounded-full bg-(--color-promo) px-2 py-0.5 text-[11px] font-600 text-white">
-            Giảm giá
+            {dict.catalog.on_sale}
           </div>
         )}
         {!isOutOfStock && !isOnSale && isLowStock && (
           <div className="absolute left-2 top-2 rounded-full bg-(--color-cta) px-2 py-0.5 text-[11px] font-600 text-white">
-            Còn {listing.quantity}
+            {dict.catalog.low_stock.replace('{n}', String(listing.quantity))}
           </div>
         )}
       </Link>

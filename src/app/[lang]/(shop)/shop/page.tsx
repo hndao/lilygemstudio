@@ -75,22 +75,24 @@ export default async function ShopPage({ params, searchParams }: ShopPageProps) 
       {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="mb-4 text-sm text-(--color-muted)">
         <ol className="flex items-center gap-1.5">
-          <li><Link href={`/${lang}`} className="hover:text-(--color-stone)">Home</Link></li>
+          <li><Link href={`/${lang}`} className="hover:text-(--color-stone)">{dict.nav.home}</Link></li>
           <li aria-hidden="true">›</li>
-          <li className="font-500 text-(--color-stone)">Shop</li>
+          <li className="font-500 text-(--color-stone)">{dict.nav.shop}</li>
         </ol>
       </nav>
 
       {/* Page header */}
       <div className="mb-6 flex items-baseline justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-700 text-(--color-stone)">Cửa Hàng</h1>
+          <h1 className="text-2xl font-heading font-700 text-(--color-stone)">{dict.shop.title}</h1>
           {sp.q ? (
             <p className="mt-1 text-sm text-(--color-sand-dark)">
-              Kết quả cho &ldquo;{sp.q}&rdquo; — {meta.total} sản phẩm
+              {dict.shop.search_results.replace('{q}', sp.q).replace('{total}', String(meta.total))}
             </p>
           ) : (
-            <p className="mt-1 text-sm text-(--color-sand-dark)">{meta.total} sản phẩm</p>
+            <p className="mt-1 text-sm text-(--color-sand-dark)">
+              {dict.shop.product_count.replace('{total}', String(meta.total))}
+            </p>
           )}
         </div>
         {/* Sort — tablet+ only (mobile sort is inside filter drawer) */}
@@ -117,7 +119,7 @@ export default async function ShopPage({ params, searchParams }: ShopPageProps) 
               <CatalogSort />
             </Suspense>
             <Suspense>
-              <MobileFilterButton categories={categories} activeCount={activeFilterCount} dict={dict.catalog} />
+              <MobileFilterButton categories={categories} activeCount={activeFilterCount} />
             </Suspense>
           </div>
 
@@ -134,7 +136,7 @@ export default async function ShopPage({ params, searchParams }: ShopPageProps) 
             </>
           ) : (
             <div className="flex min-h-[300px] items-center justify-center text-(--color-sand-dark)">
-              Không tìm thấy sản phẩm.
+              {dict.shop.no_products}
             </div>
           )}
         </div>

@@ -154,7 +154,7 @@ export function Header({ dict, lang }: HeaderProps) {
                 type="button"
                 onClick={openCart}
                 className="relative flex h-10 w-10 items-center justify-center rounded-md text-(--color-sand) transition-colors hover:bg-white/10 hover:text-(--color-cream)"
-                aria-label="Giỏ hàng"
+                aria-label={dict.header.cart_aria}
               >
                 <ShoppingBag className="h-5 w-5" />
                 {itemCount > 0 && (
@@ -254,7 +254,7 @@ export function Header({ dict, lang }: HeaderProps) {
               type="button"
               onClick={openCart}
               className="xl:hidden relative flex h-10 w-10 items-center justify-center rounded-md text-(--color-sand) transition-colors hover:bg-white/10 hover:text-(--color-cream)"
-              aria-label="Giỏ hàng"
+              aria-label={dict.header.cart_aria}
             >
               <ShoppingBag className="h-5 w-5" />
               {itemCount > 0 && (

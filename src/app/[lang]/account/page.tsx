@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Package, MapPin, User, ChevronRight } from 'lucide-react';
+import { Package, MapPin, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useDict } from '@/context/DictionaryContext';
 import { getOrders } from '@/lib/commerceApi';
 import type { Order } from '@/types';
 
@@ -17,19 +18,13 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled:  'bg-red-50 text-red-600 border border-red-200',
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  pending:    'Chờ xác nhận',
-  confirmed:  'Đã xác nhận',
-  processing: 'Đang xử lý',
-  shipped:    'Đã gửi hàng',
-  delivered:  'Đã giao hàng',
-  cancelled:  'Đã hủy',
-};
-
 export default function AccountPage() {
   const router = useRouter();
   const pathname = usePathname();
-  const lang = pathname.split('/')[1] ?? 'vi';
+  const lang = pathname.split('/')[1] ?? 'en';
+  const dict = useDict();
+  const a = dict.account;
+  const oc = dict.order_confirmation;
 
   const { customer, isLoading, logout } = useAuth();
 
@@ -51,6 +46,15 @@ export default function AccountPage() {
 
   if (isLoading || !customer) return null;
 
+  const statusLabels: Record<string, string> = {
+    pending:    oc.status_pending,
+    confirmed:  oc.status_confirmed,
+    processing: oc.status_processing,
+    shipped:    oc.status_shipped,
+    delivered:  oc.status_delivered,
+    cancelled:  oc.status_cancelled,
+  };
+
   return (
     <div className="space-y-6">
       {/* Welcome banner */}
@@ -62,7 +66,7 @@ export default function AccountPage() {
             </div>
             <div>
               <p className="font-heading text-[18px] font-700 text-(--color-stone)">
-                Xin chào, {customer.name}
+                {a.welcome.replace('{name}', customer.name)}
               </p>
               <p className="text-[13px] text-(--color-sand-dark) mt-0.5">{customer.email}</p>
             </div>
@@ -71,7 +75,7 @@ export default function AccountPage() {
             onClick={logout}
             className="shrink-0 text-[12px] text-(--color-sand-dark) hover:text-red-500 transition-colors border border-(--color-border) rounded-[8px] px-3 py-1.5 hover:border-red-200 hover:bg-red-50"
           >
-            Đăng xuất
+            {dict.header.sign_out}
           </button>
         </div>
       </div>
@@ -86,8 +90,8 @@ export default function AccountPage() {
             <Package className="h-5 w-5" />
           </div>
           <div>
-            <p className="font-heading text-[14px] font-700 text-(--color-stone)">Đơn hàng</p>
-            <p className="text-[12px] text-(--color-sand-dark) mt-0.5">Theo dõi đơn hàng</p>
+            <p className="font-heading text-[14px] font-700 text-(--color-stone)">{a.orders}</p>
+            <p className="text-[12px] text-(--color-sand-dark) mt-0.5">{a.orders_hint}</p>
           </div>
         </Link>
 
@@ -99,8 +103,8 @@ export default function AccountPage() {
             <MapPin className="h-5 w-5" />
           </div>
           <div>
-            <p className="font-heading text-[14px] font-700 text-(--color-stone)">Địa chỉ</p>
-            <p className="text-[12px] text-(--color-sand-dark) mt-0.5">Quản lý địa chỉ giao hàng</p>
+            <p className="font-heading text-[14px] font-700 text-(--color-stone)">{a.addresses}</p>
+            <p className="text-[12px] text-(--color-sand-dark) mt-0.5">{a.addresses_hint}</p>
           </div>
         </Link>
       </div>
@@ -109,13 +113,13 @@ export default function AccountPage() {
       <section>
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-heading text-[15px] font-700 text-(--color-stone)">
-            Đơn hàng gần đây
+            {a.recent_orders}
           </h2>
           <Link
             href={`/${lang}/account/orders`}
             className="text-[12px] text-(--color-cta) hover:text-(--color-cta-hover) transition-colors"
           >
-            Xem tất cả →
+            {a.view_all}
           </Link>
         </div>
 
@@ -137,12 +141,12 @@ export default function AccountPage() {
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-(--color-quartz-mist) mx-auto mb-3">
                 <Package className="h-6 w-6 text-(--color-cta)" strokeWidth={1.5} />
               </div>
-              <p className="text-[13px] text-(--color-sand-dark) mb-4">Chưa có đơn hàng nào</p>
+              <p className="text-[13px] text-(--color-sand-dark) mb-4">{a.no_orders}</p>
               <Link
                 href={`/${lang}/shop`}
                 className="inline-flex items-center gap-1 rounded-[10px] bg-(--color-cta) px-5 py-2 text-[13px] font-600 text-white hover:bg-(--color-cta-hover) transition-colors"
               >
-                Mua sắm ngay <ChevronRight className="h-3.5 w-3.5" />
+                {dict.home.shop_now} <ChevronRight className="h-3.5 w-3.5" />
               </Link>
             </div>
           ) : (
@@ -153,10 +157,12 @@ export default function AccountPage() {
                     <span className="text-[14px] font-700 text-(--color-stone)">#{order.orderNumber}</span>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-600 ${STATUS_COLORS[order.status] ?? 'bg-gray-50 text-gray-600 border border-gray-200'}`}>
-                        {STATUS_LABELS[order.status] ?? order.status}
+                        {statusLabels[order.status] ?? order.status}
                       </span>
                       <span className="text-[11px] text-(--color-sand-dark)">
-                        {new Date(order.createdAt).toLocaleDateString('vi-VN')}
+                        {new Date(order.createdAt).toLocaleDateString(
+                          lang === 'vi' ? 'vi-VN' : 'en-US'
+                        )}
                       </span>
                     </div>
                   </div>
@@ -166,7 +172,7 @@ export default function AccountPage() {
                       href={`/${lang}/account/orders/${order.orderNumber}`}
                       className="flex h-8 items-center gap-1 rounded-[8px] border border-(--color-border) px-3 text-[12px] font-600 text-(--color-stone) hover:border-(--color-cta) hover:text-(--color-cta) transition-colors"
                     >
-                      Xem <ChevronRight className="h-3.5 w-3.5" />
+                      {a.view_details} <ChevronRight className="h-3.5 w-3.5" />
                     </Link>
                   </div>
                 </li>

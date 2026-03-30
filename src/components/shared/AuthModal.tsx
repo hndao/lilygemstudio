@@ -4,6 +4,9 @@ import { useState, useEffect, useRef } from 'react';
 import Script from 'next/script';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePathname } from 'next/navigation';
+import en from '@/dictionaries/en.json';
+import vi from '@/dictionaries/vi.json';
 
 // Extend window with the Turnstile API
 declare global {
@@ -44,6 +47,12 @@ export function AuthModal({ isOpen, onClose, login, register, loginWithSocial }:
 
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '';
 
+  // Derive dict from URL lang segment
+  const pathname = usePathname();
+  const lang = pathname.split('/')[1] ?? 'en';
+  const dict = lang === 'vi' ? vi : en;
+  const a = dict.auth;
+
   // Lock body scroll when open
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : '';
@@ -74,7 +83,7 @@ export function AuthModal({ isOpen, onClose, login, register, loginWithSocial }:
       'expired-callback': () => setTurnstileToken(''),
       'error-callback': () => setTurnstileToken(''),
       theme: 'light',
-      language: 'vi',
+      language: lang === 'vi' ? 'vi' : 'en',
     });
 
     return () => {
@@ -83,7 +92,7 @@ export function AuthModal({ isOpen, onClose, login, register, loginWithSocial }:
         widgetIdRef.current = undefined;
       }
     };
-  }, [tab, turnstileReady, siteKey]);
+  }, [tab, turnstileReady, siteKey, lang]);
 
   // Reset token when switching tabs
   useEffect(() => { setTurnstileToken(''); }, [tab]);
@@ -99,7 +108,7 @@ export function AuthModal({ isOpen, onClose, login, register, loginWithSocial }:
     setError(null);
 
     if (tab === 'signup' && siteKey && !turnstileToken) {
-      setError('Vui lòng hoàn thành xác minh bảo mật bên dưới.');
+      setError(a.complete_captcha);
       return;
     }
 
@@ -158,7 +167,7 @@ export function AuthModal({ isOpen, onClose, login, register, loginWithSocial }:
             key="auth-panel"
             role="dialog"
             aria-modal="true"
-            aria-label={tab === 'signin' ? 'Sign In' : 'Create Account'}
+            aria-label={tab === 'signin' ? a.sign_in : a.sign_up}
             className={[
               'fixed z-[301] w-full bg-(--color-surface) shadow-2xl overflow-y-auto',
               // Mobile: bottom sheet
@@ -187,17 +196,15 @@ export function AuthModal({ isOpen, onClose, login, register, loginWithSocial }:
                     🌸 LilyGem Studio
                   </p>
                   <h2 className="font-heading text-xl font-700 text-(--color-stone)">
-                    {tab === 'signin' ? 'Chào mừng trở lại' : 'Tạo tài khoản'}
+                    {tab === 'signin' ? a.welcome_back : a.create_account}
                   </h2>
                   <p className="mt-0.5 text-sm text-(--color-muted)">
-                    {tab === 'signin'
-                      ? 'Đăng nhập để tiếp tục mua sắm'
-                      : 'Tham gia cộng đồng LilyGem'}
+                    {tab === 'signin' ? a.sign_in_to_continue : a.join_community}
                   </p>
                 </div>
                 <button
                   onClick={onClose}
-                  aria-label="Đóng"
+                  aria-label={a.close}
                   className="ml-4 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-(--color-muted) transition-colors hover:bg-(--color-border) hover:text-(--color-stone)"
                 >
                   <X className="h-4 w-4" />
@@ -218,7 +225,7 @@ export function AuthModal({ isOpen, onClose, login, register, loginWithSocial }:
                         : 'text-(--color-muted) hover:text-(--color-stone)',
                     ].join(' ')}
                   >
-                    {t === 'signin' ? 'Đăng nhập' : 'Tạo tài khoản'}
+                    {t === 'signin' ? a.sign_in : a.sign_up}
                   </button>
                 ))}
               </div>
@@ -236,7 +243,7 @@ export function AuthModal({ isOpen, onClose, login, register, loginWithSocial }:
                     <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                   </svg>
-                  Tiếp tục với Google
+                  {a.continue_with_google}
                 </button>
 
                 <button
@@ -247,14 +254,14 @@ export function AuthModal({ isOpen, onClose, login, register, loginWithSocial }:
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2" aria-hidden="true">
                     <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
                   </svg>
-                  Tiếp tục với Facebook
+                  {a.continue_with_facebook}
                 </button>
               </div>
 
               {/* ── Divider ────────────────────────────────────────────── */}
               <div className="mb-5 flex items-center gap-3">
                 <div className="h-px flex-1 bg-(--color-border)" />
-                <span className="text-xs text-(--color-muted)">hoặc</span>
+                <span className="text-xs text-(--color-muted)">{a.or}</span>
                 <div className="h-px flex-1 bg-(--color-border)" />
               </div>
 
@@ -262,34 +269,34 @@ export function AuthModal({ isOpen, onClose, login, register, loginWithSocial }:
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 {tab === 'signup' && (
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-600 text-(--color-stone)">Họ và tên</label>
+                    <label className="text-xs font-600 text-(--color-stone)">{a.full_name}</label>
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       required
                       autoComplete="name"
-                      placeholder="Lily Nguyễn"
+                      placeholder={a.full_name_placeholder}
                       className={INPUT_CLASS}
                     />
                   </div>
                 )}
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-600 text-(--color-stone)">Email</label>
+                  <label className="text-xs font-600 text-(--color-stone)">{a.email}</label>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     autoComplete="email"
-                    placeholder="ban@email.com"
+                    placeholder={a.email_placeholder}
                     className={INPUT_CLASS}
                   />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-600 text-(--color-stone)">Mật khẩu</label>
+                  <label className="text-xs font-600 text-(--color-stone)">{a.password}</label>
                   <input
                     type="password"
                     value={password}
@@ -304,7 +311,7 @@ export function AuthModal({ isOpen, onClose, login, register, loginWithSocial }:
 
                 {tab === 'signup' && (
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-600 text-(--color-stone)">Xác nhận mật khẩu</label>
+                    <label className="text-xs font-600 text-(--color-stone)">{a.confirm_password}</label>
                     <input
                       type="password"
                       value={confirm}
@@ -322,7 +329,7 @@ export function AuthModal({ isOpen, onClose, login, register, loginWithSocial }:
                   <div className="flex flex-col gap-1.5">
                     <div ref={turnstileContainerRef} />
                     {!turnstileReady && (
-                      <p className="text-xs text-(--color-muted)">Đang tải xác minh bảo mật…</p>
+                      <p className="text-xs text-(--color-muted)">{a.loading_captcha}</p>
                     )}
                   </div>
                 )}
@@ -341,19 +348,19 @@ export function AuthModal({ isOpen, onClose, login, register, loginWithSocial }:
                 >
                   {submitting
                     ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                    : tab === 'signin' ? 'Đăng nhập' : 'Tạo tài khoản'}
+                    : tab === 'signin' ? a.sign_in : a.sign_up}
                 </button>
               </form>
 
               {/* ── Switch tab link ─────────────────────────────────────── */}
               <p className="mt-4 text-center text-xs text-(--color-muted)">
-                {tab === 'signin' ? 'Chưa có tài khoản? ' : 'Đã có tài khoản? '}
+                {tab === 'signin' ? a.no_account + ' ' : a.already_have_account + ' '}
                 <button
                   type="button"
                   onClick={() => switchTab(tab === 'signin' ? 'signup' : 'signin')}
                   className="font-600 text-(--color-cta) hover:underline"
                 >
-                  {tab === 'signin' ? 'Tạo tài khoản' : 'Đăng nhập'}
+                  {tab === 'signin' ? a.sign_up : a.sign_in}
                 </button>
               </p>
             </div>

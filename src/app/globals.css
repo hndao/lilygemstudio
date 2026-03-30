@@ -59,6 +59,7 @@ h2[id] {
   --color-promo: #9E7B6B;         /* Rose Quartz — Sale / promo badge */
   --color-quartz-mist: #F0E6D6;   /* Quartz Mist — accent bg tint */
   --color-zalo: #0068FF;          /* Zalo brand blue */
+  --color-messenger: #0084FF;     /* Facebook Messenger brand blue */
   --color-agate-dark: #6B5A3F;    /* Agate Brown dark — active/pressed CTA */
 
   /* ─── Semantic Aliases ───────────────────────────────────────────── */

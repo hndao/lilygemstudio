@@ -14,16 +14,16 @@ import { useState } from 'react';
 import { X, SlidersHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CatalogFilters } from './CatalogFilters';
+import { useDict } from '@/context/DictionaryContext';
 import type { CategoryWithChildren } from '@/types';
-import type { Dictionary } from '@/lib/i18n';
 
 interface MobileFilterButtonProps {
   categories: CategoryWithChildren[];
   activeCount?: number;
-  dict?: Dictionary['catalog'];
 }
 
-export function MobileFilterButton({ categories, activeCount = 0, dict }: MobileFilterButtonProps) {
+export function MobileFilterButton({ categories, activeCount = 0 }: MobileFilterButtonProps) {
+  const dict = useDict();
   const [open, setOpen] = useState(false);
 
   return (
@@ -32,10 +32,10 @@ export function MobileFilterButton({ categories, activeCount = 0, dict }: Mobile
         type="button"
         onClick={() => setOpen(true)}
         className="flex items-center gap-1.5 rounded-md border border-(--color-border) px-3 py-1.5 text-sm font-500 text-(--color-stone)"
-        aria-label={activeCount > 0 ? `Bộ lọc (${activeCount} đang áp dụng)` : 'Bộ lọc'}
+        aria-label={activeCount > 0 ? dict.catalog.filters_aria.replace('{n}', String(activeCount)) : dict.catalog.filters_title}
       >
         <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
-        Lọc
+        {dict.catalog.filter_button}
         {activeCount > 0 && (
           <span className="flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-(--color-cta) px-1 text-[10px] font-700 text-white">
             {activeCount}
@@ -63,7 +63,7 @@ export function MobileFilterButton({ categories, activeCount = 0, dict }: Mobile
               key="filter-drawer"
               role="dialog"
               aria-modal="true"
-              aria-label="Bộ lọc sản phẩm"
+              aria-label={dict.catalog.filters_title}
               className="fixed bottom-0 left-0 right-0 z-[151] max-h-[85dvh] overflow-y-auto rounded-t-[20px] bg-(--color-surface) px-5 pt-4"
               style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}
               initial={{ y: '100%' }}
@@ -79,20 +79,20 @@ export function MobileFilterButton({ categories, activeCount = 0, dict }: Mobile
               {/* Header */}
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="font-heading text-sm font-700 uppercase tracking-widest text-(--color-stone)">
-                  Bộ lọc sản phẩm
+                  {dict.catalog.filters_title}
                 </h2>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
                   className="flex h-8 w-8 items-center justify-center rounded-full text-(--color-muted) transition-colors hover:bg-(--color-border)"
-                  aria-label="Đóng bộ lọc"
+                  aria-label={dict.catalog.close_filters}
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
               {/* Filter content — reuses desktop CatalogFilters unchanged */}
-              <CatalogFilters categories={categories} dict={dict} />
+              <CatalogFilters categories={categories} dict={dict.catalog} />
             </motion.div>
           </>
         )}

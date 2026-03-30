@@ -10,15 +10,18 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Package, MapPin, User, ChevronRight } from 'lucide-react';
 import { AuthContext } from '@/context/AuthContext';
-
-const NAV_ITEMS = [
-  { href: '/account', label: 'Tổng quan', icon: User, exact: true },
-  { href: '/account/orders', label: 'Đơn hàng', icon: Package, exact: false },
-  { href: '/account/addresses', label: 'Địa chỉ', icon: MapPin, exact: false },
-];
+import { useDict } from '@/context/DictionaryContext';
 
 function AccountSidebar({ lang }: { lang: string }) {
   const pathname = usePathname();
+  const dict = useDict();
+  const a = dict.account;
+  const h = dict.header;
+  const NAV_ITEMS = [
+    { href: '/account', label: a.profile, icon: User, exact: true },
+    { href: '/account/orders', label: a.orders, icon: Package, exact: false },
+    { href: '/account/addresses', label: a.addresses, icon: MapPin, exact: false },
+  ];
   // Use context directly (not useAuth) — avoids throwing during SSR/hydration
   const auth = useContext(AuthContext);
   const customer = auth?.customer ?? null;
@@ -71,7 +74,7 @@ function AccountSidebar({ lang }: { lang: string }) {
             onClick={() => { void logout(); }}
             className="w-full text-left text-[12px] text-(--color-sand-dark) hover:text-red-500 transition-colors px-3 py-1.5 rounded-[8px] hover:bg-red-50"
           >
-            Đăng xuất
+            {h.sign_out}
           </button>
         </div>
       )}
@@ -81,7 +84,7 @@ function AccountSidebar({ lang }: { lang: string }) {
 
 export default function AccountLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const lang = pathname.split('/')[1] ?? 'vi';
+  const lang = pathname.split('/')[1] ?? 'en';
 
   return (
     <div className="min-h-[calc(100vh-64px)] bg-(--color-background)">

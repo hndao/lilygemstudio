@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { X, ShoppingBag, Minus, Plus, Trash2, Tag, ChevronRight, Lock } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useDict } from '@/context/DictionaryContext';
 import type { CartItem } from '@/types';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -39,6 +40,7 @@ function formatUsd(cents: number): string {
 // ── Line item ──────────────────────────────────────────────────────────────────
 
 function CartLineItem({ item, isVn }: { item: CartItem; isVn: boolean }) {
+  const dict = useDict();
   const { updateItem, removeItem } = useCart();
   const [busy, setBusy] = useState(false);
 
@@ -92,7 +94,7 @@ function CartLineItem({ item, isVn }: { item: CartItem; isVn: boolean }) {
           </p>
           {item.outOfStock && (
             <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-700 text-red-600">
-              Hết hàng
+              {dict.cart.out_of_stock}
             </span>
           )}
         </div>
@@ -115,7 +117,7 @@ function CartLineItem({ item, isVn }: { item: CartItem; isVn: boolean }) {
               onClick={() => handleQty(-1)}
               disabled={busy || item.quantity <= 1}
               className="flex h-8 w-8 items-center justify-center text-(--color-stone-light) hover:bg-(--color-quartz-mist) disabled:opacity-40"
-              aria-label="Decrease"
+              aria-label={dict.cart.remove_item}
             >
               <Minus className="h-3.5 w-3.5" />
             </button>
@@ -127,7 +129,7 @@ function CartLineItem({ item, isVn }: { item: CartItem; isVn: boolean }) {
               onClick={() => handleQty(1)}
               disabled={busy}
               className="flex h-8 w-8 items-center justify-center text-(--color-stone-light) hover:bg-(--color-quartz-mist) disabled:opacity-40"
-              aria-label="Increase"
+              aria-label={dict.cart.item_count.replace('{n}', '+')}
             >
               <Plus className="h-3.5 w-3.5" />
             </button>
@@ -142,7 +144,7 @@ function CartLineItem({ item, isVn }: { item: CartItem; isVn: boolean }) {
             onClick={handleRemove}
             disabled={busy}
             className="flex h-8 w-8 items-center justify-center rounded-full text-(--color-sand-dark) hover:bg-red-50 hover:text-red-500 disabled:opacity-40"
-            aria-label="Remove"
+            aria-label={dict.cart.remove_item}
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -154,7 +156,8 @@ function CartLineItem({ item, isVn }: { item: CartItem; isVn: boolean }) {
 
 // ── Coupon row ─────────────────────────────────────────────────────────────────
 
-function CouponRow() {
+function CouponRow({ isVn }: { isVn: boolean }) {
+  const dict = useDict();
   const { cart, applyCouponCode, removeCouponCode } = useCart();
   const [expanded, setExpanded] = useState(false);
   const [code, setCode]         = useState('');
@@ -181,14 +184,14 @@ function CouponRow() {
       <div className="flex items-center gap-2 rounded-[10px] bg-green-50 px-3 py-2 text-[13px]">
         <Tag className="h-4 w-4 text-green-600" />
         <span className="flex-1 font-500 text-green-700">
-          {cart.coupon.code} — {formatVnd(cart.coupon.discountCents)} giảm
+          {dict.cart.coupon_applied.replace('{code}', cart.coupon.code)}
         </span>
         <button
           type="button"
           onClick={() => removeCouponCode()}
           className="text-[12px] text-green-600 underline"
         >
-          Xoá
+          {dict.cart.coupon_remove}
         </button>
       </div>
     );
@@ -202,7 +205,7 @@ function CouponRow() {
         className="flex items-center gap-1.5 text-[13px] text-(--color-cta) font-500"
       >
         <Tag className="h-4 w-4" />
-        Bạn có mã giảm giá?
+        {dict.cart.coupon_question}
       </button>
       {expanded && (
         <div className="mt-2 flex gap-2">
@@ -210,7 +213,7 @@ function CouponRow() {
             type="text"
             value={code}
             onChange={(e) => setCode(e.target.value)}
-            placeholder="Nhập mã giảm giá"
+            placeholder={dict.cart.coupon_placeholder}
             className="flex-1 rounded-[8px] border border-(--color-border) px-3 py-2 text-[13px] outline-none focus:border-(--color-cta)"
             onKeyDown={(e) => e.key === 'Enter' && handleApply()}
           />
@@ -220,7 +223,7 @@ function CouponRow() {
             disabled={busy}
             className="rounded-[8px] bg-(--color-cta) px-4 py-2 text-[13px] font-600 text-white disabled:opacity-50"
           >
-            Áp dụng
+            {dict.cart.coupon_apply}
           </button>
         </div>
       )}
@@ -232,12 +235,17 @@ function CouponRow() {
 // ── Main CartDrawer ────────────────────────────────────────────────────────────
 
 export function CartDrawer() {
+  const dict = useDict();
   const { cart, isOpen, closeCart, itemCount } = useCart();
   const pathname = usePathname();
-  // Detect locale from URL segment: /vi/... → isVn = true
   const lang = pathname.split('/')[1] ?? 'en';
-  const isVn = lang === 'vi';
   const hasOutOfStock = cart?.items.some((i) => i.outOfStock) ?? false;
+
+  // Derive isVn from NEXT_COUNTRY cookie (set by middleware via Cloudflare/Vercel geo)
+  const [isVn, setIsVn] = useState(false);
+  useEffect(() => {
+    setIsVn(document.documentElement.classList.contains('country-vn'));
+  }, []);
 
   // Lock body scroll when open
   useEffect(() => {
@@ -280,7 +288,7 @@ export function CartDrawer() {
             ].join(' ')}
             role="dialog"
             aria-modal="true"
-            aria-label="Shopping cart"
+            aria-label={dict.cart.title}
           >
             {/* Mobile drag handle */}
             <div className="mx-auto mt-3 mb-0 h-1 w-10 shrink-0 rounded-full bg-(--color-border) md:hidden" />
@@ -290,7 +298,7 @@ export function CartDrawer() {
               <div className="flex items-center gap-2">
                 <ShoppingBag className="h-5 w-5 text-(--color-cta)" />
                 <span className="font-heading text-[16px] font-700 text-(--color-stone)">
-                  Giỏ hàng
+                  {dict.cart.title}
                 </span>
                 {itemCount > 0 && (
                   <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-(--color-cta) px-1.5 text-[11px] font-700 text-white">
@@ -302,7 +310,7 @@ export function CartDrawer() {
                 type="button"
                 onClick={closeCart}
                 className="flex h-9 w-9 items-center justify-center rounded-full text-(--color-stone-light) hover:bg-(--color-quartz-mist)"
-                aria-label="Đóng"
+                aria-label={dict.cart.close}
               >
                 <X className="h-5 w-5" />
               </button>
@@ -317,17 +325,17 @@ export function CartDrawer() {
                     <ShoppingBag className="h-10 w-10 text-(--color-sand-dark)" />
                   </div>
                   <p className="font-heading text-[16px] font-700 text-(--color-stone) mb-1">
-                    Giỏ hàng trống
+                    {dict.cart.empty}
                   </p>
                   <p className="text-[13px] text-(--color-sand-dark) mb-6">
-                    Hãy chọn sản phẩm bạn yêu thích
+                    {dict.cart.empty_sub}
                   </p>
                   <Link
-                    href="/vi/shop"
+                    href={`/${lang}/shop`}
                     onClick={closeCart}
                     className="inline-flex items-center gap-1.5 rounded-[10px] bg-(--color-cta) px-5 py-2.5 text-[14px] font-600 text-white"
                   >
-                    Xem sản phẩm <ChevronRight className="h-4 w-4" />
+                    {dict.cart.browse_products} <ChevronRight className="h-4 w-4" />
                   </Link>
                 </div>
               ) : (
@@ -344,33 +352,33 @@ export function CartDrawer() {
               <div className="shrink-0 border-t border-(--color-border) px-5 pt-4 pb-[max(20px,env(safe-area-inset-bottom))]">
                 {/* Coupon */}
                 <div className="mb-3">
-                  <CouponRow />
+                  <CouponRow isVn={isVn} />
                 </div>
 
                 {/* Totals */}
                 <div className="mb-4 space-y-1.5 text-[13px]">
                   <div className="flex justify-between text-(--color-stone-light)">
-                    <span>Tạm tính</span>
+                    <span>{dict.cart.subtotal}</span>
                     <span className="font-600 text-(--color-stone)">{subtotalFormatted}</span>
                   </div>
                   {cart.coupon && (
                     <div className="flex justify-between text-green-600">
-                      <span>Giảm giá ({cart.coupon.code})</span>
+                      <span>{dict.cart.discount.replace('{code}', cart.coupon.code)}</span>
                       <span className="font-600">
                         −{isVn ? formatVnd(cart.coupon.discountCents) : formatUsd(cart.coupon.discountCents)}
                       </span>
                     </div>
                   )}
                   <div className="flex justify-between text-[11px] text-(--color-sand-dark)">
-                    <span>Phí vận chuyển</span>
-                    <span>Tính khi thanh toán</span>
+                    <span>{dict.cart.shipping_fee}</span>
+                    <span>{dict.cart.shipping_calculated}</span>
                   </div>
                 </div>
 
                 {/* OOS warning */}
                 {hasOutOfStock && (
                   <div className="mb-3 rounded-[10px] bg-red-50 border border-red-200 px-3 py-2.5 text-[12px] text-red-600">
-                    Một số sản phẩm đã hết hàng. Vui lòng xoá chúng trước khi thanh toán.
+                    {dict.cart.oos_warning}
                   </div>
                 )}
 
@@ -378,7 +386,7 @@ export function CartDrawer() {
                 {hasOutOfStock ? (
                   <div className="flex h-12 w-full cursor-not-allowed items-center justify-center gap-2 rounded-[12px] bg-(--color-border) text-[15px] font-700 text-(--color-sand-dark)">
                     <Lock className="h-4 w-4" />
-                    Thanh toán an toàn
+                    {dict.cart.checkout}
                   </div>
                 ) : (
                   <Link
@@ -387,17 +395,17 @@ export function CartDrawer() {
                     className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-(--color-cta) text-[15px] font-700 text-white shadow-sm transition-all hover:bg-(--color-cta-hover) active:scale-[0.98]"
                   >
                     <Lock className="h-4 w-4" />
-                    Thanh toán an toàn
+                    {dict.cart.checkout}
                   </Link>
                 )}
 
                 {/* Trust badges */}
                 <div className="mt-3 flex items-center justify-center gap-3 text-[11px] text-(--color-sand-dark)">
-                  <span>🔒 SSL</span>
+                  <span>{dict.checkout.trust_ssl}</span>
                   <span>·</span>
-                  <span>📦 Đổi trả 7 ngày</span>
+                  <span>{dict.checkout.trust_returns}</span>
                   <span>·</span>
-                  <span>💳 Thanh toán an toàn</span>
+                  <span>{dict.checkout.trust_payment}</span>
                 </div>
               </div>
             )}

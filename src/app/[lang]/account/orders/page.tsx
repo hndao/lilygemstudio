@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Package, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useDict } from '@/context/DictionaryContext';
 import { getOrders } from '@/lib/commerceApi';
 import type { Order } from '@/types';
 
@@ -19,14 +20,7 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled:  'bg-red-50 text-red-600 border border-red-200',
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  pending:    'Chờ xác nhận',
-  confirmed:  'Đã xác nhận',
-  processing: 'Đang xử lý',
-  shipped:    'Đã gửi hàng',
-  delivered:  'Đã giao hàng',
-  cancelled:  'Đã hủy',
-};
+// STATUS_LABELS are now sourced from dict inside the component
 
 // ── Skeleton ─────────────────────────────────────────────────────────────────────
 
@@ -52,22 +46,24 @@ function OrdersSkeleton() {
 // ── Empty state ───────────────────────────────────────────────────────────────────
 
 function EmptyOrders({ lang }: { lang: string }) {
+  const dict = useDict();
+  const a = dict.account;
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-(--color-quartz-mist)">
         <Package className="h-9 w-9 text-(--color-cta)" strokeWidth={1.5} />
       </div>
       <h2 className="font-heading text-[17px] font-700 text-(--color-stone) mb-2">
-        Chưa có đơn hàng nào
+        {a.no_orders}
       </h2>
       <p className="text-[13px] text-(--color-sand-dark) mb-6 max-w-xs">
-        Hãy khám phá cửa hàng và đặt đơn hàng đầu tiên của bạn nhé!
+        {a.no_orders_hint}
       </p>
       <Link
         href={`/${lang}/shop`}
         className="inline-flex items-center gap-1.5 rounded-[12px] bg-(--color-cta) px-6 py-3 text-[14px] font-700 text-white hover:bg-(--color-cta-hover) transition-colors"
       >
-        Mua sắm ngay
+        {dict.home.shop_now}
         <ChevronRight className="h-4 w-4" />
       </Link>
     </div>
@@ -77,6 +73,16 @@ function EmptyOrders({ lang }: { lang: string }) {
 // ── Order row ─────────────────────────────────────────────────────────────────────
 
 function OrderRow({ order, lang }: { order: Order; lang: string }) {
+  const dict = useDict();
+  const oc = dict.order_confirmation;
+  const statusLabels: Record<string, string> = {
+    pending:    oc.status_pending,
+    confirmed:  oc.status_confirmed,
+    processing: oc.status_processing,
+    shipped:    oc.status_shipped,
+    delivered:  oc.status_delivered,
+    cancelled:  oc.status_cancelled,
+  };
   return (
     <li className="py-4 flex items-center justify-between gap-4 group">
       {/* Left */}
@@ -86,10 +92,13 @@ function OrderRow({ order, lang }: { order: Order; lang: string }) {
         </span>
         <div className="flex items-center gap-2 flex-wrap">
           <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-600 ${STATUS_COLORS[order.status] ?? 'bg-gray-50 text-gray-600 border border-gray-200'}`}>
-            {STATUS_LABELS[order.status] ?? order.status}
+            {statusLabels[order.status] ?? order.status}
           </span>
           <span className="text-[11px] text-(--color-sand-dark)">
-            {new Date(order.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+            {new Date(order.createdAt).toLocaleDateString(
+              lang === 'vi' ? 'vi-VN' : 'en-US',
+              { day: '2-digit', month: '2-digit', year: 'numeric' }
+            )}
           </span>
         </div>
       </div>
@@ -103,7 +112,7 @@ function OrderRow({ order, lang }: { order: Order; lang: string }) {
           href={`/${lang}/account/orders/${order.orderNumber}`}
           className="flex h-8 items-center gap-1 rounded-[8px] border border-(--color-border) px-3 text-[12px] font-600 text-(--color-stone) hover:border-(--color-cta) hover:text-(--color-cta) transition-colors"
         >
-          Xem
+          {dict.account.view_details}
           <ChevronRight className="h-3.5 w-3.5" />
         </Link>
       </div>
@@ -116,7 +125,8 @@ function OrderRow({ order, lang }: { order: Order; lang: string }) {
 export default function OrdersPage() {
   const router = useRouter();
   const pathname = usePathname();
-  const lang = pathname.split('/')[1] ?? 'vi';
+  const lang = pathname.split('/')[1] ?? 'en';
+  const dict = useDict();
 
   const { customer, isLoading } = useAuth();
 
@@ -155,11 +165,11 @@ export default function OrdersPage() {
       {/* Page header */}
       <div className="mb-6 flex items-center justify-between">
         <h1 className="font-heading text-[20px] font-700 text-(--color-stone)">
-          Đơn hàng của tôi
+          {dict.account.order_history}
         </h1>
         {orders.length > 0 && (
           <span className="text-[12px] text-(--color-sand-dark)">
-            {orders.length} đơn hàng
+            {dict.account.order_count.replace('{n}', String(orders.length))}
           </span>
         )}
       </div>

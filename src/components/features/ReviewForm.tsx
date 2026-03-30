@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { apiSubmitReview } from '@/lib/auth';
+import { apiSubmitReview, apiGetReviewEligibility } from '@/lib/auth';
+import type { ReviewEligibility } from '@/lib/auth';
 
 interface ReviewFormProps {
   productSlug: string;
@@ -17,11 +18,23 @@ interface ReviewFormProps {
     sign_in_to_review: string;
     review_min_chars: string;
     already_reviewed: string;
+    collapse: string;
+    eligible_days_remaining: string;
+    ineligible_already_reviewed: string;
+    ineligible_no_order: string;
+    ineligible_window_expired: string;
+    ineligible_no_listing: string;
+    checking_eligibility: string;
+    verified_purchase_badge: string;
+    submit_error: string;
   };
 }
 
 export function ReviewForm({ productSlug, dict }: ReviewFormProps) {
   const { customer, token, openAuthModal } = useAuth();
+
+  const [eligibility, setEligibility] = useState<ReviewEligibility | null>(null);
+  const [checkingEligibility, setCheckingEligibility] = useState(false);
 
   const [expanded, setExpanded] = useState(false);
   const [rating, setRating]   = useState(0);
@@ -33,16 +46,35 @@ export function ReviewForm({ productSlug, dict }: ReviewFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted]   = useState(false);
 
-  // Keep name in sync when customer logs in
   if (customer?.name && name === '') {
     setName(customer.name);
   }
+
+  // Check eligibility when customer is logged in
+  useEffect(() => {
+    if (!customer || !token) return;
+    setCheckingEligibility(true);
+    apiGetReviewEligibility(productSlug, token)
+      .then(setEligibility)
+      .catch(() => setEligibility(null))
+      .finally(() => setCheckingEligibility(false));
+  }, [customer, token, productSlug]);
+
+  const minChars = eligibility?.min_chars ?? 20;
+  const maxChars = eligibility?.max_chars ?? 2000;
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
     if (rating === 0) { setError('Please select a star rating.'); return; }
-    if (body.length < 10) { setError(dict.review_min_chars); return; }
+    if (body.length < minChars) {
+      setError(dict.review_min_chars.replace('10', String(minChars)));
+      return;
+    }
+    if (body.length > maxChars) {
+      setError(`Review must not exceed ${maxChars} characters.`);
+      return;
+    }
 
     setError(null);
     setSubmitting(true);
@@ -52,20 +84,21 @@ export function ReviewForm({ productSlug, dict }: ReviewFormProps) {
         title,
         body,
         author_name: name || undefined,
+        order_id: eligibility?.order_id ?? null,
+        listing_id: eligibility?.listing_id ?? null,
       });
       setSubmitted(true);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to submit review.';
-      // Detect "already reviewed" from API message
+      const msg = err instanceof Error ? err.message : '';
       if (msg.toLowerCase().includes('already')) {
         setError(dict.already_reviewed);
       } else {
-        setError(msg);
+        setError(dict.submit_error);
       }
     } finally {
       setSubmitting(false);
     }
-  }, [token, rating, body, title, name, productSlug, dict]);
+  }, [token, rating, body, title, name, productSlug, dict, eligibility, minChars, maxChars]);
 
   if (submitted) {
     return (
@@ -89,29 +122,74 @@ export function ReviewForm({ productSlug, dict }: ReviewFormProps) {
     );
   }
 
+  // Loading eligibility
+  if (checkingEligibility) {
+    return (
+      <div className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-5 text-center">
+        <p className="text-sm text-(--color-muted) animate-pulse">{dict.checking_eligibility}</p>
+      </div>
+    );
+  }
+
+  // Ineligible states
+  if (eligibility && !eligibility.eligible) {
+    const messages: Record<string, string> = {
+      already_reviewed: dict.ineligible_already_reviewed,
+      no_delivered_order: dict.ineligible_no_order,
+      window_expired: dict.ineligible_window_expired,
+      no_listing: dict.ineligible_no_listing,
+    };
+    const message = eligibility.reason ? (messages[eligibility.reason] ?? dict.ineligible_no_order) : dict.ineligible_no_order;
+
+    return (
+      <div className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-5 text-center">
+        <p className="text-sm text-(--color-muted)">{message}</p>
+      </div>
+    );
+  }
+
   if (!expanded) {
     return (
-      <button
-        type="button"
-        onClick={() => setExpanded(true)}
-        className="flex items-center gap-2 rounded-2xl border border-(--color-border) bg-(--color-surface) px-5 py-3.5 text-sm font-600 text-(--color-cta) transition-colors hover:bg-(--color-quartz-mist) w-full md:w-auto"
-      >
-        <span className="text-lg leading-none">✏️</span>
-        {dict.write_review} +
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="flex items-center gap-2 rounded-2xl border border-(--color-border) bg-(--color-surface) px-5 py-3.5 text-sm font-600 text-(--color-cta) transition-colors hover:bg-(--color-quartz-mist) w-full md:w-auto"
+        >
+          <span className="text-lg leading-none">✏️</span>
+          {dict.write_review} +
+        </button>
+        {eligibility?.days_remaining !== null && eligibility?.days_remaining !== undefined && (
+          <span className="text-[12px] text-(--color-muted)">
+            {dict.eligible_days_remaining.replace('{n}', String(eligibility.days_remaining))}
+          </span>
+        )}
+        {eligibility?.order_id && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-(--color-nature-bg) px-2.5 py-0.5 text-[11px] font-600 text-(--color-nature-text)">
+            ✓ {dict.verified_purchase_badge}
+          </span>
+        )}
+      </div>
     );
   }
 
   return (
     <div className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-5">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-base font-700 text-(--color-stone)">{dict.write_review}</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-base font-700 text-(--color-stone)">{dict.write_review}</h3>
+          {eligibility?.order_id && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-(--color-nature-bg) px-2.5 py-0.5 text-[11px] font-600 text-(--color-nature-text)">
+              ✓ {dict.verified_purchase_badge}
+            </span>
+          )}
+        </div>
         <button
           type="button"
           onClick={() => setExpanded(false)}
           className="text-[12px] text-(--color-muted) hover:text-(--color-stone)"
         >
-          Thu gọn ▲
+          {dict.collapse}
         </button>
       </div>
 
@@ -173,11 +251,12 @@ export function ReviewForm({ productSlug, dict }: ReviewFormProps) {
             onChange={(e) => setBody(e.target.value)}
             required
             rows={4}
+            maxLength={maxChars}
             placeholder="The stone quality is beautiful and the bracelet fits perfectly..."
             className="w-full resize-none rounded-xl border border-(--color-border) bg-(--color-background) px-3.5 py-2.5 text-sm outline-none focus:border-(--color-cta) transition-colors"
           />
-          <p className={`mt-1 text-right text-xs ${body.length < 10 ? 'text-(--color-muted)' : 'text-(--color-nature-text)'}`}>
-            {body.length} / 10+
+          <p className={`mt-1 text-right text-xs ${body.length < minChars ? 'text-(--color-muted)' : 'text-(--color-nature-text)'}`}>
+            {body.length} / {minChars}+ (max {maxChars})
           </p>
         </div>
 

@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
+import { useDict } from '@/context/DictionaryContext';
 import {
   getAddresses,
   createAddress,
@@ -36,7 +36,7 @@ interface AddressFormProps {
   onSubmit: (data: AddressInput) => Promise<void>;
   onCancel: () => void;
   submitting: boolean;
-  submitLabel?: string;
+  submitLabel: string;
 }
 
 function AddressForm({
@@ -44,8 +44,10 @@ function AddressForm({
   onSubmit,
   onCancel,
   submitting,
-  submitLabel = 'Lưu địa chỉ',
+  submitLabel,
 }: AddressFormProps) {
+  const dict = useDict();
+  const a = dict.account;
   const [form, setForm] = useState<AddressInput>(initial);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -57,21 +59,21 @@ function AddressForm({
     e.preventDefault();
     setFormError(null);
     if (!form.recipient_name.trim()) {
-      setFormError('Vui lòng nhập tên người nhận.');
+      setFormError(a.valid_recipient_name);
       return;
     }
     if (!form.line1.trim()) {
-      setFormError('Vui lòng nhập địa chỉ.');
+      setFormError(a.valid_address_line1);
       return;
     }
     if (!form.city.trim()) {
-      setFormError('Vui lòng nhập thành phố.');
+      setFormError(a.valid_city);
       return;
     }
     try {
       await onSubmit(form);
     } catch (err) {
-      setFormError((err as Error).message ?? 'Lỗi lưu địa chỉ.');
+      setFormError((err as Error).message ?? a.err_save_address);
     }
   }
 
@@ -81,120 +83,102 @@ function AddressForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3 pt-3">
-      {/* Recipient name */}
       <div>
         <label className={labelCls}>
-          Tên người nhận <span className="text-red-500">*</span>
+          {a.field_recipient_name} <span className="text-red-500">*</span>
         </label>
         <input
           className={inputCls}
           value={form.recipient_name}
           onChange={(e) => set('recipient_name', e.target.value)}
-          placeholder="Nguyễn Thị A"
           autoComplete="name"
         />
       </div>
 
-      {/* Phone */}
       <div>
-        <label className={labelCls}>Số điện thoại</label>
+        <label className={labelCls}>{a.field_phone}</label>
         <input
           className={inputCls}
           value={form.phone ?? ''}
           onChange={(e) => set('phone', e.target.value)}
-          placeholder="0901 234 567"
           autoComplete="tel"
           inputMode="tel"
         />
       </div>
 
-      {/* Email */}
       <div>
-        <label className={labelCls}>Email</label>
+        <label className={labelCls}>{dict.auth.email}</label>
         <input
           className={inputCls}
           type="email"
           value={form.email ?? ''}
           onChange={(e) => set('email', e.target.value)}
-          placeholder="email@example.com"
           autoComplete="email"
         />
       </div>
 
-      {/* Line 1 */}
       <div>
         <label className={labelCls}>
-          Địa chỉ <span className="text-red-500">*</span>
+          {a.field_address_line1} <span className="text-red-500">*</span>
         </label>
         <input
           className={inputCls}
           value={form.line1}
           onChange={(e) => set('line1', e.target.value)}
-          placeholder="Số nhà, tên đường, phường/xã"
           autoComplete="address-line1"
         />
       </div>
 
-      {/* Line 2 */}
       <div>
-        <label className={labelCls}>Địa chỉ (tiếp theo)</label>
+        <label className={labelCls}>{a.field_address_line2}</label>
         <input
           className={inputCls}
           value={form.line2 ?? ''}
           onChange={(e) => set('line2', e.target.value)}
-          placeholder="Toà nhà, căn hộ (không bắt buộc)"
           autoComplete="address-line2"
         />
       </div>
 
-      {/* City */}
       <div>
         <label className={labelCls}>
-          Thành phố / Tỉnh <span className="text-red-500">*</span>
+          {a.field_city} <span className="text-red-500">*</span>
         </label>
         <input
           className={inputCls}
           value={form.city}
           onChange={(e) => set('city', e.target.value)}
-          placeholder="TP. Hồ Chí Minh"
           autoComplete="address-level2"
         />
       </div>
 
-      {/* State / district */}
       <div>
-        <label className={labelCls}>Quận / Huyện</label>
+        <label className={labelCls}>{a.field_district}</label>
         <input
           className={inputCls}
           value={form.state ?? ''}
           onChange={(e) => set('state', e.target.value)}
-          placeholder="Quận 1"
           autoComplete="address-level1"
         />
       </div>
 
-      {/* Postal code */}
       <div>
-        <label className={labelCls}>Mã bưu chính</label>
+        <label className={labelCls}>{a.field_postal_code}</label>
         <input
           className={inputCls}
           value={form.postal_code ?? ''}
           onChange={(e) => set('postal_code', e.target.value)}
-          placeholder="700000"
           inputMode="numeric"
         />
       </div>
 
-      {/* Country code */}
       <div>
         <label className={labelCls}>
-          Quốc gia <span className="text-red-500">*</span>
+          {a.field_country} <span className="text-red-500">*</span>
         </label>
         <input
           className={inputCls}
           value={form.country_code}
           onChange={(e) => set('country_code', e.target.value.toUpperCase())}
-          placeholder="VN"
           maxLength={2}
         />
       </div>
@@ -205,14 +189,13 @@ function AddressForm({
         </p>
       )}
 
-      {/* Actions */}
       <div className="flex gap-2 pt-1">
         <button
           type="submit"
           disabled={submitting}
           className="h-11 rounded-[12px] bg-(--color-cta) px-5 text-sm font-700 text-white hover:bg-(--color-cta-hover) disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
         >
-          {submitting ? 'Đang lưu...' : submitLabel}
+          {submitting ? a.saving : submitLabel}
         </button>
         <button
           type="button"
@@ -220,8 +203,7 @@ function AddressForm({
           disabled={submitting}
           className="h-11 rounded-[12px] border border-(--color-border) bg-(--color-surface) px-5 text-sm font-600 text-(--color-stone) hover:border-(--color-cta) transition-colors"
         >
-          {/* Cancel */}
-          Hủy
+          {a.cancel}
         </button>
       </div>
     </form>
@@ -251,6 +233,9 @@ function AddressCard({
   onEditCancel,
   submitting,
 }: AddressCardProps) {
+  const dict = useDict();
+  const a = dict.account;
+
   const initial: AddressInput = {
     recipient_name: address.recipientName,
     phone: address.phone ?? '',
@@ -266,7 +251,6 @@ function AddressCard({
 
   return (
     <div className="rounded-[14px] border border-(--color-border) bg-(--color-surface) p-5">
-      {/* Address details */}
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -275,8 +259,7 @@ function AddressCard({
             </span>
             {address.isDefault && (
               <span className="rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-600 text-green-700">
-                {/* Default */}
-                Mặc định
+                {a.default_address}
               </span>
             )}
             {address.label && (
@@ -299,15 +282,13 @@ function AddressCard({
         </div>
       </div>
 
-      {/* Action buttons */}
       {!isEditOpen && (
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={onEdit}
             className="text-[12px] font-600 text-(--color-cta) hover:text-(--color-cta-hover) transition-colors"
           >
-            {/* Edit */}
-            Sửa
+            {a.edit}
           </button>
           {!address.isDefault && (
             <>
@@ -316,8 +297,7 @@ function AddressCard({
                 onClick={onSetDefault}
                 className="text-[12px] font-600 text-(--color-stone) hover:text-(--color-cta) transition-colors"
               >
-                {/* Set as default */}
-                Đặt làm mặc định
+                {a.set_default}
               </button>
             </>
           )}
@@ -326,13 +306,11 @@ function AddressCard({
             onClick={onDelete}
             className="text-[12px] font-600 text-red-500 hover:text-red-700 transition-colors"
           >
-            {/* Delete */}
-            Xóa
+            {a.delete}
           </button>
         </div>
       )}
 
-      {/* Inline edit form */}
       {isEditOpen && (
         <div className="border-t border-(--color-border) mt-3">
           <AddressForm
@@ -340,7 +318,7 @@ function AddressCard({
             onSubmit={onEditSubmit}
             onCancel={onEditCancel}
             submitting={submitting}
-            submitLabel="Cập nhật địa chỉ"
+            submitLabel={a.update_address_btn}
           />
         </div>
       )}
@@ -354,6 +332,8 @@ export default function AddressesPage() {
   const router = useRouter();
   const pathname = usePathname();
   const lang = pathname.split('/')[1] ?? 'vi';
+  const dict = useDict();
+  const a = dict.account;
 
   const { customer, isLoading } = useAuth();
 
@@ -377,18 +357,17 @@ export default function AddressesPage() {
       const res = await getAddresses();
       setAddresses(res);
     } catch {
-      setGlobalError('Không thể tải địa chỉ.');
+      setGlobalError(a.err_load_addresses);
     } finally {
       setFetchLoading(false);
     }
-  }, []);
+  }, [a.err_load_addresses]);
 
   useEffect(() => {
     if (!customer) return;
     loadAddresses();
   }, [customer, loadAddresses]);
 
-  // Handle create
   async function handleCreate(data: AddressInput) {
     setSubmitting(true);
     setGlobalError(null);
@@ -401,7 +380,6 @@ export default function AddressesPage() {
     }
   }
 
-  // Handle update
   async function handleUpdate(id: number, data: AddressInput) {
     setSubmitting(true);
     setGlobalError(null);
@@ -414,26 +392,24 @@ export default function AddressesPage() {
     }
   }
 
-  // Handle delete with native confirm
   async function handleDelete(id: number) {
-    if (!window.confirm('Xóa địa chỉ này?')) return; // Are you sure you want to delete?
+    if (!window.confirm(a.confirm_delete_address)) return;
     setGlobalError(null);
     try {
       await deleteAddress(id);
       await loadAddresses();
     } catch {
-      setGlobalError('Không thể xóa địa chỉ.');
+      setGlobalError(a.err_delete_address);
     }
   }
 
-  // Handle set default
   async function handleSetDefault(id: number) {
     setGlobalError(null);
     try {
       await setDefaultAddress(id);
       await loadAddresses();
     } catch {
-      setGlobalError('Không thể cập nhật địa chỉ mặc định.');
+      setGlobalError(a.err_set_default_address);
     }
   }
 
@@ -441,10 +417,9 @@ export default function AddressesPage() {
 
   return (
     <div>
-      {/* Page header */}
       <div className="flex items-center justify-between mb-5">
         <h1 className="font-heading text-[20px] font-700 text-(--color-stone)">
-          Địa chỉ của tôi
+          {a.my_addresses_title}
         </h1>
         {!showAddForm && (
           <button
@@ -454,8 +429,7 @@ export default function AddressesPage() {
             }}
             className="h-9 rounded-[12px] bg-(--color-cta) px-4 text-[13px] font-700 text-white hover:bg-(--color-cta-hover) transition-colors"
           >
-            {/* Add new address */}
-            + Thêm địa chỉ mới
+            {a.add_new_address_btn}
           </button>
         )}
       </div>
@@ -466,24 +440,21 @@ export default function AddressesPage() {
         </p>
       )}
 
-      {/* Add new address inline form */}
       {showAddForm && (
         <div className="rounded-[14px] border border-(--color-cta) bg-(--color-surface) p-5 mb-4">
           <h2 className="font-heading text-[15px] font-700 text-(--color-stone) mb-1">
-            {/* Add new address */}
-            Thêm địa chỉ mới
+            {a.add_address_heading}
           </h2>
           <AddressForm
             initial={EMPTY_FORM}
             onSubmit={handleCreate}
             onCancel={() => setShowAddForm(false)}
             submitting={submitting}
-            submitLabel="Thêm địa chỉ"
+            submitLabel={a.add_address_btn}
           />
         </div>
       )}
 
-      {/* Address list */}
       {fetchLoading ? (
         <div className="space-y-3 animate-pulse">
           {[0, 1].map((i) => (
@@ -492,7 +463,7 @@ export default function AddressesPage() {
         </div>
       ) : addresses.length === 0 ? (
         <div className="rounded-[14px] border border-(--color-border) bg-(--color-surface) py-14 text-center text-sm text-(--color-sand-dark)">
-          Chưa có địa chỉ nào. Hãy thêm địa chỉ giao hàng đầu tiên của bạn.
+          {a.no_addresses_hint}
         </div>
       ) : (
         <ul className="space-y-3">
