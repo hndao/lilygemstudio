@@ -19,7 +19,8 @@
     "my_orders": "My Orders",
     "my_addresses": "Addresses",
     "sign_out": "Sign Out",
-    "cart_aria": "Cart"
+    "cart_aria": "Cart",
+    "notifications": "Notifications"
   },
   "footer": {
     "tagline": "Handcrafted bracelets and rings made from agate, quartz, and natural gemstones.",
@@ -266,12 +267,37 @@
     "error_not_found": "Order number not found.",
     "error_load": "Unable to load order details. Please check your confirmation email."
   },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications yet",
+    "mark_all_read": "Mark all read",
+    "view_all": "View all notifications",
+    "load_more": "Load more",
+    "order_placed": "Order confirmed",
+    "order_status_changed": "Order status update",
+    "shipment_tracking": "Shipment update",
+    "just_now": "Just now",
+    "minutes_ago": "{n}m ago",
+    "hours_ago": "{n}h ago",
+    "days_ago": "{n}d ago",
+    "preferences_title": "Notification Preferences",
+    "preferences_hint": "Choose which notifications you'd like to receive.",
+    "channel_mail": "Email",
+    "channel_database": "In-app",
+    "type_order_placed": "Order confirmation",
+    "type_order_status_changed": "Order status updates",
+    "type_shipment_tracking": "Shipment tracking",
+    "preferences_save": "Save preferences",
+    "preferences_saved": "Preferences saved",
+    "preferences_error": "Failed to save preferences"
+  },
   "account": {
     "title": "My Account",
     "welcome": "Welcome back, {name}",
     "orders": "Orders",
     "addresses": "Addresses",
     "profile": "Profile",
+    "notifications": "Notifications",
     "logout": "Sign Out",
     "order_history": "Order History",
     "no_orders": "No orders yet",

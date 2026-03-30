@@ -681,3 +681,14 @@ export interface CheckoutPayload {
   notes?: string;
 }
 
+// ── In-App Notification ────────────────────────────────────────────────────────
+
+export interface AppNotification {
+  id: string;
+  type: string;
+  message: string;
+  data: Record<string, unknown>;
+  readAt: string | null;
+  createdAt: string;
+}
+

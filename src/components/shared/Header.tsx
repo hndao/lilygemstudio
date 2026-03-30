@@ -6,8 +6,11 @@ import { useRouter } from 'next/navigation';
 import { Menu, ShoppingBag, Search, UserCircle, X, LogOut, Package, MapPin, User } from 'lucide-react';
 import { MobileMenu } from './MobileMenu';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { NotificationBell } from './NotificationBell';
+import { NotificationPanel } from '@/components/features/NotificationPanel';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useNotifications } from '@/context/NotificationContext';
 import type { Locale } from '@/middleware';
 import type { Dictionary } from '@/lib/i18n';
 
@@ -25,6 +28,7 @@ export function Header({ dict, lang }: HeaderProps) {
 
   const { itemCount, openCart } = useCart();
   const { customer, logout, openAuthModal } = useAuth();
+  const { isOpen: notifOpen, openPanel: openNotifPanel, closePanel: closeNotifPanel } = useNotifications();
   const router = useRouter();
 
   const base           = `/${lang}`;
@@ -163,6 +167,18 @@ export function Header({ dict, lang }: HeaderProps) {
                   </span>
                 )}
               </button>
+
+              {/* Notification bell — desktop (authenticated only) */}
+              <div className="relative">
+                <NotificationBell ariaLabel={dict.header.notifications} />
+                {notifOpen && customer && (
+                  <NotificationPanel
+                    lang={lang}
+                    dict={dict.notifications}
+                    onClose={closeNotifPanel}
+                  />
+                )}
+              </div>
 
               {/* Profile icon */}
               <div className="relative" ref={profileRef}>

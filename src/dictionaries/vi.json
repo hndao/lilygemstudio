@@ -19,7 +19,8 @@
     "my_orders": "Đơn hàng",
     "my_addresses": "Địa chỉ",
     "sign_out": "Đăng xuất",
-    "cart_aria": "Giỏ hàng"
+    "cart_aria": "Giỏ hàng",
+    "notifications": "Thông báo"
   },
   "footer": {
     "tagline": "Vòng tay và nhẫn thủ công làm từ mã não, thạch anh và đá tự nhiên.",
@@ -266,12 +267,37 @@
     "error_not_found": "Không tìm thấy mã đơn hàng.",
     "error_load": "Không thể tải thông tin đơn hàng. Vui lòng kiểm tra email xác nhận."
   },
+  "notifications": {
+    "title": "Thông báo",
+    "empty": "Chưa có thông báo nào",
+    "mark_all_read": "Đánh dấu tất cả đã đọc",
+    "view_all": "Xem tất cả thông báo",
+    "load_more": "Tải thêm",
+    "order_placed": "Xác nhận đơn hàng",
+    "order_status_changed": "Cập nhật trạng thái đơn hàng",
+    "shipment_tracking": "Cập nhật vận chuyển",
+    "just_now": "Vừa xong",
+    "minutes_ago": "{n} phút trước",
+    "hours_ago": "{n} giờ trước",
+    "days_ago": "{n} ngày trước",
+    "preferences_title": "Cài đặt thông báo",
+    "preferences_hint": "Chọn loại thông báo bạn muốn nhận.",
+    "channel_mail": "Email",
+    "channel_database": "Trong ứng dụng",
+    "type_order_placed": "Xác nhận đơn hàng",
+    "type_order_status_changed": "Cập nhật trạng thái đơn hàng",
+    "type_shipment_tracking": "Theo dõi vận chuyển",
+    "preferences_save": "Lưu cài đặt",
+    "preferences_saved": "Đã lưu cài đặt",
+    "preferences_error": "Không thể lưu cài đặt"
+  },
   "account": {
     "title": "Tài khoản của tôi",
     "welcome": "Xin chào, {name}",
     "orders": "Đơn hàng",
     "addresses": "Địa chỉ",
     "profile": "Tài khoản",
+    "notifications": "Thông báo",
     "logout": "Đăng xuất",
     "order_history": "Lịch sử đơn hàng",
     "no_orders": "Chưa có đơn hàng nào",

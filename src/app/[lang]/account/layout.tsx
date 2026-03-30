@@ -8,7 +8,7 @@
 import { useContext } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Package, MapPin, User, ChevronRight } from 'lucide-react';
+import { Package, MapPin, User, Bell, ChevronRight } from 'lucide-react';
 import { AuthContext } from '@/context/AuthContext';
 import { useDict } from '@/context/DictionaryContext';
 
@@ -21,6 +21,7 @@ function AccountSidebar({ lang }: { lang: string }) {
     { href: '/account', label: a.profile, icon: User, exact: true },
     { href: '/account/orders', label: a.orders, icon: Package, exact: false },
     { href: '/account/addresses', label: a.addresses, icon: MapPin, exact: false },
+    { href: '/account/notifications', label: a.notifications, icon: Bell, exact: false },
   ];
   // Use context directly (not useAuth) — avoids throwing during SSR/hydration
   const auth = useContext(AuthContext);
