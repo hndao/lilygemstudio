@@ -164,11 +164,11 @@ const EMPTY_FORM: AddressFormValues = {
 interface CheckoutWizardProps {
   lang: string;
   dict: Dictionary['checkout'];
+  isVn: boolean;
 }
 
-export function CheckoutWizard({ lang, dict }: CheckoutWizardProps) {
+export function CheckoutWizard({ lang, dict, isVn }: CheckoutWizardProps) {
   const router = useRouter();
-  const isVn   = lang === 'vi';
 
   const { cart, isLoading, closeCart } = useCart();
 
@@ -193,7 +193,7 @@ export function CheckoutWizard({ lang, dict }: CheckoutWizardProps) {
   const [ratesLoading, setRatesLoading]     = useState(false);
   const [selectedRateId, setSelectedRateId] = useState<number | null>(null);
 
-  const [paymentMethod, setPaymentMethod]   = useState<'cod' | 'bank_transfer' | 'stripe' | 'paypal'>(() => lang === 'vi' ? 'cod' : 'stripe');
+  const [paymentMethod, setPaymentMethod]   = useState<'cod' | 'bank_transfer' | 'stripe' | 'paypal'>(isVn ? 'cod' : 'stripe');
   const [placing, setPlacing]               = useState(false);
   const [placeError, setPlaceError]         = useState('');
 
