@@ -314,14 +314,84 @@ export interface Post extends PostCard {
 export interface HeroSlide {
   image_url: string;
   image_alt: string;
-  /** Headline — may contain \n to split into two lines */
-  title: string;
-  description: string;
-  cta_text: string;
+  /** Headline — bilingual. Legacy single-language `title` kept as fallback. */
+  title_en?: string;
+  title_vi?: string;
+  title?: string;          // legacy fallback
+  description_en?: string;
+  description_vi?: string;
+  description?: string;    // legacy fallback
+  cta_text_en?: string;
+  cta_text_vi?: string;
+  cta_text?: string;       // legacy fallback
   cta_url: string;
-  /** Optional secondary (outline) CTA — omit or leave blank to hide */
-  cta2_text?: string;
+  cta2_text_en?: string;
+  cta2_text_vi?: string;
+  cta2_text?: string;      // legacy fallback
   cta2_url?: string;
+}
+
+export interface PageAboutContent {
+  hero_image_url?: string;
+  hero_image_alt?: string;
+  hero_label_en?: string;   hero_label_vi?: string;
+  hero_title_en?: string;   hero_title_vi?: string;
+  hero_body_en?: string;    hero_body_vi?: string;
+  hero_cta_shop_en?: string;    hero_cta_shop_vi?: string;
+  hero_cta_contact_en?: string; hero_cta_contact_vi?: string;
+  stats?: Array<{ value: string; label_en: string; label_vi: string }>;
+  process_label_en?: string;   process_label_vi?: string;
+  process_heading_en?: string; process_heading_vi?: string;
+  process_steps?: Array<{ step: string; title_en: string; title_vi: string; body_en: string; body_vi: string }>;
+  values_label_en?: string;   values_label_vi?: string;
+  values_heading_en?: string; values_heading_vi?: string;
+  values_items?: Array<{ title_en: string; title_vi: string; body_en: string; body_vi: string }>;
+  cta_heading_en?: string; cta_heading_vi?: string;
+  cta_body_en?: string;    cta_body_vi?: string;
+  cta_shop_en?: string;    cta_shop_vi?: string;
+  cta_story_en?: string;   cta_story_vi?: string;
+}
+
+export interface PageStoryContent {
+  hero_image_url?: string;
+  hero_image_alt?: string;
+  hero_label_en?: string;   hero_label_vi?: string;
+  hero_title_en?: string;   hero_title_vi?: string;
+  hero_body_en?: string;    hero_body_vi?: string;
+  pillars_label_en?: string;   pillars_label_vi?: string;
+  pillars_heading_en?: string; pillars_heading_vi?: string;
+  pillar_a_title_en?: string;  pillar_a_title_vi?: string;
+  pillar_a_body_en?: string;   pillar_a_body_vi?: string;
+  pillar_b_title_en?: string;  pillar_b_title_vi?: string;
+  pillar_b_body_en?: string;   pillar_b_body_vi?: string;
+  philosophy_label_en?: string;   philosophy_label_vi?: string;
+  philosophy_heading_en?: string; philosophy_heading_vi?: string;
+  philosophy_body_en?: string;    philosophy_body_vi?: string;
+  cta_heading_en?: string; cta_heading_vi?: string;
+  cta_shop_en?: string;    cta_shop_vi?: string;
+  cta_about_en?: string;   cta_about_vi?: string;
+}
+
+export interface PageHomeContent {
+  hero_image_url?: string;
+  hero_image_alt?: string;
+  story_label_en?: string;   story_label_vi?: string;
+  story_heading_en?: string; story_heading_vi?: string;
+  story_body1_en?: string;   story_body1_vi?: string;
+  story_body2_en?: string;   story_body2_vi?: string;
+  story_body3_en?: string;   story_body3_vi?: string;
+  story_cta_en?: string;     story_cta_vi?: string;
+}
+
+export interface PageContactContent {
+  hero_label_en?: string;   hero_label_vi?: string;
+  hero_title_en?: string;   hero_title_vi?: string;
+  hero_body_en?: string;    hero_body_vi?: string;
+  sidebar_heading_en?: string; sidebar_heading_vi?: string;
+  sidebar_body_en?: string;    sidebar_body_vi?: string;
+  response_time_en?: string;   response_time_vi?: string;
+  form_heading_en?: string;    form_heading_vi?: string;
+  form_subheading_en?: string; form_subheading_vi?: string;
 }
 
 export interface SiteSettings {
@@ -349,6 +419,12 @@ export interface SiteSettings {
   hero: {
     hero_mode: 'single' | 'slider';
     hero_slides: HeroSlide[];
+  };
+  pages?: {
+    page_about?: PageAboutContent;
+    page_story?: PageStoryContent;
+    page_contact?: PageContactContent;
+    page_home?: PageHomeContent;
   };
 }
 

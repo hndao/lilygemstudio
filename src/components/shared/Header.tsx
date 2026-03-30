@@ -132,109 +132,128 @@ export function Header({ dict, lang }: HeaderProps) {
             ))}
           </nav>
 
-          {/* ── Right-side: Search + Profile + Cart + Hamburger ──────── */}
+          {/* ── Right-side icons ─────────────────────────────────────── */}
           <div className="flex items-center gap-1">
 
-            {/* Search icon */}
-            <button
-              type="button"
-              onClick={() => setSearchOpen((v) => !v)}
-              className="flex h-10 w-10 items-center justify-center rounded-md text-(--color-sand) transition-colors hover:bg-white/10 hover:text-(--color-cream)"
-              aria-label={dict.header.search_label}
-              aria-expanded={searchOpen}
-            >
-              <Search className="h-5 w-5" />
-            </button>
+            {/* Desktop only: Search + Profile + Language switcher */}
+            <div className="hidden xl:flex items-center gap-1">
 
-            {/* Profile icon */}
-            <div className="relative" ref={profileRef}>
+              {/* Search icon */}
               <button
                 type="button"
-                onClick={handleProfileClick}
+                onClick={() => setSearchOpen((v) => !v)}
                 className="flex h-10 w-10 items-center justify-center rounded-md text-(--color-sand) transition-colors hover:bg-white/10 hover:text-(--color-cream)"
-                aria-label={dict.header.profile}
-                aria-expanded={profileOpen}
-                aria-haspopup="menu"
+                aria-label={dict.header.search_label}
+                aria-expanded={searchOpen}
               >
-                {customer && avatarInitial ? (
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-(--color-cta) text-[13px] font-700 text-white leading-none">
-                    {avatarInitial}
+                <Search className="h-5 w-5" />
+              </button>
+
+              {/* Cart badge — desktop */}
+              <button
+                type="button"
+                onClick={openCart}
+                className="relative flex h-10 w-10 items-center justify-center rounded-md text-(--color-sand) transition-colors hover:bg-white/10 hover:text-(--color-cream)"
+                aria-label="Giỏ hàng"
+              >
+                <ShoppingBag className="h-5 w-5" />
+                {itemCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-(--color-cta) px-1 text-[10px] font-700 text-white leading-none">
+                    {itemCount > 99 ? '99+' : itemCount}
                   </span>
-                ) : (
-                  <UserCircle className="h-5 w-5" />
                 )}
               </button>
 
-              {/* Profile dropdown */}
-              {profileOpen && customer && (
-                <div
-                  role="menu"
-                  className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-(--color-border) bg-(--color-surface) shadow-lg overflow-hidden z-50"
+              {/* Profile icon */}
+              <div className="relative" ref={profileRef}>
+                <button
+                  type="button"
+                  onClick={handleProfileClick}
+                  className="flex h-10 w-10 items-center justify-center rounded-md text-(--color-sand) transition-colors hover:bg-white/10 hover:text-(--color-cream)"
+                  aria-label={dict.header.profile}
+                  aria-expanded={profileOpen}
+                  aria-haspopup="menu"
                 >
-                  {/* Customer name row */}
-                  <div className="flex items-center gap-3 border-b border-(--color-border) px-4 py-3">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--color-cta) text-[13px] font-700 text-white">
+                  {customer && avatarInitial ? (
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-(--color-cta) text-[13px] font-700 text-white leading-none">
                       {avatarInitial}
                     </span>
-                    <span className="truncate text-sm font-600 text-(--color-stone)">
-                      {customer.name}
-                    </span>
-                  </div>
+                  ) : (
+                    <UserCircle className="h-5 w-5" />
+                  )}
+                </button>
 
-                  {/* Links */}
-                  <div className="py-1">
-                    <Link
-                      href={`${base}/account`}
-                      onClick={() => setProfileOpen(false)}
-                      role="menuitem"
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-(--color-stone) hover:bg-(--color-sand) transition-colors"
-                    >
-                      <User className="h-4 w-4 text-(--color-muted)" />
-                      {dict.header.my_account}
-                    </Link>
-                    <Link
-                      href={`${base}/account/orders`}
-                      onClick={() => setProfileOpen(false)}
-                      role="menuitem"
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-(--color-stone) hover:bg-(--color-sand) transition-colors"
-                    >
-                      <Package className="h-4 w-4 text-(--color-muted)" />
-                      {dict.header.my_orders}
-                    </Link>
-                    <Link
-                      href={`${base}/account/addresses`}
-                      onClick={() => setProfileOpen(false)}
-                      role="menuitem"
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-(--color-stone) hover:bg-(--color-sand) transition-colors"
-                    >
-                      <MapPin className="h-4 w-4 text-(--color-muted)" />
-                      {dict.header.my_addresses}
-                    </Link>
-                  </div>
+                {/* Profile dropdown */}
+                {profileOpen && customer && (
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-(--color-border) bg-(--color-surface) shadow-lg overflow-hidden z-50"
+                  >
+                    {/* Customer name row */}
+                    <div className="flex items-center gap-3 border-b border-(--color-border) px-4 py-3">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--color-cta) text-[13px] font-700 text-white">
+                        {avatarInitial}
+                      </span>
+                      <span className="truncate text-sm font-600 text-(--color-stone)">
+                        {customer.name}
+                      </span>
+                    </div>
 
-                  <div className="border-t border-(--color-border) py-1">
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      role="menuitem"
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      {dict.header.sign_out}
-                    </button>
+                    {/* Links */}
+                    <div className="py-1">
+                      <Link
+                        href={`${base}/account`}
+                        onClick={() => setProfileOpen(false)}
+                        role="menuitem"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-(--color-stone) hover:bg-(--color-sand) transition-colors"
+                      >
+                        <User className="h-4 w-4 text-(--color-muted)" />
+                        {dict.header.my_account}
+                      </Link>
+                      <Link
+                        href={`${base}/account/orders`}
+                        onClick={() => setProfileOpen(false)}
+                        role="menuitem"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-(--color-stone) hover:bg-(--color-sand) transition-colors"
+                      >
+                        <Package className="h-4 w-4 text-(--color-muted)" />
+                        {dict.header.my_orders}
+                      </Link>
+                      <Link
+                        href={`${base}/account/addresses`}
+                        onClick={() => setProfileOpen(false)}
+                        role="menuitem"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-(--color-stone) hover:bg-(--color-sand) transition-colors"
+                      >
+                        <MapPin className="h-4 w-4 text-(--color-muted)" />
+                        {dict.header.my_addresses}
+                      </Link>
+                    </div>
+
+                    <div className="border-t border-(--color-border) py-1">
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        role="menuitem"
+                        className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        {dict.header.sign_out}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
+
+              {/* Language switcher */}
+              <LanguageSwitcher currentLang={lang} dict={dict} />
             </div>
 
-            {/* Language switcher */}
-            <LanguageSwitcher currentLang={lang} dict={dict} />
-
-            {/* Cart badge */}
+            {/* Cart badge — mobile only */}
             <button
               type="button"
               onClick={openCart}
-              className="relative flex h-10 w-10 items-center justify-center rounded-md text-(--color-sand) transition-colors hover:bg-white/10 hover:text-(--color-cream)"
+              className="xl:hidden relative flex h-10 w-10 items-center justify-center rounded-md text-(--color-sand) transition-colors hover:bg-white/10 hover:text-(--color-cream)"
               aria-label="Giỏ hàng"
             >
               <ShoppingBag className="h-5 w-5" />
@@ -245,6 +264,7 @@ export function Header({ dict, lang }: HeaderProps) {
               )}
             </button>
 
+            {/* Hamburger — mobile only */}
             <button
               onClick={() => setMenuOpen(true)}
               className="xl:hidden flex items-center justify-center rounded-md p-2 text-(--color-sand) transition-colors hover:bg-white/10 hover:text-(--color-cream)"

@@ -177,6 +177,11 @@
     "total_label": "Tổng cộng",
     "cod_description": "Trả tiền mặt khi nhận được hàng.",
     "bank_transfer_description": "Hướng dẫn chuyển khoản sẽ hiển thị sau khi đặt hàng.",
+    "stripe": "Thanh toán bằng thẻ (Stripe)",
+    "stripe_description": "Thẻ tín dụng / ghi nợ. Sắp ra mắt — liên hệ chúng tôi để đặt hàng.",
+    "paypal": "Thanh toán bằng PayPal",
+    "paypal_description": "Thanh toán PayPal. Sắp ra mắt — liên hệ chúng tôi để đặt hàng.",
+    "payment_coming_soon": "Thanh toán thẻ quốc tế sắp ra mắt. Vui lòng liên hệ chúng tôi qua email hoặc mạng xã hội để đặt hàng.",
     "trust_ssl": "🔒 Bảo mật SSL",
     "trust_returns": "📦 Đổi trả 7 ngày",
     "trust_payment": "💳 Thanh toán an toàn"

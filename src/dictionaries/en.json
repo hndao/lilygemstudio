@@ -177,6 +177,11 @@
     "total_label": "Total",
     "cod_description": "Pay with cash when your order arrives.",
     "bank_transfer_description": "Transfer instructions will be shown after placing your order.",
+    "stripe": "Pay with Card (Stripe)",
+    "stripe_description": "Credit / debit card. Coming soon — contact us to arrange your order.",
+    "paypal": "Pay with PayPal",
+    "paypal_description": "PayPal checkout. Coming soon — contact us to arrange your order.",
+    "payment_coming_soon": "International card payments are coming soon. Please contact us via email or social media to place your order.",
     "trust_ssl": "🔒 SSL Secured",
     "trust_returns": "📦 7-day returns",
     "trust_payment": "💳 Safe payment"

@@ -193,7 +193,7 @@ export function CheckoutWizard({ lang, dict }: CheckoutWizardProps) {
   const [ratesLoading, setRatesLoading]     = useState(false);
   const [selectedRateId, setSelectedRateId] = useState<number | null>(null);
 
-  const [paymentMethod, setPaymentMethod]   = useState<'cod' | 'bank_transfer'>('cod');
+  const [paymentMethod, setPaymentMethod]   = useState<'cod' | 'bank_transfer' | 'stripe' | 'paypal'>(() => lang === 'vi' ? 'cod' : 'stripe');
   const [placing, setPlacing]               = useState(false);
   const [placeError, setPlaceError]         = useState('');
 
@@ -319,7 +319,10 @@ export function CheckoutWizard({ lang, dict }: CheckoutWizardProps) {
       currency:             isVn ? 'VND' : 'USD',
       shipping_rate_cents:  selectedRate?.rateCents ?? 0,
       shipping_address:     shippingAddress,
-      notes: paymentMethod === 'cod' ? dict.cod : dict.bank_transfer,
+      notes: paymentMethod === 'cod' ? dict.cod
+           : paymentMethod === 'bank_transfer' ? dict.bank_transfer
+           : paymentMethod === 'stripe' ? dict.stripe
+           : dict.paypal,
     };
 
     try {
@@ -768,29 +771,28 @@ export function CheckoutWizard({ lang, dict }: CheckoutWizardProps) {
                 {dict.payment_method}
               </p>
               <div className="flex flex-col gap-3">
-                {[
-                  {
-                    id: 'cod' as const,
-                    title: dict.cod,
-                    description: dict.cod_description,
-                    icon: '📦',
-                  },
-                  {
-                    id: 'bank_transfer' as const,
-                    title: dict.bank_transfer,
-                    description: dict.bank_transfer_description,
-                    icon: '🏦',
-                  },
-                ].map((opt) => (
+                {(isVn
+                  ? [
+                      { id: 'cod'           as const, title: dict.cod,           description: dict.cod_description,           icon: '📦', disabled: false },
+                      { id: 'bank_transfer' as const, title: dict.bank_transfer, description: dict.bank_transfer_description, icon: '🏦', disabled: false },
+                    ]
+                  : [
+                      { id: 'stripe' as const, title: dict.stripe, description: dict.stripe_description, icon: '💳', disabled: true },
+                      { id: 'paypal' as const, title: dict.paypal, description: dict.paypal_description, icon: '🅿️', disabled: true },
+                    ]
+                ).map((opt) => (
                   <button
                     key={opt.id}
                     type="button"
                     onClick={() => setPaymentMethod(opt.id)}
+                    disabled={opt.disabled}
                     className={[
                       'flex items-start gap-4 rounded-[12px] border-[1.5px] p-4 text-left transition-all',
-                      paymentMethod === opt.id
-                        ? 'border-(--color-cta) bg-(--color-quartz-mist)'
-                        : 'border-(--color-border) bg-white hover:border-(--color-cta)/50',
+                      opt.disabled
+                        ? 'cursor-not-allowed border-(--color-border) bg-(--color-quartz-mist) opacity-60'
+                        : paymentMethod === opt.id
+                          ? 'border-(--color-cta) bg-(--color-quartz-mist)'
+                          : 'border-(--color-border) bg-white hover:border-(--color-cta)/50',
                     ].join(' ')}
                   >
                     <div
@@ -799,19 +801,29 @@ export function CheckoutWizard({ lang, dict }: CheckoutWizardProps) {
                         paymentMethod === opt.id ? 'border-(--color-cta)' : 'border-(--color-border)',
                       ].join(' ')}
                     >
-                      {paymentMethod === opt.id && (
+                      {paymentMethod === opt.id && !opt.disabled && (
                         <div className="h-2.5 w-2.5 rounded-full bg-(--color-cta)" />
                       )}
                     </div>
-                    <div>
-                      <p className="text-[14px] font-600 text-(--color-stone)">
+                    <div className="flex-1">
+                      <p className="flex items-center gap-2 text-[14px] font-600 text-(--color-stone)">
                         {opt.icon} {opt.title}
+                        {opt.disabled && (
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-700 uppercase tracking-wide text-amber-700">
+                            Coming soon
+                          </span>
+                        )}
                       </p>
                       <p className="mt-0.5 text-[12px] text-(--color-sand-dark)">{opt.description}</p>
                     </div>
                   </button>
                 ))}
               </div>
+              {!isVn && (
+                <p className="mt-3 rounded-[10px] border border-amber-200 bg-amber-50 px-4 py-3 text-[12px] text-amber-800">
+                  {dict.payment_coming_soon}
+                </p>
+              )}
             </div>
 
             {placeError && (
@@ -831,7 +843,7 @@ export function CheckoutWizard({ lang, dict }: CheckoutWizardProps) {
               <button
                 type="button"
                 onClick={handlePlaceOrder}
-                disabled={placing}
+                disabled={placing || !isVn}
                 className="flex h-12 flex-[2] items-center justify-center gap-2 rounded-[12px] bg-(--color-cta) font-heading text-[15px] font-700 text-white transition-all hover:bg-(--color-cta-hover) active:scale-[0.98] disabled:opacity-60"
               >
                 {placing ? (

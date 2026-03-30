@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { X, User, Package, MapPin, LogOut } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { X, User, Package, MapPin, LogOut, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,6 +20,18 @@ interface MobileMenuProps {
 export function MobileMenu({ isOpen, onClose, dict, lang }: MobileMenuProps) {
   const base = `/${lang}`;
   const { customer, logout, openAuthModal } = useAuth();
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSearchSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (!q) return;
+    setSearchQuery('');
+    onClose();
+    router.push(`${base}/shop?q=${encodeURIComponent(q)}`);
+  }, [searchQuery, base, router, onClose]);
 
   const NAV_LINKS = [
     { href: base, label: dict.nav.home },
@@ -35,6 +48,7 @@ export function MobileMenu({ isOpen, onClose, dict, lang }: MobileMenuProps) {
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : '';
+    if (!isOpen) setSearchQuery('');
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
@@ -85,6 +99,23 @@ export function MobileMenu({ isOpen, onClose, dict, lang }: MobileMenuProps) {
               >
                 <X className="h-5 w-5" />
               </button>
+            </div>
+
+            {/* Search */}
+            <div className="border-b border-(--color-border) px-4 py-3">
+              <form onSubmit={handleSearchSubmit}>
+                <div className="relative flex items-center">
+                  <Search className="absolute left-3 h-4 w-4 text-(--color-muted) pointer-events-none" aria-hidden="true" />
+                  <input
+                    ref={searchInputRef}
+                    type="search"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={dict.header.search_placeholder}
+                    className="w-full rounded-lg border border-(--color-border) bg-(--color-background) py-2.5 pl-9 pr-4 text-sm text-(--color-stone) placeholder:text-(--color-muted) outline-none focus:ring-1 focus:ring-(--color-cta)"
+                  />
+                </div>
+              </form>
             </div>
 
             {/* Nav links */}
