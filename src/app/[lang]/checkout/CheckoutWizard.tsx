@@ -170,7 +170,7 @@ interface CheckoutWizardProps {
 export function CheckoutWizard({ lang, dict, isVn }: CheckoutWizardProps) {
   const router = useRouter();
 
-  const { cart, isLoading, closeCart } = useCart();
+  const { cart, isLoading, closeCart, clearCart } = useCart();
 
   // Close cart drawer on mount
   useEffect(() => { closeCart(); }, [closeCart]);
@@ -327,7 +327,7 @@ export function CheckoutWizard({ lang, dict, isVn }: CheckoutWizardProps) {
 
     try {
       const order: Order = await checkout(payload);
-      sessionStorage.setItem('lily_last_order', JSON.stringify(order));
+      clearCart();
       router.push(`/${lang}/checkout/success?order=${order.orderNumber}`);
     } catch (e: unknown) {
       setPlaceError(e instanceof Error ? e.message : dict.error_generic);

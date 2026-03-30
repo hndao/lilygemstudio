@@ -39,6 +39,8 @@ export interface CartContextValue {
   removeItem: (itemId: number) => Promise<void>;
   applyCouponCode: (code: string) => Promise<void>;
   removeCouponCode: () => Promise<void>;
+  /** Reset cart state after checkout (backend deletes cart on order creation). */
+  clearCart: () => void;
   /** Derived — sum of item.quantity values. Optimistically updated. */
   itemCount: number;
 }
@@ -131,6 +133,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setOptimisticCount(updated.itemCount);
   }, []);
 
+  const clearCart = useCallback(() => {
+    setCart(null);
+    setOptimisticCount(0);
+    setIsOpen(false);
+  }, []);
+
   return (
     <CartContext.Provider
       value={{
@@ -144,6 +152,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         removeItem,
         applyCouponCode,
         removeCouponCode,
+        clearCart,
         itemCount,
       }}
     >
