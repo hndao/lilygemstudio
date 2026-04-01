@@ -213,26 +213,6 @@ function SuccessSkeleton() {
   );
 }
 
-// ── Brand icons ───────────────────────────────────────────────────────────
-
-function ZaloIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 32 32" fill="none" className={className}>
-      <rect width="32" height="32" rx="7" fill="#0068FF" />
-      <path d="M9 10h14M9 22l14-12M9 22h14" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function MessengerIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <circle cx="12" cy="12" r="12" fill="#0084FF" />
-      <path d="M12 3C7.03 3 3 6.81 3 11.5c0 2.74 1.35 5.19 3.45 6.8V21l3.1-1.7c.83.23 1.7.35 2.6.35 4.97 0 9-3.81 9-8.5S16.97 3 12 3zm.9 11.44-2.3-2.46-4.49 2.46 4.94-5.24 2.35 2.46 4.44-2.46-4.94 5.24z" fill="white" />
-    </svg>
-  );
-}
-
 // ── Main content ──────────────────────────────────────────────────────────
 
 interface Props {
@@ -446,7 +426,7 @@ export function CheckoutSuccessContent({ lang, isVn, dict, zaloUrl, messengerUrl
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 text-[13px] text-(--color-stone-light) transition-colors hover:text-(--color-zalo)"
               >
-                <ZaloIcon className="h-5 w-5 shrink-0" />
+                <Image src="/logo-zalo.webp" alt="Zalo" width={20} height={20} className="shrink-0" />
                 {dict.zalo_support}
               </a>
             )}
@@ -457,7 +437,7 @@ export function CheckoutSuccessContent({ lang, isVn, dict, zaloUrl, messengerUrl
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 text-[13px] text-(--color-stone-light) transition-colors hover:text-(--color-messenger)"
               >
-                <MessengerIcon className="h-5 w-5 shrink-0" />
+                <Image src="/logo-fb-msg.svg" alt="Messenger" width={20} height={20} className="shrink-0" />
                 {dict.messenger_support}
               </a>
             )}

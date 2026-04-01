@@ -18,6 +18,7 @@ import Link from 'next/link';
 import { ShoppingCart } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { StarRating } from '@/components/ui/StarRating';
+import { ListingBadgePill } from '@/components/ui/ListingBadgePill';
 import { useCart } from '@/context/CartContext';
 import { useDict } from '@/context/DictionaryContext';
 import type { ListingCard as ListingCardType } from '@/types';
@@ -106,22 +107,33 @@ export function ListingCard({
           </button>
         )}
 
-        {/* Badge overlay */}
-        {isOutOfStock && (
-          <div className="absolute left-2 top-2 rounded-full bg-(--color-stone) px-2 py-0.5 text-[11px] font-600 text-white">
-            {dict.catalog.out_of_stock}
-          </div>
-        )}
-        {!isOutOfStock && isOnSale && (
-          <div className="absolute left-2 top-2 rounded-full bg-(--color-promo) px-2 py-0.5 text-[11px] font-600 text-white">
-            {dict.catalog.on_sale}
-          </div>
-        )}
-        {!isOutOfStock && !isOnSale && isLowStock && (
-          <div className="absolute left-2 top-2 rounded-full bg-(--color-cta) px-2 py-0.5 text-[11px] font-600 text-white">
-            {dict.catalog.low_stock.replace('{n}', String(listing.quantity))}
-          </div>
-        )}
+        {/* Badge overlay — top-left stack */}
+        <div className="absolute left-2 top-2 flex flex-col gap-1">
+          {/* Stock state always takes priority */}
+          {isOutOfStock ? (
+            <div className="rounded-full bg-(--color-stone) px-2 py-0.5 text-[10px] font-600 text-white">
+              {dict.catalog.out_of_stock}
+            </div>
+          ) : (
+            <>
+              {/* Admin listing badges — promotion first, max 2 shown on card */}
+              {listing.badges && listing.badges.slice(0, 2).map((badge) => (
+                <ListingBadgePill key={badge.id} badge={badge} size="sm" />
+              ))}
+              {/* Auto stock badges when no admin badges cover urgency */}
+              {(!listing.badges || listing.badges.length === 0) && isOnSale && (
+                <div className="rounded-full bg-(--color-promo) px-2 py-0.5 text-[10px] font-600 text-white">
+                  {dict.catalog.on_sale}
+                </div>
+              )}
+              {(!listing.badges || listing.badges.length === 0) && !isOnSale && isLowStock && (
+                <div className="rounded-full bg-(--color-cta) px-2 py-0.5 text-[10px] font-600 text-white">
+                  {dict.catalog.low_stock.replace('{n}', String(listing.quantity))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </Link>
 
       {/* Content area */}

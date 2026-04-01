@@ -14,12 +14,11 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { getProduct, getReviews, getProductsBySlugs, getSiteSettings, getListingBySlug, getListings } from '@/lib/api';
+import { getProduct, getReviews, getSiteSettings, getListingBySlug, getListings } from '@/lib/api';
 import { getDictionary } from '@/lib/i18n';
 import { productJsonLd, breadcrumbJsonLd, generateProductMeta } from '@/lib/seo';
 import { ProductImageGallery } from '@/components/features/ProductImageGallery';
 import { ProductColorProvider } from '@/context/ProductColorContext';
-import { ProductGrid } from '@/components/features/ProductGrid';
 import { ListingGrid } from '@/components/features/ListingGrid';
 import { AffiliateCTA } from '@/components/features/AffiliateCTA';
 import { ProductVNPanel } from '@/components/features/ProductVNPanel';
@@ -33,6 +32,7 @@ import { ReviewForm } from '@/components/features/ReviewForm';
 import { StarRating } from '@/components/ui/StarRating';
 import { PriceLine } from '@/components/ui/PriceLine';
 import { Badge } from '@/components/ui/Badge';
+import { ListingBadgePill } from '@/components/ui/ListingBadgePill';
 
 export const revalidate = 3600; // 1h ISR — matches PRODUCT_DETAIL TTL
 
@@ -87,15 +87,11 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   const product = productRes.data;
   const reviews = reviewsRes.data;
 
-  const relatedSlugs = product.tags.slice(0, 4).filter((t) => t !== productSlug);
-  const relatedProducts = relatedSlugs.length > 0
-    ? await getProductsBySlugs(relatedSlugs).catch(() => [])
-    : [];
-  const relatedListings = relatedSlugs.length === 0
-    ? await getListings({ category: product.category?.slug, perPage: 4, platform: 'direct' })
-        .then((r) => r.data.filter((l) => l.slug !== slug))
-        .catch(() => [])
-    : [];
+  // Always use listings for "You May Also Like" — product slugs can't be used
+  // as shop URLs since the detail page routes by listing slug, not product slug.
+  const relatedListings = await getListings({ category: product.category?.slug, perPage: 5, platform: 'direct' })
+    .then((r) => r.data.filter((l) => l.slug !== slug).slice(0, 4))
+    .catch(() => []);
 
   // Listing images take precedence over product images when available
   const galleryImages = directListing?.images?.length
@@ -116,8 +112,12 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     ? { amount: directListing.comparePriceCentsVnd, currency: 'USD' as const, formatted: directListing.formattedCompareAtPriceVnd ?? '' }
     : null;
 
-  const displayName = lang === 'vi' && product.nameVi ? product.nameVi : product.name;
-  const displayTagline = lang === 'vi' && product.taglineVi ? product.taglineVi : product.tagline;
+  const displayName = lang === 'vi'
+    ? (directListing?.titleVi || directListing?.title || product.nameVi || product.name)
+    : (directListing?.title || product.name);
+  const displayTagline = lang === 'vi'
+    ? (directListing?.taglineVi || directListing?.tagline || product.taglineVi || product.tagline)
+    : (directListing?.tagline || product.tagline);
   const displayCategoryName = lang === 'vi' && product.category?.nameVi ? product.category.nameVi : product.category?.name;
   const displayDescription = lang === 'vi' && product.descriptionVi ? product.descriptionVi : product.description;
 
@@ -185,6 +185,15 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
 
           <h1 className="text-2xl leading-tight md:text-3xl lg:text-4xl">{displayName}</h1>
           <p className="text-[13px] font-500 text-(--color-cta)">{displayTagline}</p>
+
+          {/* Listing badges — all badges shown on detail page (up to 3) */}
+          {directListing?.badges && directListing.badges.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {directListing.badges.map((badge) => (
+                <ListingBadgePill key={badge.id} badge={badge} size="md" />
+              ))}
+            </div>
+          )}
 
           {(listingPrice ?? product.price).amount > 0 && (
             <PriceLine
@@ -312,13 +321,10 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         </div>
       </section>
 
-      {(relatedProducts.length > 0 || relatedListings.length > 0) && (
+      {relatedListings.length > 0 && (
         <section className="mt-16" aria-labelledby="related-heading">
           <h2 id="related-heading" className="mb-6">{dict.product.related_products}</h2>
-          {relatedProducts.length > 0
-            ? <ProductGrid products={relatedProducts} priorityCount={0} />
-            : <ListingGrid listings={relatedListings} priorityCount={0} />
-          }
+          <ListingGrid listings={relatedListings} priorityCount={0} />
         </section>
       )}
 

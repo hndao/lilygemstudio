@@ -219,9 +219,10 @@ export function ProductBuyBox({
 
       </div>
 
-      {/* ── External Platform Links (Etsy, etc.) ──────────────────────── */}
-      {externalLinks.length > 0 && (
-        <div className="flex flex-col gap-2">
+      {/* ── External Platform Links (Etsy, etc.) — Global users only ─── */}
+      {/* VN users buy via Add to Cart / Zalo / Messenger; never show external links to them */}
+      {!preferVnd && externalLinks.length > 0 && (
+        <div className={externalLinks.length === 1 ? 'flex' : 'grid grid-cols-2 gap-2'}>
           {externalLinks.map((link) => {
             const label = dict.buy_on.replace('%s', link.platform.charAt(0).toUpperCase() + link.platform.slice(1));
             return (
@@ -230,7 +231,7 @@ export function ProductBuyBox({
                 href={link.url}
                 target="_blank"
                 rel="nofollow noopener noreferrer sponsored"
-                className="flex h-[48px] w-full items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-(--color-border) text-[14px] font-600 text-(--color-stone) transition-all hover:border-(--color-cta-hover) hover:bg-(--color-quartz-mist)"
+                className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-(--color-border) text-[14px] font-600 text-(--color-stone) transition-all hover:border-(--color-cta-hover) hover:bg-(--color-quartz-mist)"
               >
                 {label}
               </a>

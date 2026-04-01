@@ -659,9 +659,22 @@ export interface ListingCard {
   description?: string | null;
   descriptionVi?: string | null;
   titleVi?: string | null;
+  tagline?: string | null;
+  taglineVi?: string | null;
   /** Social proof — from first bundle product's review aggregates */
   averageRating?: number | null;
   reviewCount?: number | null;
+  /** Merchandising badges attached in admin — max 3, ordered by priority */
+  badges?: ListingBadge[];
+}
+
+export interface ListingBadge {
+  id: number;
+  name: string;
+  group: 'promotion' | 'status' | 'trust' | 'shipping' | 'exclusive';
+  color: string;      // hex background — "#DC2626"
+  textColor: string;  // hex text — "#FFFFFF"
+  expiresAt?: string | null; // ISO 8601 — null = no expiry; set for Flash Sale, Pre-order, etc.
 }
 
 export interface ListingListParams {
