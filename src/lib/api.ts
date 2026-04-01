@@ -202,6 +202,23 @@ export async function getListings(
     ...(params.badge && { badge: params.badge }),
   });
 
+  if (params.priceMin)      qs.append('price_min',      String(params.priceMin));
+  if (params.priceMax)      qs.append('price_max',      String(params.priceMax));
+  if (params.priceCurrency) qs.append('price_currency', params.priceCurrency);
+  if (params.inStock)       qs.append('in_stock',       '1');
+
+  if (params.customFilters) {
+    for (const [k, v] of Object.entries(params.customFilters)) {
+      if (v) qs.append(k, v);
+    }
+  }
+
+  // Tell the API which custom filter keys should use variant combination queries
+  const variantFields = (params.filterDefinitions ?? [])
+    .filter(d => d.source === 'variant')
+    .map(d => d.name);
+  if (variantFields.length) qs.append('variant_fields', variantFields.join(','));
+
   return apiFetch<PaginatedResponse<ListingCard>>(`/listings?${qs}`, {
     revalidate: REVALIDATION.LISTING_LIST,
     tags: [CACHE_TAGS.LISTINGS],

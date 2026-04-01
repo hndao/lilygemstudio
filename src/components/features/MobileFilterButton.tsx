@@ -20,9 +20,10 @@ import type { CategoryWithChildren } from '@/types';
 interface MobileFilterButtonProps {
   categories: CategoryWithChildren[];
   activeCount?: number;
+  preferVnd?: boolean;
 }
 
-export function MobileFilterButton({ categories, activeCount = 0 }: MobileFilterButtonProps) {
+export function MobileFilterButton({ categories, activeCount = 0, preferVnd = false }: MobileFilterButtonProps) {
   const dict = useDict();
   const [open, setOpen] = useState(false);
 
@@ -92,7 +93,7 @@ export function MobileFilterButton({ categories, activeCount = 0 }: MobileFilter
               </div>
 
               {/* Filter content — reuses desktop CatalogFilters unchanged */}
-              <CatalogFilters categories={categories} dict={dict.catalog} />
+              <CatalogFilters categories={categories} dict={dict.catalog} preferVnd={preferVnd} />
             </motion.div>
           </>
         )}

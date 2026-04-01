@@ -63,7 +63,20 @@
     "filter_button": "Lọc",
     "filters_aria": "Bộ lọc ({n} đang áp dụng)",
     "filters_title": "Bộ lọc sản phẩm",
-    "close_filters": "Đóng bộ lọc"
+    "close_filters": "Đóng bộ lọc",
+    "price_range": "Khoảng Giá",
+    "in_stock_only": "Chỉ hàng còn",
+    "apply_filters": "Áp Dụng",
+    "reset_filters": "Xóa Bộ Lọc",
+    "price_all": "Tất cả mức giá",
+    "price_under_50": "Dưới $50",
+    "price_50_200": "$50 – $200",
+    "price_200_500": "$200 – $500",
+    "price_over_500": "Trên $500",
+    "price_under_1m": "Dưới 1.000.000₫",
+    "price_1m_3m": "1M – 3M₫",
+    "price_3m_5m": "3M – 5M₫",
+    "price_over_5m": "Trên 5M₫"
   },
   "product": {
     "add_to_cart": "Mua Ngay",

@@ -12,6 +12,7 @@
  */
 
 import { Suspense } from 'react';
+import { cookies } from 'next/headers';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getListings, getCategories } from '@/lib/api';
@@ -30,20 +31,30 @@ export const metadata: Metadata = {
   description: 'Khám phá bộ sưu tập trang sức đá quý thủ công của chúng tôi.',
 };
 
+const RESERVED_PARAMS = new Set([
+  'page', 'sort', 'q', 'category', 'badge',
+  'price_min', 'price_max', 'price_currency', 'in_stock', 'variant_fields',
+]);
+
 interface ShopPageProps {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<{
-    page?: string;
-    sort?: string;
-    q?: string;
-    category?: string;
-    badge?: string;
-  }>;
+  searchParams: Promise<Record<string, string | undefined>>;
 }
 
 export default async function ShopPage({ params, searchParams }: ShopPageProps) {
   const { lang } = await params;
   const sp = await searchParams;
+
+  // Determine if Vietnamese user (VND pricing) from NEXT_COUNTRY cookie
+  const cookieStore = await cookies();
+  const country = cookieStore.get('NEXT_COUNTRY')?.value ?? '';
+  const preferVnd = country === 'VN';
+
+  // Parse custom field filters from URL (anything not in RESERVED_PARAMS)
+  const customFilters: Record<string, string> = {};
+  for (const [key, value] of Object.entries(sp)) {
+    if (!RESERVED_PARAMS.has(key) && value) customFilters[key] = value;
+  }
 
   const listingParams: ListingListParams = {
     page: sp.page ? Number(sp.page) : 1,
@@ -53,11 +64,19 @@ export default async function ShopPage({ params, searchParams }: ShopPageProps) 
     ...(sp.q && { query: sp.q }),
     ...(sp.category && { category: sp.category }),
     ...(sp.badge && sp.badge !== 'all' && { badge: sp.badge }),
+    ...(sp.price_min && { priceMin: Number(sp.price_min) }),
+    ...(sp.price_max && { priceMax: Number(sp.price_max) }),
+    ...(sp.price_currency && { priceCurrency: sp.price_currency as 'usd' | 'vnd' }),
+    ...(sp.in_stock === '1' && { inStock: true }),
+    ...(Object.keys(customFilters).length > 0 && { customFilters }),
   };
 
   const activeFilterCount = [
     sp.category,
     sp.badge && sp.badge !== 'all' ? sp.badge : undefined,
+    sp.price_min || sp.price_max ? 'price' : undefined,
+    sp.in_stock === '1' ? 'in_stock' : undefined,
+    ...Object.keys(customFilters),
   ].filter(Boolean).length;
 
   // Fetch listings, categories, and dict in parallel — no waterfall
@@ -108,7 +127,12 @@ export default async function ShopPage({ params, searchParams }: ShopPageProps) 
 
         {/* Filter sidebar — tablet+ visible, mobile hidden */}
         <Suspense>
-          <CatalogFilters categories={categories} className="hidden md:block" dict={dict.catalog} />
+          <CatalogFilters
+            categories={categories}
+            className="hidden md:block"
+            dict={dict.catalog}
+            preferVnd={preferVnd}
+          />
         </Suspense>
 
         {/* Listing grid */}
@@ -119,7 +143,7 @@ export default async function ShopPage({ params, searchParams }: ShopPageProps) 
               <CatalogSort />
             </Suspense>
             <Suspense>
-              <MobileFilterButton categories={categories} activeCount={activeFilterCount} />
+              <MobileFilterButton categories={categories} activeCount={activeFilterCount} preferVnd={preferVnd} />
             </Suspense>
           </div>
 

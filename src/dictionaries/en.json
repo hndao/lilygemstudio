@@ -63,7 +63,20 @@
     "filter_button": "Filter",
     "filters_aria": "Filters ({n} active)",
     "filters_title": "Product Filters",
-    "close_filters": "Close filters"
+    "close_filters": "Close filters",
+    "price_range": "Price Range",
+    "in_stock_only": "In stock only",
+    "apply_filters": "Apply Filters",
+    "reset_filters": "Reset",
+    "price_all": "All prices",
+    "price_under_50": "Under $50",
+    "price_50_200": "$50 – $200",
+    "price_200_500": "$200 – $500",
+    "price_over_500": "Over $500",
+    "price_under_1m": "Under 1,000,000₫",
+    "price_1m_3m": "1M – 3M₫",
+    "price_3m_5m": "3M – 5M₫",
+    "price_over_5m": "Over 5M₫"
   },
   "product": {
     "add_to_cart": "Buy Now",

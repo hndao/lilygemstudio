@@ -437,6 +437,27 @@ export interface Category {
   nameVi?: string;          // Tiếng Việt translation
   slug: string;
   productCount: number;
+  /** Filter definitions for the shop sidebar — populated by the category's assigned field definitions */
+  filterDefinitions?: FilterDefinition[];
+}
+
+// ── Shop filter definitions (from category.filterDefinitions) ────────────────
+
+export interface FilterOptionItem {
+  value: string;
+  label: string;
+  hex?: string | null;
+}
+
+export interface FilterDefinition {
+  name: string;
+  label: string;
+  labelVi?: string | null;
+  /** 'variant' = backed by product_field_combinations; 'custom_field' = backed by product_field_values */
+  source: 'variant' | 'custom_field';
+  /** How the filter is rendered in the UI */
+  display: 'checkbox' | 'color_swatch' | 'button_grid' | 'text';
+  options: FilterOptionItem[];
 }
 
 /**
@@ -685,6 +706,20 @@ export interface ListingListParams {
   query?: string;
   category?: string;
   badge?: string;
+  /** Price range filter — integer cents (USD) or đồng (VND) */
+  priceMin?: number;
+  priceMax?: number;
+  priceCurrency?: 'usd' | 'vnd';
+  /** Only show listings with available stock */
+  inStock?: boolean;
+  /** Arbitrary field slug → value filters (e.g. { stone_type: 'agate', color: 'gold' }) */
+  customFilters?: Record<string, string>;
+  /**
+   * Used client-side only — tells getListings() which customFilter keys should be
+   * routed to the variant_fields query param (combination-based) vs spec-based.
+   * Derived from the category's filterDefinitions.
+   */
+  filterDefinitions?: FilterDefinition[];
 }
 
 export interface CheckoutPayload {
