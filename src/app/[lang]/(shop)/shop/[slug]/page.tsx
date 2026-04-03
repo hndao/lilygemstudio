@@ -27,12 +27,13 @@ import { FeatureAnalysis } from '@/components/features/FeatureAnalysis';
 import { BlocksRenderer } from '@/components/features/BlocksRenderer';
 import { MobileStickyBar } from '@/components/features/MobileStickyBar';
 import { ReviewGrid } from '@/components/features/ReviewGrid';
-import { LikeButton } from '@/components/features/LikeButton';
 import { ReviewForm } from '@/components/features/ReviewForm';
 import { StarRating } from '@/components/ui/StarRating';
 import { PriceLine } from '@/components/ui/PriceLine';
 import { Badge } from '@/components/ui/Badge';
 import { ListingBadgePill } from '@/components/ui/ListingBadgePill';
+import { ProductSpecs } from '@/components/features/ProductSpecs';
+import { FengShuiCard } from '@/components/features/FengShuiCard';
 
 export const revalidate = 3600; // 1h ISR — matches PRODUCT_DETAIL TTL
 
@@ -50,7 +51,7 @@ export async function generateMetadata({ params, searchParams }: ProductPageProp
     const productSlug = listing.bundleProducts[0]?.slug;
     if (!productSlug) return { title: 'Product Not Found' };
     const { data: product } = await getProduct(productSlug, token);
-    const meta = generateProductMeta(product, { listingSlug: slug, lang });
+    const meta = generateProductMeta(product, { listingSlug: slug, lang, listingTitle: listing.title ?? undefined });
     if (token) {
       return { ...meta, robots: { index: false, follow: false } };
     }
@@ -120,6 +121,10 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     : (directListing?.tagline || product.tagline);
   const displayCategoryName = lang === 'vi' && product.category?.nameVi ? product.category.nameVi : product.category?.name;
   const displayDescription = lang === 'vi' && product.descriptionVi ? product.descriptionVi : product.description;
+  // Listing brand story takes priority; falls back to product brand story.
+  const rawBrandStory   = directListing?.brandStory   ?? product.brandStory;
+  const rawBrandStoryVi = directListing?.brandStoryVi ?? product.brandStoryVi;
+  const displayBrandStory = lang === 'vi' && rawBrandStoryVi ? rawBrandStoryVi : rawBrandStory;
 
 
   // ── Breadcrumbs ────────────────────────────────────────────────────────────
@@ -170,30 +175,37 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
 
         {/* Product info — right column */}
         <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center gap-2">
-            {product.badge && <Badge variant={product.badge} />}
-            {product.categories && product.categories.length > 0 && product.categories.map((cat) => (
-              <Link
-                key={cat.slug}
-                href={`/${lang}/shop?category=${cat.slug}`}
-                className="rounded-full border border-(--color-border) px-2.5 py-0.5 text-[11px] font-500 text-(--color-muted) hover:border-(--color-cta) hover:text-(--color-cta) transition-colors"
-              >
-                {lang === 'vi' && cat.nameVi ? cat.nameVi : cat.name}
-              </Link>
-            ))}
-          </div>
-
-          <h1 className="text-2xl leading-tight md:text-3xl lg:text-4xl">{displayName}</h1>
-          <p className="text-[13px] font-500 text-(--color-cta)">{displayTagline}</p>
-
-          {/* Listing badges — all badges shown on detail page (up to 3) */}
+          {/* ── Listing badges only — hidden when none assigned ──────── */}
           {directListing?.badges && directListing.badges.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap items-center gap-2">
               {directListing.badges.map((badge) => (
                 <ListingBadgePill key={badge.id} badge={badge} size="md" />
               ))}
             </div>
           )}
+
+          <h1
+            className="font-heading text-2xl leading-tight md:text-3xl lg:text-4xl"
+          >{displayName}</h1>
+          {displayTagline && (
+            <p className="font-heading text-[15px] font-300 italic text-(--color-muted)">{displayTagline}</p>
+          )}
+
+          <div className="flex flex-wrap items-center gap-3">
+            <StarRating
+              rating={product.reviewSummary.averageRating}
+              count={product.reviewSummary.totalCount}
+              size="md"
+            />
+            {(product.likesCount ?? 0) > 0 && (
+              <span className="flex items-center gap-1.5 text-[13px] text-(--color-muted)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+                <span className="font-500">{product.likesCount}</span>
+              </span>
+            )}
+          </div>
 
           {(listingPrice ?? product.price).amount > 0 && (
             <PriceLine
@@ -205,33 +217,17 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
             />
           )}
 
-          <div className="flex flex-wrap items-center gap-3">
-            <StarRating
-              rating={product.reviewSummary.averageRating}
-              count={product.reviewSummary.totalCount}
-              size="md"
-            />
-            <LikeButton
-              productSlug={productSlug}
-              initialCount={product.likesCount ?? 0}
-              dict={dict.like}
-            />
-          </div>
-
-          {/* Social proof micro-signal */}
-          {((product.likesCount ?? 0) > 0 || product.reviewSummary.totalCount > 0) && (
-            <p className="text-[12px] text-(--color-muted)">
-              {(product.likesCount ?? 0) > 0 && (
-                <span>{product.likesCount} {lang === 'vi' ? 'người yêu thích' : 'people loved this'}</span>
-              )}
-              {(product.likesCount ?? 0) > 0 && product.reviewSummary.totalCount > 0 && <span> · </span>}
-              {product.reviewSummary.totalCount > 0 && (
-                <span>{product.reviewSummary.totalCount} {lang === 'vi' ? 'đánh giá' : 'reviews'}</span>
-              )}
-            </p>
-          )}
-
           {product.verdict && <ExpertVerdict verdict={product.verdict} />}
+
+          {/* Brand story — decorative quote card above variant pickers */}
+          {displayBrandStory && (
+            <div className="overflow-hidden rounded-[14px] bg-(--color-cream) px-7 py-6">
+              <div
+                className="relative font-heading text-[15px] font-300 italic leading-[1.75] text-(--color-stone) prose-p:m-0"
+                dangerouslySetInnerHTML={{ __html: displayBrandStory }}
+              />
+            </div>
+          )}
 
           <div className="h-px bg-(--color-border)" aria-hidden="true" />
 
@@ -249,6 +245,10 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
               stockQuantity={product.quantity}
               dict={dict.buybox}
               listing={directListing}
+              trustBadges={product.trustBadges}
+              variants={product.variants}
+              lang={lang}
+              sizeGuideLabel={dict.buybox.size_guide}
             />
           </div>
 
@@ -266,6 +266,10 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
                 dict={dict.buybox}
                 listing={directListing}
                 preferVnd={false}
+                trustBadges={product.trustBadges}
+                variants={product.variants}
+                lang={lang}
+                sizeGuideLabel={dict.buybox.size_guide}
               />
             ) : (
               <>
@@ -281,6 +285,24 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
               </>
             )}
           </div>
+
+          {/* Specs — inside right column; hidden for multi-product bundles */}
+          {product.customFields && Object.keys(product.customFields).length > 0
+            && directListing.bundleProducts.length <= 1
+            && (
+              <ProductSpecs
+                customFields={product.customFields as Record<string, string | number | boolean | import('@/types').ColorFieldValue>}
+                customFieldDefinitions={product.customFieldDefinitions}
+                lang={lang}
+                className="mt-2"
+              />
+            )
+          }
+
+          {/* Feng shui section — inside right column per mockup */}
+          {product.fengShui && (
+            <FengShuiCard profile={product.fengShui} lang={lang} className="mt-2" />
+          )}
 
         </div>
       </div>
@@ -299,7 +321,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       {displayDescription && (
         <div className="mt-12">
           <h2 className="mb-4 font-heading text-base font-700 text-(--color-stone)">
-            {lang === 'vi' ? 'Mô tả sản phẩm' : 'Description'}
+            {dict.product.description_heading}
           </h2>
           <div
             className="prose max-w-none text-sm leading-relaxed text-(--color-muted)"
@@ -309,13 +331,12 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       )}
 
       <blockquote className="mt-16 border-l-2 border-(--color-sand-dark) pl-5 text-sm italic leading-relaxed text-(--color-muted)">
-        Every piece featured on LilyGem Studio is carefully crafted and verified for quality.
-        When you shop with us, you support independent artisans. No middlemen, no mystery — just authentic beauty you can trust.
+        {dict.product.trust_quote}
       </blockquote>
 
       {/* ── Reviews section ────────────────────────────────────────────────── */}
       <section className="mt-16" aria-labelledby="reviews-heading">
-        <ReviewGrid reviews={reviews} totalCount={reviewsRes.meta.total} />
+        <ReviewGrid reviews={reviews} totalCount={reviewsRes.meta.total} dict={dict.review} />
         <div className="mt-8">
           <ReviewForm productSlug={productSlug} dict={dict.review} />
         </div>

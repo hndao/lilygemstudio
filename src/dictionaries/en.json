@@ -84,7 +84,9 @@
     "no_reviews": "No reviews yet.",
     "related_products": "You May Also Like",
     "available": "In Stock",
-    "sold_out": "Sold Out"
+    "sold_out": "Sold Out",
+    "description_heading": "Description",
+    "trust_quote": "Every piece featured on LilyGem Studio is carefully crafted and verified for quality. When you shop with us, you support independent artisans. No middlemen, no mystery — just authentic beauty you can trust."
   },
   "home": {
     "hero_title": "Natural Gemstone Jewelry, Handcrafted",
@@ -144,7 +146,10 @@
     "ineligible_no_listing": "This product is not available for review.",
     "checking_eligibility": "Checking eligibility...",
     "verified_purchase_badge": "Verified Purchase",
-    "submit_error": "Something went wrong. Please try again."
+    "submit_error": "Something went wrong. Please try again.",
+    "no_reviews": "No reviews yet",
+    "be_first": "Be the first to share your experience",
+    "customer_reviews": "Customer Reviews"
   },
   "like": {
     "like": "Like",
@@ -397,6 +402,7 @@
     "buy_on": "Buy on %s",
     "trust_shipping": "Free shipping",
     "trust_handmade": "Handcrafted",
-    "trust_returns": "7-day returns"
+    "trust_returns": "7-day returns",
+    "size_guide": "Size Guide"
   }
 }

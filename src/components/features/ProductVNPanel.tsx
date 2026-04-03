@@ -13,7 +13,7 @@ import { VariantPicker } from './VariantPicker';
 import { ProductBuyBox } from './ProductBuyBox';
 import { useProductColor } from '@/context/ProductColorContext';
 import type { Dictionary } from '@/lib/i18n';
-import type { ListingCard, Money } from '@/types';
+import type { ListingCard, Money, ProductDetail } from '@/types';
 
 interface ProductVNPanelProps {
   productId: string;
@@ -28,6 +28,10 @@ interface ProductVNPanelProps {
   dict: Dictionary['buybox'];
   listing?: ListingCard | null;
   preferVnd?: boolean;
+  trustBadges?: ProductDetail['trustBadges'];
+  variants?: ProductDetail['variants'];
+  lang?: string;
+  sizeGuideLabel?: string;
 }
 
 export function ProductVNPanel({
@@ -43,6 +47,10 @@ export function ProductVNPanel({
   dict,
   listing,
   preferVnd = true,
+  trustBadges,
+  variants,
+  lang = 'en',
+  sizeGuideLabel,
 }: ProductVNPanelProps) {
   // Collect option types from all bundle products, deduplicated by slug.
   // (Multiple bundle products may share the same option type slug, e.g. "color".)
@@ -62,9 +70,13 @@ export function ProductVNPanel({
 
   const { setActiveTag } = useProductColor();
 
-  // Pre-filter gallery to the first color_swatch value on initial render
+  // An option drives gallery switching when it's a color field (by type) or rendered as swatches.
+  const isColorOption = (o: (typeof allOptions)[0]) =>
+    o.fieldType === 'color' || o.displayType === 'color_swatch';
+
+  // Pre-filter gallery to the first color option value on initial render
   useEffect(() => {
-    const colorOption = allOptions.find((o) => o.displayType === 'color_swatch');
+    const colorOption = allOptions.find(isColorOption);
     const defaultSlug = colorOption?.values[0]?.slug;
     if (defaultSlug) setActiveTag(defaultSlug);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -73,9 +85,8 @@ export function ProductVNPanel({
   const handleOptionChange = (optionSlug: string, valueSlug: string) => {
     setSelectedOptions((prev) => ({ ...prev, [optionSlug]: valueSlug }));
 
-    // When a color_swatch option changes, use the value slug as the gallery tag key
     const option = allOptions.find((o) => o.slug === optionSlug);
-    if (option?.displayType === 'color_swatch') {
+    if (option && isColorOption(option)) {
       setActiveTag(valueSlug || null);
     }
   };
@@ -86,6 +97,9 @@ export function ProductVNPanel({
         options={allOptions}
         selected={selectedOptions}
         onChange={handleOptionChange}
+        variants={variants}
+        lang={lang}
+        sizeGuideLabel={sizeGuideLabel}
       />
 
       <ProductBuyBox
@@ -102,6 +116,9 @@ export function ProductVNPanel({
         listing={listing}
         preferVnd={preferVnd}
         selectedOptions={selectedOptions}
+        variants={variants}
+        trustBadges={trustBadges}
+        lang={lang}
       />
     </div>
   );

@@ -17,6 +17,7 @@ import { ListingCard } from './ListingCard';
 interface ListingGridProps {
   listings: ListingCardType[];
   priorityCount?: number;
+  preferVnd?: boolean;
 }
 
 const containerVariants = {
@@ -37,7 +38,7 @@ const itemVariants = {
   },
 };
 
-export function ListingGrid({ listings, priorityCount = 4 }: ListingGridProps) {
+export function ListingGrid({ listings, priorityCount = 4, preferVnd = false }: ListingGridProps) {
   if (listings.length === 0) {
     return (
       <div className="flex min-h-[200px] items-center justify-center text-(--color-muted)">
@@ -63,6 +64,7 @@ export function ListingGrid({ listings, priorityCount = 4 }: ListingGridProps) {
             listing={listing}
             priority={index < priorityCount}
             sizes="(max-width: 767px) 50vw, (max-width: 1279px) 33vw, 25vw"
+            preferVnd={preferVnd}
           />
         </motion.div>
       ))}

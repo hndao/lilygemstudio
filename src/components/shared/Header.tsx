@@ -108,8 +108,8 @@ export function Header({ dict, lang }: HeaderProps) {
     <>
       <header
         className={[
-          'sticky top-0 z-30 w-full bg-(--color-stone) transition-shadow duration-200',
-          scrolled ? 'shadow-[0_2px_16px_rgba(0,0,0,0.18)]' : '',
+          'sticky top-0 z-30 w-full bg-(--color-sand-light) transition-shadow duration-200',
+          scrolled ? 'shadow-[0_2px_16px_rgba(44,38,30,0.10)]' : '',
         ].join(' ')}
       >
         <div className="mx-auto flex h-14 max-w-[1280px] items-center justify-between px-4 md:px-6 lg:px-8">
@@ -117,7 +117,7 @@ export function Header({ dict, lang }: HeaderProps) {
           {/* ── Logo ─────────────────────────────────────────────────── */}
           <Link
             href={base}
-            className="font-heading text-xl font-bold tracking-tight text-(--color-cream) transition-opacity hover:opacity-80"
+            className="font-heading text-xl font-bold tracking-tight text-(--color-stone) transition-opacity hover:opacity-80"
             aria-label="LilyGem Studio — Home"
           >
             🌸 LilyGem Studio
@@ -129,7 +129,7 @@ export function Header({ dict, lang }: HeaderProps) {
               <Link
                 key={link.href}
                 href={link.href}
-                className="font-heading text-sm font-600 text-(--color-sand) transition-colors hover:text-(--color-cream)"
+                className="font-heading text-sm font-600 text-(--color-stone-light) transition-colors hover:text-(--color-cta)"
               >
                 {link.label}
               </Link>
@@ -146,7 +146,7 @@ export function Header({ dict, lang }: HeaderProps) {
               <button
                 type="button"
                 onClick={() => setSearchOpen((v) => !v)}
-                className="flex h-10 w-10 items-center justify-center rounded-md text-(--color-sand) transition-colors hover:bg-white/10 hover:text-(--color-cream)"
+                className="flex h-10 w-10 items-center justify-center rounded-md text-(--color-stone-light) transition-colors hover:bg-(--color-quartz-mist) hover:text-(--color-cta)"
                 aria-label={dict.header.search_label}
                 aria-expanded={searchOpen}
               >
@@ -157,7 +157,7 @@ export function Header({ dict, lang }: HeaderProps) {
               <button
                 type="button"
                 onClick={openCart}
-                className="relative flex h-10 w-10 items-center justify-center rounded-md text-(--color-sand) transition-colors hover:bg-white/10 hover:text-(--color-cream)"
+                className="relative flex h-10 w-10 items-center justify-center rounded-md text-(--color-sand) transition-colors hover:bg-(--color-quartz-mist) hover:text-(--color-cta)"
                 aria-label={dict.header.cart_aria}
               >
                 <ShoppingBag className="h-5 w-5" />
@@ -185,7 +185,7 @@ export function Header({ dict, lang }: HeaderProps) {
                 <button
                   type="button"
                   onClick={handleProfileClick}
-                  className="flex h-10 w-10 items-center justify-center rounded-md text-(--color-sand) transition-colors hover:bg-white/10 hover:text-(--color-cream)"
+                  className="flex h-10 w-10 items-center justify-center rounded-md text-(--color-stone-light) transition-colors hover:bg-(--color-quartz-mist) hover:text-(--color-cta)"
                   aria-label={dict.header.profile}
                   aria-expanded={profileOpen}
                   aria-haspopup="menu"
@@ -269,7 +269,7 @@ export function Header({ dict, lang }: HeaderProps) {
             <button
               type="button"
               onClick={openCart}
-              className="xl:hidden relative flex h-10 w-10 items-center justify-center rounded-md text-(--color-sand) transition-colors hover:bg-white/10 hover:text-(--color-cream)"
+              className="xl:hidden relative flex h-10 w-10 items-center justify-center rounded-md text-(--color-stone-light) transition-colors hover:bg-(--color-quartz-mist) hover:text-(--color-cta)"
               aria-label={dict.header.cart_aria}
             >
               <ShoppingBag className="h-5 w-5" />
@@ -283,7 +283,7 @@ export function Header({ dict, lang }: HeaderProps) {
             {/* Hamburger — mobile only */}
             <button
               onClick={() => setMenuOpen(true)}
-              className="xl:hidden flex items-center justify-center rounded-md p-2 text-(--color-sand) transition-colors hover:bg-white/10 hover:text-(--color-cream)"
+              className="xl:hidden flex items-center justify-center rounded-md p-2 text-(--color-stone-light) transition-colors hover:bg-(--color-quartz-mist) hover:text-(--color-cta)"
               aria-label={dict.header.open_menu}
               aria-expanded={menuOpen}
             >
@@ -294,23 +294,23 @@ export function Header({ dict, lang }: HeaderProps) {
 
         {/* ── Search overlay ─────────────────────────────────────────── */}
         {searchOpen && (
-          <div className="border-t border-white/10 bg-(--color-stone) px-4 py-3 md:px-6 lg:px-8">
+          <div className="border-t border-(--color-border) bg-(--color-sand-light) px-4 py-3 md:px-6 lg:px-8">
             <form onSubmit={handleSearchSubmit} className="mx-auto max-w-[1280px]">
               <div className="relative flex items-center">
-                <Search className="absolute left-3 h-4 w-4 text-(--color-sand-dark) pointer-events-none" aria-hidden="true" />
+                <Search className="absolute left-3 h-4 w-4 text-(--color-stone-muted) pointer-events-none" aria-hidden="true" />
                 <input
                   ref={searchInputRef}
                   type="search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={dict.header.search_placeholder}
-                  className="w-full rounded-lg bg-white/10 py-2.5 pl-9 pr-10 text-sm text-(--color-cream) placeholder:text-(--color-sand-dark) outline-none focus:ring-1 focus:ring-(--color-cta)"
+                  className="w-full rounded-lg bg-(--color-sand) py-2.5 pl-9 pr-10 text-sm text-(--color-stone) placeholder:text-(--color-stone-muted) outline-none focus:ring-1 focus:ring-(--color-cta)"
                   aria-label={dict.header.search_label}
                 />
                 <button
                   type="button"
                   onClick={() => setSearchOpen(false)}
-                  className="absolute right-2 flex h-6 w-6 items-center justify-center rounded text-(--color-sand-dark) hover:text-(--color-cream)"
+                  className="absolute right-2 flex h-6 w-6 items-center justify-center rounded text-(--color-stone-muted) hover:text-(--color-cta)"
                   aria-label="Close search"
                 >
                   <X className="h-4 w-4" />

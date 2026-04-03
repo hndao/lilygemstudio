@@ -13,6 +13,10 @@ type BadgeVariant = NonNullable<ProductCard['badge']>;
 
 const BADGE_CONFIG: Record<BadgeVariant, { label: string; className: string; icon?: boolean }> = {
   new: {
+    label: 'New',
+    className: 'bg-(--color-quartz-mist) text-(--color-agate-dark)',
+  },
+  natural: {
     label: 'Natural gemstone',
     // Moss Agate tint bg, dark moss text — includes checkmark icon
     className: 'bg-(--color-nature-bg) text-(--color-nature-text)',

@@ -27,12 +27,14 @@ interface ListingCardProps {
   listing: ListingCardType;
   priority?: boolean;
   sizes?: string;
+  preferVnd?: boolean;
 }
 
 export function ListingCard({
   listing,
   priority = false,
   sizes = '(max-width: 767px) 50vw, (max-width: 1279px) 33vw, 25vw',
+  preferVnd = false,
 }: ListingCardProps) {
   const params = useParams();
   const lang = (params?.lang as string) || 'en';
@@ -54,13 +56,12 @@ export function ListingCard({
   };
   const isLowStock = listing.quantity != null && listing.quantity > 0 && listing.quantity <= 10;
 
-  // VN site shows VND price first; USD price as secondary
-  const primaryPrice = listing.formattedPriceVnd ?? listing.formattedPrice;
-  const comparePrice = listing.comparePriceCentsVnd != null
-    ? listing.formattedCompareAtPriceVnd
-    : listing.comparePriceCents != null
-      ? listing.formattedCompareAtPrice
-      : null;
+  const primaryPrice = preferVnd
+    ? (listing.formattedPriceVnd ?? listing.formattedPrice)
+    : (listing.formattedPrice ?? listing.formattedPriceVnd);
+  const comparePrice = preferVnd
+    ? (listing.comparePriceCentsVnd != null ? listing.formattedCompareAtPriceVnd : listing.comparePriceCents != null ? listing.formattedCompareAtPrice : null)
+    : (listing.comparePriceCents != null ? listing.formattedCompareAtPrice : listing.comparePriceCentsVnd != null ? listing.formattedCompareAtPriceVnd : null);
   const isOnSale = comparePrice != null;
 
   return (

@@ -7,10 +7,10 @@
  * This keeps design tokens co-located with styles and enables runtime access
  * via CSS custom properties — critical for dynamic theming and SSR correctness.
  *
- * PALETTE RATIONALE (Agate-Inspired, 60-30-10 Rule):
- *  - Warm Ivory (#F7F4F0) / Soft Cream (#FFFDF9): 60% — page bg and card surfaces
- *  - Obsidian (#1A1A1A) / Sandstone (#E8E2DA): 30% — text, borders, structure
- *  - Agate Brown (#8B6F4E) / Golden Agate (#B8956A): 10% — CTA, price, accents
+ * PALETTE RATIONALE (Warm Gold / Stone — from lilygem_product_detail mockup):
+ *  - Warm Sand (#f3efe7) / Cream (#faf8f4) / Warm-White (#fefdfb): 60% — bg & surfaces
+ *  - Stone (#4a4239) / Stone-Light (#7a7068) / Stone-Muted (#b5ada3): 30% — text, borders
+ *  - Gold (#9e8c6c) / Gold-Light (#c4b394) / Gold-Dark (#6b5d45): 10% — CTA, accents
  */
 
 /* ── Smooth anchor scrolling ────────────────────────────────────────────── */
@@ -37,51 +37,49 @@ h2[id] {
 }
 
 @theme inline {
-  /* ─── Brand Palette (LilyGemStudio — Agate-Inspired) ────────────── */
-  --color-stone: #1A1A1A;         /* Obsidian — warm near-black for text & header */
-  --color-stone-light: #333333;
-  --color-sand: #E8E2DA;          /* Sandstone — borders, dividers, nav links */
-  --color-sand-light: #FFFDF9;    /* Soft Cream — card surfaces, popups */
-  --color-sand-dark: #D4C5B0;     /* Tumbled Stone — decorative, compare-at price */
-  --color-sage: #7A8B6F;          /* Moss Agate — "Natural" / "Handmade" accents */
-  --color-sage-light: #A3B096;
-  --color-sage-dark: #5C6B4F;
-  --color-terracotta: #B8956A;    /* Golden Agate — hover states, star ratings */
-  --color-terracotta-dark: #8B6F4E; /* Agate Brown — CTA, prices, captions */
+  /* ─── Brand Palette (LilyGemStudio — Warm Gold / Stone, per mockup) ── */
+  --color-stone: #4a4239;         /* Stone — headings, labels, primary UI text */
+  --color-stone-light: #7a7068;   /* Stone-Light — secondary labels, form text */
+  --color-stone-muted: #b5ada3;   /* Stone-Muted — placeholders, disabled text */
+  --color-sand: #e8e2d8;          /* Border/Sand — borders, dividers */
+  --color-sand-light: #fefdfb;    /* Warm-White — elevated card surfaces */
+  --color-sand-dark: #b5ada3;     /* Stone-Muted alias — compare-at, decorative */
+  --color-sage: #5a7a5e;          /* Success Green — verified, handmade accents */
+  --color-sage-light: #8aab8d;
+  --color-sage-dark: #3d5940;
+  --color-terracotta: #c4b394;    /* Gold-Light — hover states, star ratings */
+  --color-terracotta-dark: #9e8c6c; /* Gold — CTA alias */
 
-  --color-charcoal: #1A1A1A;      /* Obsidian alias */
-  --color-cream: #FFFDF9;         /* Soft Cream alias */
+  --color-charcoal: #2c261e;      /* Darkest text alias */
+  --color-cream: #faf8f4;         /* Cream — section cards, brand-story bg */
 
-  /* ─── New Palette Tokens ─────────────────────────────────────────── */
-  --color-nature: #7A8B6F;        /* Moss Agate — "Natural" / "New" badge */
-  --color-nature-bg: #EDF1EB;     /* Moss Agate tint — badge background */
-  --color-nature-text: #5C6F52;   /* Moss Agate dark — badge text */
-  --color-promo: #9E7B6B;         /* Rose Quartz — Sale / promo badge */
-  --color-quartz-mist: #F0E6D6;   /* Quartz Mist — accent bg tint */
+  /* ─── Palette Tokens ─────────────────────────────────────────────── */
+  --color-nature: #5a7a5e;        /* Success Green — "Natural" / "New" badge */
+  --color-nature-bg: #e8f0e9;     /* Success tint — badge background */
+  --color-nature-text: #3d5940;   /* Success dark — badge text */
+  --color-promo: #9e7b6b;         /* Warm rose — Sale / urgency ("only X left") */
+  --color-quartz-mist: #f0ece4;   /* Border-Light — hover bg tint on pills/buttons */
   --color-zalo: #0068FF;          /* Zalo brand blue */
   --color-messenger: #0084FF;     /* Facebook Messenger brand blue */
-  --color-agate-dark: #6B5A3F;    /* Agate Brown dark — active/pressed CTA */
+  --color-agate-dark: #6b5d45;    /* Gold-Dark — active/pressed CTA state */
 
   /* ─── Semantic Aliases ───────────────────────────────────────────── */
-  --color-background: #F7F4F0;    /* Warm Ivory — main page background */
-  --color-surface: #FFFDF9;       /* Soft Cream — cards, modals */
-  --color-foreground: var(--color-stone);
-  --color-muted: #8B6F4E;         /* Agate Brown — captions, brand-labels (4.5:1 on ivory) */
-  --color-border: #E8E2DA;        /* Sandstone — all borders and dividers */
+  --color-background: #f3efe7;    /* Sand — main page background */
+  --color-surface: #fefdfb;       /* Warm-White — cards, modals, overlays */
+  --color-foreground: #2c261e;    /* Text — body copy (darkest warm brown) */
+  --color-muted: #8a8078;         /* Text-Secondary — captions, meta, sub-labels */
+  --color-border: #e8e2d8;        /* Border — all borders and dividers */
   --color-primary: var(--color-stone);
   --color-secondary: var(--color-sand);
-  --color-accent: var(--color-terracotta-dark);
+  --color-accent: var(--color-cta);
 
   /*
-   * WHY --color-cta #8B6F4E (Agate Brown):
-   * WCAG 2.1 SC 1.4.3 requires ≥4.5:1 for normal text. Agate Brown on
-   * Warm Ivory (#F7F4F0) achieves 4.5:1 — exactly at the AA threshold.
-   * Hover uses Golden Agate (#B8956A) which is lighter but within acceptable
-   * range for large UI components (≥3:1). The on-button text is always
-   * #FFFDF9 (Soft Cream), giving 4.6:1 on Agate Brown — AA compliant.
+   * --color-cta #9e8c6c (Gold): warm gold from mockup --gold token.
+   * Used for primary CTAs, prices, and active selection rings.
+   * Hover: #c4b394 (Gold-Light). Active/pressed: #6b5d45 (Gold-Dark).
    */
-  --color-cta: #8B6F4E;           /* Agate Brown — 4.5:1 on Warm Ivory */
-  --color-cta-hover: #B8956A;     /* Golden Agate — hover state */
+  --color-cta: #9e8c6c;           /* Gold — primary CTA, prices, selections */
+  --color-cta-hover: #c4b394;     /* Gold-Light — hover state */
 
   /* ─── Typography ─────────────────────────────────────────────────── */
   /*
@@ -117,9 +115,9 @@ h2[id] {
   --radius-xl: 16px;
 
   /* ─── Shadows (Warm, Stone-based) ───────────────────────────────── */
-  --shadow-soft: 0 2px 8px 0 rgba(26, 26, 26, 0.06);
-  --shadow-card: 0 4px 16px 0 rgba(26, 26, 26, 0.10);
-  --shadow-lifted: 0 8px 32px 0 rgba(26, 26, 26, 0.14);
+  --shadow-soft: 0 2px 8px 0 rgba(44, 38, 30, 0.06);
+  --shadow-card: 0 4px 16px 0 rgba(44, 38, 30, 0.10);
+  --shadow-lifted: 0 8px 32px 0 rgba(44, 38, 30, 0.14);
 }
 
 /* ─── Base Reset ──────────────────────────────────────────────────────── */
@@ -135,12 +133,12 @@ html {
 }
 
 :root {
-  --color-terracotta: #B8956A;      /* Golden Agate */
-  --color-terracotta-dark: #8B6F4E; /* Agate Brown */
+  --color-terracotta: #c4b394;      /* Gold-Light */
+  --color-terracotta-dark: #9e8c6c; /* Gold */
 }
 
 body {
-  background-color: var(--color-background);
+  background-color: var(--color-sand-light);
   color: var(--color-foreground);
 
   /*

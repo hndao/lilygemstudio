@@ -84,7 +84,9 @@
     "no_reviews": "Chưa có đánh giá nào.",
     "related_products": "Có Thể Bạn Thích",
     "available": "Còn Hàng",
-    "sold_out": "Hết Hàng"
+    "sold_out": "Hết Hàng",
+    "description_heading": "Mô tả sản phẩm",
+    "trust_quote": "Mỗi sản phẩm trên LilyGem Studio đều được lựa chọn kỹ lưỡng và xác thực chất lượng. Mua sắm cùng chúng tôi là ủng hộ các nghệ nhân độc lập. Không trung gian, không bí ẩn — chỉ có vẻ đẹp đích thực bạn có thể tin tưởng."
   },
   "home": {
     "hero_title": "Trang Sức Đá Quý Tự Nhiên, Thủ Công",
@@ -144,7 +146,10 @@
     "ineligible_no_listing": "Sản phẩm này không có sẵn để đánh giá.",
     "checking_eligibility": "Đang kiểm tra...",
     "verified_purchase_badge": "Đã mua hàng",
-    "submit_error": "Đã có lỗi xảy ra. Vui lòng thử lại."
+    "submit_error": "Đã có lỗi xảy ra. Vui lòng thử lại.",
+    "no_reviews": "Chưa có đánh giá",
+    "be_first": "Hãy là người đầu tiên đánh giá",
+    "customer_reviews": "Đánh giá khách hàng"
   },
   "like": {
     "like": "Thích",
@@ -397,6 +402,7 @@
     "buy_on": "Mua trên %s",
     "trust_shipping": "Miễn phí vận chuyển",
     "trust_handmade": "Thủ công mỹ nghệ",
-    "trust_returns": "Đổi trả 7 ngày"
+    "trust_returns": "Đổi trả 7 ngày",
+    "size_guide": "Hướng dẫn cỡ"
   }
 }

@@ -86,8 +86,13 @@ export interface ColorOption {
 export interface CustomFieldDefinition {
   name: string;                                    // snake_case key stored in custom_fields JSON
   label: string;                                   // human-readable UI label
+  labelVi?: string;                                // Vietnamese label
   type: 'text' | 'number' | 'boolean' | 'color';
   unit?: string;                                   // only present for type=number (e.g. "mm", "cm")
+  /** Label override shown only in the specs panel (EN). Falls back to label. */
+  specificationsEnLabel?: string;
+  /** Label override shown only in the specs panel (VI). Falls back to labelVi then label. */
+  specificationsViLabel?: string;
   group?: string;                                  // grouping label used for section headers
   required?: boolean;
   /** Only for type=color. When true, value is ColorOption[] (multi-swatch picker). Default false. */
@@ -200,7 +205,7 @@ export interface ProductCard {
   affiliateLink: AffiliateLink;
   affiliateLinkVn?: AffiliateLink;
   reviewSummary: ReviewSummary;
-  badge?: 'new' | 'bestseller' | 'sale' | 'limited';
+  badge?: 'new' | 'natural' | 'bestseller' | 'sale' | 'limited';
   /** null = unlimited / not tracked; 0 = out of stock; >0 = available quantity */
   quantity?: number | null;
   /** Total number of likes from all customers */
@@ -230,6 +235,33 @@ export interface ProductDetail extends ProductCard {
   pros_cons?: ProductProsCons;
   /** AI-generated content blocks — rendered by BlocksRenderer.tsx */
   blocks?: ProductBlock[];
+  /** Per-combination stock — used to mark individual option values as out-of-stock */
+  variants?: {
+    id: string;
+    attributes: Record<string, string>;
+    quantity: number | null;
+    isAvailable: boolean;
+    price_cents?: number | null;
+    price_cents_vnd?: number | null;
+    is_active: boolean;
+  }[];
+  /** Feng shui profile — assigned by admin, reusable across products */
+  fengShui?: {
+    elementSymbol: string;
+    elementName: string;
+    elementNameVi?: string;
+    description?: string;
+    descriptionVi?: string;
+    benefitTags: string[];
+  } | null;
+  /** Trust badges — admin-curated signals (shipping, authenticity, returns) */
+  trustBadges?: {
+    icon: string;
+    label: string;
+    labelVi?: string;
+    subLabel?: string;
+    subLabelVi?: string;
+  }[];
 }
 
 // ── Journal / Blog (two shapes: card vs full article) ────────────────────────
@@ -671,7 +703,8 @@ export interface ListingCard {
     options: {
       slug: string;
       name: string;
-      displayType: 'color_swatch' | 'text_pill' | 'image_swatch' | 'dropdown';
+      fieldType: string;   // 'color' | 'text' | 'number' | 'boolean'
+      displayType: string; // 'color_swatch' | 'button_grid' | 'checkbox' | 'toggle' | 'text'
       values: { slug: string; label: string; metadata: Record<string, string> }[];
     }[];
   }[];
@@ -682,6 +715,8 @@ export interface ListingCard {
   titleVi?: string | null;
   tagline?: string | null;
   taglineVi?: string | null;
+  brandStory?: string | null;
+  brandStoryVi?: string | null;
   /** Social proof — from first bundle product's review aggregates */
   averageRating?: number | null;
   reviewCount?: number | null;

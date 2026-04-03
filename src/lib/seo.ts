@@ -35,7 +35,7 @@ const SITE_NAME = 'DARIIV';
  *    alternates tell Google which language version to show per locale, preventing
  *    the wrong language from ranking for Vietnamese vs English queries.
  */
-export function generateProductMeta(product: ProductDetail, options?: { listingSlug?: string; lang?: string }): Metadata {
+export function generateProductMeta(product: ProductDetail, options?: { listingSlug?: string; lang?: string; listingTitle?: string }): Metadata {
   const pageSlug = options?.listingSlug ?? product.slug;
   const lang = options?.lang ?? 'en';
   const url = `${SITE_URL}/${lang}/shop/${pageSlug}`;
@@ -44,11 +44,12 @@ export function generateProductMeta(product: ProductDetail, options?: { listingS
   // repins/shares than a raw product photo with no context overlay.
   const ogImageUrl = `${SITE_URL}/api/og/product/${product.slug}`;
 
-  // WHY metadata.seo: imported products get AI-written meta tags stored in
-  // metadata.seo by ImportProductFromUrl. We prefer those over the generic
-  // name/tagline fallbacks because they are keyword-optimised and length-capped.
+  // WHY listingTitle takes precedence: the listing title is what the admin named
+  // this sellable item (e.g. "Moonlight & Golden Veil Agate Bangle Set") and is
+  // what appears as the page H1. The product's AI-imported seo.meta_title is an
+  // SEO-optimised fallback for when no listing title is provided.
   const seo = product.metadata?.seo;
-  const title = seo?.meta_title ?? product.name;
+  const title = options?.listingTitle ?? seo?.meta_title ?? product.name;
   const description = seo?.meta_description ?? product.tagline;
 
   return {

@@ -17,12 +17,14 @@
  *  - Tertiary:  "Yêu thích" — wishlist for retargeting
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Heart } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/hooks/useAuth';
+import { apiToggleLike, apiGetLikeStatus } from '@/lib/auth';
 import type { Dictionary } from '@/lib/i18n';
-import type { Money, ListingCard } from '@/types';
+import type { Money, ListingCard, ProductDetail } from '@/types';
 
 interface ProductBuyBoxProps {
   productId: string;
@@ -37,6 +39,8 @@ interface ProductBuyBoxProps {
   selectedOptions?: Record<string, string>;
   /** null = unlimited; 0 = out of stock; >0 = capped at this value */
   stockQuantity?: number | null;
+  /** Per-combination variant stock from ProductDetail */
+  variants?: ProductDetail['variants'];
   dict: Dictionary['buybox'];
   /**
    * Active direct listing for this product.
@@ -49,6 +53,9 @@ interface ProductBuyBoxProps {
    * Set to false for global (non-VN) users to show USD price.
    */
   preferVnd?: boolean;
+  /** Admin-curated trust signals; empty array = fall back to plain text dict */
+  trustBadges?: ProductDetail['trustBadges'];
+  lang?: string;
 }
 
 export function ProductBuyBox({
@@ -62,17 +69,52 @@ export function ProductBuyBox({
   coverImage,
   selectedOptions,
   stockQuantity,
+  variants,
   dict,
   listing,
   preferVnd = true,
+  trustBadges,
+  lang = 'en',
 }: ProductBuyBoxProps) {
   const { addItem } = useCart();
+  const { customer, token, openAuthModal } = useAuth();
 
-  // Effective max = min of listing hard cap and product-level stock.
-  // Both are optional caps; missing (null/undefined) means no cap from that source.
+  // ── Wishlist / like state ─────────────────────────────────────────────────
+  const [liked, setLiked]             = useState(false);
+  const [likeLoading, setLikeLoading] = useState(false);
+
+  useEffect(() => {
+    if (!customer || !token) return;
+    apiGetLikeStatus(productSlug, token)
+      .then(({ liked: l }) => setLiked(l))
+      .catch(() => {});
+  }, [customer, token, productSlug]);
+
+  const handleLike = useCallback(async () => {
+    if (!customer) { openAuthModal(); return; }
+    if (!token || likeLoading) return;
+    setLikeLoading(true);
+    try {
+      const { liked: newLiked } = await apiToggleLike(productSlug, token);
+      setLiked(newLiked);
+    } catch {
+      // ignore
+    } finally {
+      setLikeLoading(false);
+    }
+  }, [customer, token, productSlug, likeLoading, openAuthModal]);
+
+  // Find the variant combination that matches the current selection.
+  const selectedVariant = variants?.find((v) =>
+    Object.entries(selectedOptions ?? {}).every(([key, val]) => v.attributes[key] === val),
+  );
+
+  // Effective max = min of listing hard cap, product-level stock, and selected-variant stock.
+  // Any source that is null/undefined contributes no cap (treated as Infinity).
   const effectiveMax = Math.min(
     listing?.quantity ?? Infinity,
     stockQuantity ?? Infinity,
+    selectedVariant?.quantity ?? Infinity,
   );
   const maxQty        = isFinite(effectiveMax) ? effectiveMax : 99;
   const hasKnownStock = isFinite(effectiveMax); // at least one source has a cap
@@ -80,6 +122,16 @@ export function ProductBuyBox({
   const isOutOfStock  = hasKnownStock && maxQty === 0;
 
   const [quantity, setQuantity]   = useState((isUnavailable || isOutOfStock) ? 0 : 1);
+
+  // Reset quantity when the selected variant changes (e.g. switching from Black→Gold
+  // may change the available stock cap).
+  useEffect(() => {
+    setQuantity((prev) => {
+      if (isUnavailable || isOutOfStock) return 0;
+      return Math.min(prev, Math.max(1, maxQty));
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedVariant?.id]);
   const [addBusy, setAddBusy]     = useState(false);
 
   // Display price: respect preferVnd flag — VN users see ₫, global users see $
@@ -89,6 +141,18 @@ export function ProductBuyBox({
         : (listing.formattedPrice ?? listing.formattedPriceVnd))
     : null;
   const displayPrice = preferVnd ? (priceVnd ?? price) : price;
+
+  // Button label price = unit price × quantity
+  const buttonTotalPrice = listing
+    ? (() => {
+        const useVnd = preferVnd && listing.priceCentsVnd != null;
+        const cents  = useVnd ? listing.priceCentsVnd! : listing.priceCents;
+        if (cents == null) return listingPriceDisplay;
+        return useVnd
+          ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(cents * quantity)
+          : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents * quantity / 100);
+      })()
+    : null;
 
   // Platform links for non-direct channels (e.g. Etsy)
   const externalLinks = (listing?.platformLinks ?? []).filter(
@@ -161,62 +225,45 @@ export function ProductBuyBox({
         ) : null}
       </div>
 
-      {/* ── Primary CTA ────────────────────────────────────────────────── */}
-      <button
-        type="button"
-        onClick={handleAddToCart}
-        disabled={isUnavailable || isOutOfStock || addBusy}
-        className="flex h-[52px] w-full items-center justify-center gap-2.5 rounded-[12px] bg-(--color-cta) text-[16px] font-600 tracking-[0.02em] text-(--color-cream) transition-all hover:-translate-y-px hover:bg-(--color-cta-hover) hover:shadow-[0_4px_16px_rgba(139,111,78,0.25)] active:translate-y-0 active:bg-(--color-agate-dark) disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
-        aria-label={isUnavailable ? dict.unavailable : isOutOfStock ? dict.out_of_stock : `${dict.add_to_cart} ${productName}`}
-      >
-        <ShoppingCart className="h-5 w-5" aria-hidden="true" />
-        {isUnavailable
-          ? dict.unavailable
-          : isOutOfStock
-          ? dict.out_of_stock
-          : addBusy
-          ? '...'
-          : listingPriceDisplay
-          ? `${dict.add_to_cart} — ${listingPriceDisplay}`
-          : dict.add_to_cart
-        }
-      </button>
-
-      {/* ── Trust Signals ──────────────────────────────────────────────── */}
-      <div className="flex items-center justify-center gap-4 text-xs text-(--color-muted)">
-        <span>🚚 {dict.trust_shipping}</span>
-        <span>✋ {dict.trust_handmade}</span>
-        <span>🔄 {dict.trust_returns}</span>
-      </div>
-
-      {/* ── Secondary Row: Zalo / Messenger / Yêu thích ──────────────── */}
+      {/* ── Primary CTA: Cart + Wishlist heart ────────────────────────── */}
       <div className="flex gap-2.5">
-        {zaloUrl && (
-          <a
-            href={zaloHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-1 items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-(--color-border) py-3 text-[13px] font-600 text-(--color-stone) transition-all hover:border-(--color-cta-hover) hover:bg-(--color-quartz-mist)"
-            aria-label={dict.contact_zalo}
-          >
-            <Image src="/logo-zalo.webp" alt="Zalo" width={18} height={18} className="shrink-0" />
-            Zalo
-          </a>
-        )}
+        <button
+          type="button"
+          onClick={handleAddToCart}
+          disabled={isUnavailable || isOutOfStock || addBusy}
+          className="flex flex-1 h-[52px] items-center justify-center gap-2.5 rounded-[12px] bg-(--color-cta) text-[16px] font-600 tracking-[0.02em] text-(--color-cream) transition-all hover:-translate-y-px hover:bg-(--color-cta-hover) hover:shadow-[0_4px_16px_rgba(139,111,78,0.25)] active:translate-y-0 active:bg-(--color-agate-dark) disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
+          aria-label={isUnavailable ? dict.unavailable : isOutOfStock ? dict.out_of_stock : `${dict.add_to_cart} ${productName}`}
+        >
+          <ShoppingCart className="h-5 w-5" aria-hidden="true" />
+          {isUnavailable
+            ? dict.unavailable
+            : isOutOfStock
+            ? dict.out_of_stock
+            : addBusy
+            ? '...'
+            : buttonTotalPrice
+            ? `${dict.add_to_cart} — ${buttonTotalPrice}`
+            : dict.add_to_cart
+          }
+        </button>
 
-        {messengerUrl && (
-          <a
-            href={messengerUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-1 items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-(--color-border) py-3 text-[13px] font-600 text-(--color-stone) transition-all hover:border-(--color-cta-hover) hover:bg-(--color-quartz-mist)"
-            aria-label={dict.message}
-          >
-            <Image src="/logo-fb-msg.svg" alt="Messenger" width={18} height={18} className="shrink-0" />
-            {dict.message}
-          </a>
-        )}
-
+        {/* Wishlist heart button */}
+        <button
+          type="button"
+          onClick={handleLike}
+          disabled={likeLoading}
+          aria-label={liked ? 'Remove from wishlist' : 'Add to wishlist'}
+          aria-pressed={liked}
+          className={[
+            'flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[12px]',
+            'border-[1.5px] transition-all',
+            liked
+              ? 'border-(--color-sand-dark) bg-(--color-cream) text-(--color-cta)'
+              : 'border-(--color-border) text-(--color-stone-light) hover:border-(--color-sand-dark) hover:bg-(--color-cream) hover:text-(--color-cta)',
+          ].join(' ')}
+        >
+          <Heart className="h-5 w-5" fill={liked ? 'currentColor' : 'none'} />
+        </button>
       </div>
 
       {/* ── External Platform Links (Etsy, etc.) — Global users only ─── */}
@@ -237,6 +284,65 @@ export function ProductBuyBox({
               </a>
             );
           })}
+        </div>
+      )}
+
+      {/* ── Trust Signals ──────────────────────────────────────────────── */}
+      {trustBadges && trustBadges.length > 0 ? (
+        <div className="grid grid-cols-3 gap-2">
+          {trustBadges.map((b, i) => (
+            <div
+              key={i}
+              className="flex flex-col items-center gap-1 rounded-[10px] bg-(--color-cream) px-2 py-3 text-center"
+            >
+              <span className="text-[20px] leading-none">{b.icon}</span>
+              <span className="text-[11px] font-600 leading-tight text-(--color-stone)">
+                {lang === 'vi' ? (b.labelVi ?? b.label) : b.label}
+              </span>
+              {(lang === 'vi' ? (b.subLabelVi ?? b.subLabel) : b.subLabel) && (
+                <span className="text-[10px] leading-tight text-(--color-muted)">
+                  {lang === 'vi' ? (b.subLabelVi ?? b.subLabel) : b.subLabel}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="flex items-center justify-center gap-4 text-xs text-(--color-muted)">
+          <span>🚚 {dict.trust_shipping}</span>
+          <span>✋ {dict.trust_handmade}</span>
+          <span>🔄 {dict.trust_returns}</span>
+        </div>
+      )}
+
+      {/* ── Zalo / Messenger consultation row ────────────────────────── */}
+      {(zaloUrl || messengerUrl) && (
+        <div className="flex gap-2.5">
+          {zaloUrl && (
+            <a
+              href={zaloHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-1 items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-(--color-border) py-3 text-[13px] font-600 text-(--color-stone) transition-all hover:border-(--color-cta-hover) hover:bg-(--color-quartz-mist)"
+              aria-label={dict.contact_zalo}
+            >
+              <Image src="/logo-zalo.webp" alt="Zalo" width={18} height={18} className="shrink-0" />
+              Zalo
+            </a>
+          )}
+
+          {messengerUrl && (
+            <a
+              href={messengerUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-1 items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-(--color-border) py-3 text-[13px] font-600 text-(--color-stone) transition-all hover:border-(--color-cta-hover) hover:bg-(--color-quartz-mist)"
+              aria-label={dict.message}
+            >
+              <Image src="/logo-fb-msg.svg" alt="Messenger" width={18} height={18} className="shrink-0" />
+              {dict.message}
+            </a>
+          )}
         </div>
       )}
 

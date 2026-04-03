@@ -3,15 +3,13 @@
 /**
  * CatalogFilters — filter sidebar (tablet/desktop) and filter drawer (mobile).
  *
- * PENDING STATE PATTERN:
- *  - All filter selections go into local `pendingFilters` state
- *  - URL is only updated when the user clicks "Apply Filters"
- *  - This prevents per-click ISR re-fetches on every selection
+ * IMMEDIATE NAVIGATION PATTERN:
+ *  - Each filter selection immediately updates the URL (router.push)
+ *  - No pending/Apply step — selections are reflected in results instantly
  *
  * CATEGORY HIERARCHY:
  *  - Top-level categories shown with expand/collapse
  *  - Children indented beneath their parent
- *  - Category selection immediately updates `pendingFilters.category`
  *
  * PRICE BRACKETS:
  *  - VND brackets shown when `preferVnd=true` (Vietnamese users)
@@ -248,18 +246,8 @@ function FieldFilterSection({ def, activeValues, onToggle }: FieldFilterSectionP
 
 const RESERVED_PARAMS = new Set([
   'page', 'sort', 'q', 'category', 'badge',
-  'price_min', 'price_max', 'price_currency', 'in_stock',
+  'price_min', 'price_max', 'price_currency', 'in_stock', 'variant_fields',
 ]);
-
-interface PendingFilters {
-  category: string;
-  badge: string;
-  priceMin?: number;
-  priceMax?: number;
-  priceCurrency?: 'usd' | 'vnd';
-  inStock: boolean;
-  customFilters: Record<string, string[]>; // field name → selected values
-}
 
 interface CatalogFiltersProps {
   categories?: CategoryWithChildren[];
@@ -278,122 +266,115 @@ export function CatalogFilters({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // ── Parse current URL to initialise pending state ────────────────────────
-  const initialPending = useMemo((): PendingFilters => {
-    const customFilters: Record<string, string[]> = {};
+  // ── Current filter values — read directly from URL ────────────────────────
+  const category = searchParams.get('category') ?? '';
+  const badge = searchParams.get('badge') ?? 'all';
+  const priceMin = Number(searchParams.get('price_min')) || undefined;
+  const priceMax = Number(searchParams.get('price_max')) || undefined;
+  const inStock = searchParams.get('in_stock') === '1';
+
+  const customFilters = useMemo(() => {
+    const cf: Record<string, string[]> = {};
     searchParams.forEach((value, key) => {
       if (!RESERVED_PARAMS.has(key)) {
-        customFilters[key] = value.split(',').filter(Boolean);
+        cf[key] = value.split(',').filter(Boolean);
       }
     });
-    return {
-      category:      searchParams.get('category') ?? '',
-      badge:         searchParams.get('badge') ?? 'all',
-      priceMin:      Number(searchParams.get('price_min')) || undefined,
-      priceMax:      Number(searchParams.get('price_max')) || undefined,
-      priceCurrency: (searchParams.get('price_currency') as 'usd' | 'vnd') || undefined,
-      inStock:       searchParams.get('in_stock') === '1',
-      customFilters,
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // intentionally only init once — pending state is local
+    return cf;
+  }, [searchParams]);
 
-  const [pending, setPending] = useState<PendingFilters>(initialPending);
-
-  // ── Find the APPLIED (URL) category to determine which filterDefinitions to show ─
-  const appliedCategory = searchParams.get('category') ?? '';
+  // ── Find selected category's filterDefinitions ────────────────────────────
   const selectedCategoryData = useMemo(() => {
     for (const cat of categories) {
-      if (cat.slug === appliedCategory) return cat;
+      if (cat.slug === category) return cat;
       for (const child of cat.children ?? []) {
-        if (child.slug === appliedCategory) return child;
+        if (child.slug === category) return child;
       }
     }
     return null;
-  }, [categories, appliedCategory]);
+  }, [categories, category]);
   const filterDefinitions: FilterDefinition[] = selectedCategoryData?.filterDefinitions ?? [];
 
   // ── Price brackets ────────────────────────────────────────────────────────
   const d = dict;
   const priceBrackets = d ? getPriceBrackets(preferVnd, d) : [];
   const activePriceBracket = priceBrackets.find(
-    (b) => (b.min ?? undefined) === pending.priceMin && (b.max ?? undefined) === pending.priceMax
+    (b) => (b.min ?? undefined) === priceMin && (b.max ?? undefined) === priceMax
   ) ?? priceBrackets[0];
 
-  // ── Pending state helpers ─────────────────────────────────────────────────
-  function setCategory(slug: string) {
-    setPending((p) => ({ ...p, category: slug, customFilters: {} })); // reset field filters on category change
-  }
-
-  function setBadge(value: string) {
-    setPending((p) => ({ ...p, badge: value }));
-  }
-
-  function setPriceBracket(bracket: PriceBracket) {
-    const currency = preferVnd ? 'vnd' : 'usd';
-    setPending((p) => ({
-      ...p,
-      priceMin: bracket.min,
-      priceMax: bracket.max,
-      priceCurrency: bracket.min || bracket.max ? currency : undefined,
-    }));
-  }
-
-  function setInStock(v: boolean) {
-    setPending((p) => ({ ...p, inStock: v }));
-  }
-
-  function toggleCustomFilter(fieldName: string, value: string) {
-    setPending((p) => {
-      const current = p.customFilters[fieldName] ?? [];
-      const next = current.includes(value)
-        ? current.filter((v) => v !== value)
-        : [...current, value];
-      return {
-        ...p,
-        customFilters: next.length > 0
-          ? { ...p.customFilters, [fieldName]: next }
-          : Object.fromEntries(Object.entries(p.customFilters).filter(([k]) => k !== fieldName)),
-      };
-    });
-  }
-
-  // ── Apply / Reset ─────────────────────────────────────────────────────────
-  function applyFilters() {
+  // ── Navigate: merge current URL params with overrides and push ────────────
+  function navigate(overrides: {
+    category?: string;
+    badge?: string;
+    priceMin?: number | undefined;
+    priceMax?: number | undefined;
+    priceCurrency?: string | undefined;
+    inStock?: boolean;
+    customFilters?: Record<string, string[]>;
+  }) {
     const next = new URLSearchParams();
-    // Preserve sort and query from URL
     const sort = searchParams.get('sort');
     const q = searchParams.get('q');
     if (sort) next.set('sort', sort);
     if (q) next.set('q', q);
 
-    if (pending.category) next.set('category', pending.category);
-    if (pending.badge && pending.badge !== 'all') next.set('badge', pending.badge);
-    if (pending.priceMin) next.set('price_min', String(pending.priceMin));
-    if (pending.priceMax) next.set('price_max', String(pending.priceMax));
-    if (pending.priceCurrency) next.set('price_currency', pending.priceCurrency);
-    if (pending.inStock) next.set('in_stock', '1');
+    const cat     = 'category'     in overrides ? overrides.category!     : category;
+    const bdg     = 'badge'        in overrides ? overrides.badge!         : badge;
+    const pMin    = 'priceMin'     in overrides ? overrides.priceMin       : priceMin;
+    const pMax    = 'priceMax'     in overrides ? overrides.priceMax       : priceMax;
+    const pCur    = 'priceCurrency'in overrides ? overrides.priceCurrency  : (searchParams.get('price_currency') || undefined);
+    const stock   = 'inStock'      in overrides ? overrides.inStock!       : inStock;
+    const cf      = 'customFilters'in overrides ? overrides.customFilters! : customFilters;
 
-    for (const [field, values] of Object.entries(pending.customFilters)) {
+    if (cat) next.set('category', cat);
+    if (bdg && bdg !== 'all') next.set('badge', bdg);
+    if (pMin) next.set('price_min', String(pMin));
+    if (pMax) next.set('price_max', String(pMax));
+    if (pCur) next.set('price_currency', pCur);
+    if (stock) next.set('in_stock', '1');
+    for (const [field, values] of Object.entries(cf)) {
       if (values.length > 0) next.set(field, values.join(','));
     }
 
-    // Inform API which fields are variant-based
-    const variantFields = filterDefinitions
-      .filter((d) => d.source === 'variant')
-      .map((d) => d.name);
+    // Derive variant_fields from the (possibly new) category
+    const catForDefs = 'category' in overrides ? overrides.category! : category;
+    let catData = null;
+    for (const c of categories) {
+      if (c.slug === catForDefs) { catData = c; break; }
+      for (const child of c.children ?? []) {
+        if (child.slug === catForDefs) { catData = child; break; }
+      }
+      if (catData) break;
+    }
+    const defs: FilterDefinition[] = catData?.filterDefinitions ?? filterDefinitions;
+    const variantFields = defs.filter((fd) => fd.source === 'variant').map((fd) => fd.name);
     if (variantFields.length > 0) next.set('variant_fields', variantFields.join(','));
 
     router.push(`/shop?${next.toString()}`);
   }
 
-  function resetFilters() {
-    setPending({
-      category: '', badge: 'all',
-      priceMin: undefined, priceMax: undefined, priceCurrency: undefined,
-      inStock: false, customFilters: {},
+  function handleCategoryChange(slug: string) {
+    navigate({ category: slug, customFilters: {} });
+  }
+
+  function handlePriceBracket(bracket: PriceBracket) {
+    const currency = preferVnd ? 'vnd' : 'usd';
+    navigate({
+      priceMin: bracket.min,
+      priceMax: bracket.max,
+      priceCurrency: bracket.min || bracket.max ? currency : undefined,
     });
-    router.push('/shop');
+  }
+
+  function handleCustomFilterToggle(fieldName: string, value: string) {
+    const current = customFilters[fieldName] ?? [];
+    const next = current.includes(value)
+      ? current.filter((v) => v !== value)
+      : [...current, value];
+    const newCf = { ...customFilters };
+    if (next.length > 0) newCf[fieldName] = next;
+    else delete newCf[fieldName];
+    navigate({ customFilters: newCf });
   }
 
   // ── Badge label helper ────────────────────────────────────────────────────
@@ -422,8 +403,8 @@ export function CatalogFilters({
                 type="radio"
                 name="category"
                 value=""
-                checked={!pending.category}
-                onChange={() => setCategory('')}
+                checked={!category}
+                onChange={() => handleCategoryChange('')}
                 className="accent-(--color-sage)"
               />
               {d?.all ?? 'All'}
@@ -433,8 +414,8 @@ export function CatalogFilters({
             <CategoryRow
               key={cat.slug}
               cat={cat}
-              activeCategory={pending.category}
-              onSelect={setCategory}
+              activeCategory={category}
+              onSelect={handleCategoryChange}
             />
           ))}
         </ul>
@@ -451,7 +432,7 @@ export function CatalogFilters({
                     type="radio"
                     name="price_range"
                     checked={priceKey(bracket) === priceKey(activePriceBracket ?? priceBrackets[0])}
-                    onChange={() => setPriceBracket(bracket)}
+                    onChange={() => handlePriceBracket(bracket)}
                     className="accent-(--color-sage)"
                   />
                   {bracket.label}
@@ -467,8 +448,8 @@ export function CatalogFilters({
         <FieldFilterSection
           key={def.name}
           def={def}
-          activeValues={pending.customFilters[def.name] ?? []}
-          onToggle={(value) => toggleCustomFilter(def.name, value)}
+          activeValues={customFilters[def.name] ?? []}
+          onToggle={(value) => handleCustomFilterToggle(def.name, value)}
         />
       ))}
 
@@ -482,8 +463,8 @@ export function CatalogFilters({
                   type="radio"
                   name="badge"
                   value={value}
-                  checked={pending.badge === value}
-                  onChange={() => setBadge(value)}
+                  checked={badge === value}
+                  onChange={() => navigate({ badge: value })}
                   className="accent-(--color-sage)"
                 />
                 {badgeLabel(value)}
@@ -499,26 +480,19 @@ export function CatalogFilters({
           <span className="font-500">{d?.in_stock_only ?? 'In stock only'}</span>
           <input
             type="checkbox"
-            checked={pending.inStock}
-            onChange={(e) => setInStock(e.target.checked)}
+            checked={inStock}
+            onChange={(e) => navigate({ inStock: e.target.checked })}
             className="accent-(--color-sage)"
           />
         </label>
       </div>
 
-      {/* 6. Apply / Reset buttons */}
-      <div className="flex gap-2 pt-4">
+      {/* 6. Reset */}
+      <div className="pt-4">
         <button
           type="button"
-          onClick={applyFilters}
-          className="flex-1 rounded-full bg-(--color-cta) px-4 py-2 text-sm font-600 text-white transition-colors hover:bg-(--color-cta-hover)"
-        >
-          {d?.apply_filters ?? 'Apply Filters'}
-        </button>
-        <button
-          type="button"
-          onClick={resetFilters}
-          className="rounded-full border border-(--color-border) px-4 py-2 text-sm text-(--color-muted) hover:border-(--color-stone) hover:text-(--color-stone)"
+          onClick={() => router.push('/shop')}
+          className="w-full rounded-full border border-(--color-border) px-4 py-2 text-sm text-(--color-muted) hover:border-(--color-stone) hover:text-(--color-stone)"
         >
           {d?.reset_filters ?? 'Reset'}
         </button>

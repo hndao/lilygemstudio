@@ -20,18 +20,27 @@ type FieldValue = string | number | boolean | ColorFieldValue;
 interface ProductSpecsProps {
   customFields: Record<string, FieldValue>;
   customFieldDefinitions?: CustomFieldDefinition[];
+  lang?: string;
   className?: string;
 }
 
-export function ProductSpecs({ customFields, customFieldDefinitions, className = '' }: ProductSpecsProps) {
-  const entries = Object.entries(customFields).filter(([, v]) => v !== null && v !== undefined && v !== '');
-
-  if (entries.length === 0) return null;
-
+export function ProductSpecs({ customFields, customFieldDefinitions, lang, className = '' }: ProductSpecsProps) {
   // Build lookup map: field key → definition
   const defMap = new Map<string, CustomFieldDefinition>(
     (customFieldDefinitions ?? []).map((d) => [d.name, d]),
   );
+
+  // Use customFieldDefinitions order (sorted by specs_order) when available;
+  // fall back to Object.entries insertion order for fields with no definition.
+  const orderedKeys = customFieldDefinitions && customFieldDefinitions.length > 0
+    ? customFieldDefinitions.map((d) => d.name)
+    : Object.keys(customFields);
+
+  const entries = orderedKeys
+    .map((key) => [key, customFields[key]] as [string, FieldValue])
+    .filter(([, v]) => v !== null && v !== undefined && v !== '');
+
+  if (entries.length === 0) return null;
 
   // Group entries by their definition's group, falling back to 'Specifications'
   const groups = new Map<string, Array<{ key: string; value: FieldValue; def?: CustomFieldDefinition }>>();
@@ -64,7 +73,10 @@ export function ProductSpecs({ customFields, customFieldDefinitions, className =
               {groupEntries.map(({ key, value, def }) => (
                 <div key={key} className="flex flex-col gap-0.5">
                   <dt className="text-[11px] font-600 uppercase tracking-wider text-(--color-muted)">
-                    {def?.label ?? key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                    {lang === 'vi'
+                      ? (def?.specificationsViLabel ?? def?.labelVi ?? def?.label ?? key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()))
+                      : (def?.specificationsEnLabel ?? def?.label ?? key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()))
+                    }
                   </dt>
                   <dd className="text-sm font-500 text-(--color-stone)">
                     {renderValue(value, def)}

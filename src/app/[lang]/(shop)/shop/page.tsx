@@ -149,7 +149,7 @@ export default async function ShopPage({ params, searchParams }: ShopPageProps) 
 
           {listings.length > 0 ? (
             <>
-              <ListingGrid listings={listings} priorityCount={6} />
+              <ListingGrid listings={listings} priorityCount={6} preferVnd={preferVnd} />
               <Suspense>
                 <Pagination
                   currentPage={meta.currentPage}
