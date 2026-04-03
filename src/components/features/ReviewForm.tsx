@@ -6,7 +6,7 @@ import { apiSubmitReview, apiGetReviewEligibility } from '@/lib/auth';
 import type { ReviewEligibility } from '@/lib/auth';
 
 interface ReviewFormProps {
-  productSlug: string;
+  listingSlug: string;
   dict: {
     write_review: string;
     your_rating: string;
@@ -30,7 +30,7 @@ interface ReviewFormProps {
   };
 }
 
-export function ReviewForm({ productSlug, dict }: ReviewFormProps) {
+export function ReviewForm({ listingSlug, dict }: ReviewFormProps) {
   const { customer, token, openAuthModal } = useAuth();
 
   const [eligibility, setEligibility] = useState<ReviewEligibility | null>(null);
@@ -54,11 +54,11 @@ export function ReviewForm({ productSlug, dict }: ReviewFormProps) {
   useEffect(() => {
     if (!customer || !token) return;
     setCheckingEligibility(true);
-    apiGetReviewEligibility(productSlug, token)
+    apiGetReviewEligibility(listingSlug, token)
       .then(setEligibility)
       .catch(() => setEligibility(null))
       .finally(() => setCheckingEligibility(false));
-  }, [customer, token, productSlug]);
+  }, [customer, token, listingSlug]);
 
   const minChars = eligibility?.min_chars ?? 20;
   const maxChars = eligibility?.max_chars ?? 2000;
@@ -79,13 +79,12 @@ export function ReviewForm({ productSlug, dict }: ReviewFormProps) {
     setError(null);
     setSubmitting(true);
     try {
-      await apiSubmitReview(productSlug, token, {
+      await apiSubmitReview(listingSlug, token, {
         rating,
         title,
         body,
         author_name: name || undefined,
         order_id: eligibility?.order_id ?? null,
-        listing_id: eligibility?.listing_id ?? null,
       });
       setSubmitted(true);
     } catch (err) {
@@ -98,7 +97,7 @@ export function ReviewForm({ productSlug, dict }: ReviewFormProps) {
     } finally {
       setSubmitting(false);
     }
-  }, [token, rating, body, title, name, productSlug, dict, eligibility, minChars, maxChars]);
+  }, [token, rating, body, title, name, listingSlug, dict, eligibility, minChars, maxChars]);
 
   if (submitted) {
     return (

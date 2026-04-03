@@ -117,33 +117,33 @@ export function getSocialLoginUrl(provider: 'google' | 'facebook'): string {
   return `${API_BASE}/auth/social/${provider}?popup=1`;
 }
 
-// ── Authenticated product actions ──────────────────────────────────────────────
+// ── Authenticated listing actions ──────────────────────────────────────────────
 
 export async function apiToggleLike(
-  productSlug: string,
+  listingSlug: string,
   token: string,
 ): Promise<{ liked: boolean; count: number }> {
-  return authFetch<{ liked: boolean; count: number }>(`/products/${productSlug}/like`, {
+  return authFetch<{ liked: boolean; count: number }>(`/listings/${listingSlug}/like`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
   });
 }
 
 export async function apiGetLikeStatus(
-  productSlug: string,
+  listingSlug: string,
   token: string,
 ): Promise<{ liked: boolean; count: number }> {
-  return authFetch<{ liked: boolean; count: number }>(`/products/${productSlug}/like`, {
+  return authFetch<{ liked: boolean; count: number }>(`/listings/${listingSlug}/like`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 }
 
 export async function apiSubmitReview(
-  productSlug: string,
+  listingSlug: string,
   token: string,
-  data: { rating: number; title: string; body: string; author_name?: string; order_id?: number | null; listing_id?: number | null },
+  data: { rating: number; title: string; body: string; author_name?: string; order_id?: number | null },
 ): Promise<{ message: string }> {
-  return authFetch<{ message: string }>(`/products/${productSlug}/reviews`, {
+  return authFetch<{ message: string }>(`/listings/${listingSlug}/reviews`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify(data),
@@ -161,10 +161,10 @@ export interface ReviewEligibility {
 }
 
 export async function apiGetReviewEligibility(
-  productSlug: string,
+  listingSlug: string,
   token: string,
 ): Promise<ReviewEligibility> {
-  return authFetch<ReviewEligibility>(`/products/${productSlug}/review-eligibility`, {
+  return authFetch<ReviewEligibility>(`/listings/${listingSlug}/review-eligibility`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 }

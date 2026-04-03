@@ -17,7 +17,7 @@ import type { ListingCard, Money, ProductDetail } from '@/types';
 
 interface ProductVNPanelProps {
   productId: string;
-  productSlug: string;
+  listingSlug: string;
   productName: string;
   price: Money;
   priceVnd?: Money;
@@ -36,7 +36,7 @@ interface ProductVNPanelProps {
 
 export function ProductVNPanel({
   productId,
-  productSlug,
+  listingSlug,
   productName,
   price,
   priceVnd,
@@ -104,7 +104,7 @@ export function ProductVNPanel({
 
       <ProductBuyBox
         productId={productId}
-        productSlug={productSlug}
+        listingSlug={listingSlug}
         productName={productName}
         price={price}
         priceVnd={priceVnd}

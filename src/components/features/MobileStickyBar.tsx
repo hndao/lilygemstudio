@@ -34,7 +34,7 @@ import type { AffiliateLink, ListingCard, Money, ProductImage } from '@/types';
 
 interface MobileStickyBarProps {
   productId: string;
-  productSlug: string;
+  listingSlug: string;
   productName: string;
   price: Money;
   priceVnd?: Money;
@@ -49,7 +49,7 @@ interface MobileStickyBarProps {
 
 export function MobileStickyBar({
   productId,
-  productSlug,
+  listingSlug,
   productName,
   price,
   priceVnd,
@@ -70,10 +70,10 @@ export function MobileStickyBar({
   // Fetch persisted like status once auth is ready
   useEffect(() => {
     if (!customer || !token) return;
-    apiGetLikeStatus(productSlug, token)
+    apiGetLikeStatus(listingSlug, token)
       .then(({ liked: l }) => setLiked(l))
       .catch(() => {});
-  }, [customer, token, productSlug]);
+  }, [customer, token, listingSlug]);
 
   const handleWishlistToggle = useCallback(async () => {
     if (!customer || !token) { openAuthModal(); return; }
@@ -81,14 +81,14 @@ export function MobileStickyBar({
     setLiked(!liked);
     setLikeLoading(true);
     try {
-      const { liked: newLiked } = await apiToggleLike(productSlug, token);
+      const { liked: newLiked } = await apiToggleLike(listingSlug, token);
       setLiked(newLiked);
     } catch {
       setLiked(prev);
     } finally {
       setLikeLoading(false);
     }
-  }, [customer, token, liked, productSlug, openAuthModal]);
+  }, [customer, token, liked, listingSlug, openAuthModal]);
 
   useEffect(() => {
     const handleScroll = () => setVisible(window.scrollY > scrollThreshold);
@@ -172,7 +172,7 @@ export function MobileStickyBar({
         <a
           href={`/go/${productId}`}
           {...AFFILIATE_LINK_PROPS}
-          onClick={() => trackAffiliateClick({ slug: productSlug, network: affiliateLink.network, name: productName })}
+          onClick={() => trackAffiliateClick({ slug: listingSlug, network: affiliateLink.network, name: productName })}
           aria-label={ctaLabel}
           className="flex min-h-[60px] min-w-[140px] items-center justify-center gap-1.5 bg-(--color-cta) px-4 font-heading text-xs font-700 uppercase tracking-widest text-white transition-opacity hover:opacity-90"
         >
@@ -261,7 +261,6 @@ export function MobileStickyBar({
           isOpen={sheetOpen}
           onClose={() => setSheetOpen(false)}
           productId={productId}
-          productSlug={productSlug}
           productName={productName}
           coverImage={coverImage.src}
           stockQuantity={stockQuantity}

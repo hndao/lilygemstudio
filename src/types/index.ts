@@ -205,7 +205,7 @@ export interface ProductCard {
   affiliateLink: AffiliateLink;
   affiliateLinkVn?: AffiliateLink;
   reviewSummary: ReviewSummary;
-  badge?: 'new' | 'natural' | 'bestseller' | 'sale' | 'limited';
+  badge?: { slug: string; name: string; color: string; textColor: string } | null;
   /** null = unlimited / not tracked; 0 = out of stock; >0 = available quantity */
   quantity?: number | null;
   /** Total number of likes from all customers */
@@ -526,7 +526,7 @@ export interface ProductListParams {
   perPage?: number;
   category?: string;
   sort?: 'newest' | 'price_asc' | 'price_desc' | 'top_rated';
-  badge?: ProductCard['badge'];
+  badge?: string;
 }
 
 export interface PostListParams {
@@ -717,9 +717,10 @@ export interface ListingCard {
   taglineVi?: string | null;
   brandStory?: string | null;
   brandStoryVi?: string | null;
-  /** Social proof — from first bundle product's review aggregates */
+  /** Social proof — scoped to this listing directly */
   averageRating?: number | null;
   reviewCount?: number | null;
+  likesCount?: number | null;
   /** Merchandising badges attached in admin — max 3, ordered by priority */
   badges?: ListingBadge[];
 }

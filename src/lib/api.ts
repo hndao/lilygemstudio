@@ -141,11 +141,11 @@ export async function getProduct(slug: string, previewToken?: string): Promise<A
 }
 
 /**
- * Fetch reviews for a product — always batched, never inside a render loop.
+ * Fetch reviews for a listing — always batched, never inside a render loop.
  * Revalidates slowly — review content is less time-sensitive than prices.
  */
 export async function getReviews(
-  productSlug: string,
+  listingSlug: string,
   page = 1,
 ): Promise<PaginatedResponse<Review>> {
   const qs = new URLSearchParams({
@@ -154,9 +154,9 @@ export async function getReviews(
     per_page: '12',
   });
 
-  return apiFetch<PaginatedResponse<Review>>(`/products/${productSlug}/reviews?${qs}`, {
+  return apiFetch<PaginatedResponse<Review>>(`/listings/${listingSlug}/reviews?${qs}`, {
     revalidate: REVALIDATION.REVIEWS,
-    tags: [CACHE_TAGS.reviews(productSlug)],
+    tags: [CACHE_TAGS.reviews(listingSlug)],
   });
 }
 

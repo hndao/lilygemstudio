@@ -30,7 +30,7 @@ import type { Dictionary } from '@/lib/i18n';
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
-type BadgeValue = NonNullable<ProductCard['badge']> | 'all';
+type BadgeValue = 'all' | 'bestseller' | 'new' | 'sale' | 'limited' | 'natural';
 const BADGE_VALUES: BadgeValue[] = ['all', 'bestseller', 'new', 'sale', 'limited'];
 
 interface FilterSectionProps {

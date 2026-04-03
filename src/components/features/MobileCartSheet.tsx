@@ -20,7 +20,6 @@ interface MobileCartSheetProps {
   isOpen: boolean;
   onClose: () => void;
   productId: string;
-  productSlug: string;
   productName: string;
   coverImage: string;
   /** null = unlimited; 0 = out of stock; >0 = capped */
@@ -34,7 +33,6 @@ export function MobileCartSheet({
   isOpen,
   onClose,
   productId,
-  productSlug,
   productName,
   coverImage,
   stockQuantity,

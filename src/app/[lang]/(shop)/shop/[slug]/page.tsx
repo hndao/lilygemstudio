@@ -75,7 +75,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
 
   const [productRes, reviewsRes, dict, settings] = await Promise.all([
     getProduct(productSlug, token).catch(() => null),
-    getReviews(productSlug, 1).catch(() => ({ data: [], meta: { total: 0, currentPage: 1, lastPage: 1, perPage: 12 } })),
+    getReviews(slug, 1).catch(() => ({ data: [], meta: { total: 0, currentPage: 1, lastPage: 1, perPage: 12 } })),
     getDictionary(lang),
     getSiteSettings().catch(() => null),
   ]);
@@ -193,16 +193,16 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
 
           <div className="flex flex-wrap items-center gap-3">
             <StarRating
-              rating={product.reviewSummary.averageRating}
-              count={product.reviewSummary.totalCount}
+              rating={directListing.averageRating ?? 0}
+              count={directListing.reviewCount ?? 0}
               size="md"
             />
-            {(product.likesCount ?? 0) > 0 && (
+            {(directListing.likesCount ?? 0) > 0 && (
               <span className="flex items-center gap-1.5 text-[13px] text-(--color-muted)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                 </svg>
-                <span className="font-500">{product.likesCount}</span>
+                <span className="font-500">{directListing.likesCount}</span>
               </span>
             )}
           </div>
@@ -235,7 +235,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
           <div className="geo-show-vn w-full">
             <ProductVNPanel
               productId={product.id}
-              productSlug={productSlug}
+              listingSlug={slug}
               productName={displayName}
               price={product.price}
               priceVnd={product.priceVnd}
@@ -257,7 +257,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
             {directListing ? (
               <ProductVNPanel
                 productId={product.id}
-                productSlug={productSlug}
+                listingSlug={slug}
                 productName={displayName}
                 price={product.price}
                 priceVnd={product.priceVnd}
@@ -338,7 +338,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       <section className="mt-16" aria-labelledby="reviews-heading">
         <ReviewGrid reviews={reviews} totalCount={reviewsRes.meta.total} dict={dict.review} />
         <div className="mt-8">
-          <ReviewForm productSlug={productSlug} dict={dict.review} />
+          <ReviewForm listingSlug={slug} dict={dict.review} />
         </div>
       </section>
 
@@ -351,7 +351,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
 
       <MobileStickyBar
         productId={product.id}
-        productSlug={productSlug}
+        listingSlug={slug}
         productName={displayName}
         price={product.price}
         priceVnd={product.priceVnd}

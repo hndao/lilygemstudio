@@ -28,7 +28,7 @@ import type { Money, ListingCard, ProductDetail } from '@/types';
 
 interface ProductBuyBoxProps {
   productId: string;
-  productSlug: string;
+  listingSlug: string;
   productName: string;
   price: Money;
   priceVnd?: Money;
@@ -60,7 +60,7 @@ interface ProductBuyBoxProps {
 
 export function ProductBuyBox({
   productId,
-  productSlug,
+  listingSlug,
   productName,
   price,
   priceVnd,
@@ -85,24 +85,24 @@ export function ProductBuyBox({
 
   useEffect(() => {
     if (!customer || !token) return;
-    apiGetLikeStatus(productSlug, token)
+    apiGetLikeStatus(listingSlug, token)
       .then(({ liked: l }) => setLiked(l))
       .catch(() => {});
-  }, [customer, token, productSlug]);
+  }, [customer, token, listingSlug]);
 
   const handleLike = useCallback(async () => {
     if (!customer) { openAuthModal(); return; }
     if (!token || likeLoading) return;
     setLikeLoading(true);
     try {
-      const { liked: newLiked } = await apiToggleLike(productSlug, token);
+      const { liked: newLiked } = await apiToggleLike(listingSlug, token);
       setLiked(newLiked);
     } catch {
       // ignore
     } finally {
       setLikeLoading(false);
     }
-  }, [customer, token, productSlug, likeLoading, openAuthModal]);
+  }, [customer, token, listingSlug, likeLoading, openAuthModal]);
 
   // Find the variant combination that matches the current selection.
   const selectedVariant = variants?.find((v) =>
