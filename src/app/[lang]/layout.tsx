@@ -16,6 +16,7 @@ import { getDictionary } from '@/lib/i18n';
 import { Header } from '@/components/shared/Header';
 import { Footer } from '@/components/shared/Footer';
 import { CartDrawer } from '@/components/features/CartDrawer';
+import { PromotionBanner } from '@/components/features/PromotionBanner';
 import { DictionaryProvider } from '@/context/DictionaryContext';
 import { notFound } from 'next/navigation';
 
@@ -42,6 +43,7 @@ export default async function LangLayout({ children, params }: LangLayoutProps) 
   return (
     <DictionaryProvider dict={dict}>
       <Header dict={dict} lang={locale} />
+      <PromotionBanner lang={lang} />
       <main>{children}</main>
       <Footer dict={dict} lang={locale} />
       <CartDrawer />

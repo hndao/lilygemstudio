@@ -44,10 +44,11 @@ function formatRemaining(ms: number): string | null {
 }
 
 export function BadgeCountdown({ expiresAt, textColor }: BadgeCountdownProps) {
-  const [remaining, setRemaining] = useState<string | null>(() =>
-    formatRemaining(getRemainingMs(expiresAt))
-  );
-  const [isUrgent, setIsUrgent] = useState(() => getRemainingMs(expiresAt) < 3_600_000);
+  // WHY null initial state: initializing with Date.now() during SSR produces a
+  // different value than the client hydration pass (1s later) → hydration mismatch.
+  // Starting null means server and client both render nothing until useEffect fires.
+  const [remaining, setRemaining] = useState<string | null>(null);
+  const [isUrgent, setIsUrgent] = useState(false);
 
   useEffect(() => {
     const tick = () => {
@@ -55,6 +56,7 @@ export function BadgeCountdown({ expiresAt, textColor }: BadgeCountdownProps) {
       setRemaining(formatRemaining(ms));
       setIsUrgent(ms < 3_600_000);
     };
+    tick(); // populate immediately on mount
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [expiresAt]);

@@ -26,7 +26,8 @@ import { ExpertVerdict } from '@/components/features/ExpertVerdict';
 import { FeatureAnalysis } from '@/components/features/FeatureAnalysis';
 import { BlocksRenderer } from '@/components/features/BlocksRenderer';
 import { MobileStickyBar } from '@/components/features/MobileStickyBar';
-import { ReviewGrid } from '@/components/features/ReviewGrid';
+import { ReviewCard } from '@/components/features/ReviewCard';
+import { ReviewsDialog } from '@/components/features/ReviewsDialog';
 import { ReviewForm } from '@/components/features/ReviewForm';
 import { StarRating } from '@/components/ui/StarRating';
 import { PriceLine } from '@/components/ui/PriceLine';
@@ -171,10 +172,59 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       {/* ProductColorProvider bridges color swatch selection → gallery image filtering */}
       <ProductColorProvider>
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-12 lg:gap-16">
-        <ProductImageGallery images={galleryImages} productName={displayName} videoUrl={product.videoUrl} />
+        {/* Left column: gallery + reviews preview */}
+        <div className="flex flex-col gap-8">
+          <ProductImageGallery images={galleryImages} productName={displayName} videoUrl={product.videoUrl} />
+
+          {/* ── Reviews under gallery ─────────────────────────────── */}
+          <div>
+            <h2 className="mb-4 font-heading text-base font-700 text-(--color-stone)">
+              {dict.review.customer_reviews}
+              {(directListing.reviewCount ?? 0) > 0 && (
+                <span className="ml-1.5 font-400 text-(--color-muted)">({directListing.reviewCount})</span>
+              )}
+            </h2>
+
+            {reviews.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 py-10 text-center">
+                <div className="flex gap-0.5 text-[28px] leading-none text-(--color-sand-dark)" aria-hidden="true">
+                  {'☆'.repeat(5)}
+                </div>
+                <p className="text-[14px] font-600 text-(--color-stone)">{dict.review.no_reviews}</p>
+                <p className="text-[13px] text-(--color-muted)">{dict.review.be_first}</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {reviews.slice(0, 3).map((review) => (
+                  <ReviewCard key={review.id} review={review} />
+                ))}
+              </div>
+            )}
+
+            <ReviewsDialog
+              reviews={reviews}
+              totalCount={reviewsRes.meta.total}
+              averageRating={directListing.averageRating ?? null}
+              dict={dict.review}
+            />
+          </div>
+        </div>
 
         {/* Product info — right column */}
         <div className="flex flex-col gap-4">
+          {/* ── Price — top of column, highlighted ───────────────────── */}
+          {(listingPrice ?? product.price).amount > 0 && (
+            <div className="inline-flex">
+              <PriceLine
+                price={listingPrice ?? product.price}
+                compareAtPrice={listingCompareAtPrice ?? product.compareAtPrice}
+                priceVnd={listingPriceVnd ?? product.priceVnd}
+                compareAtPriceVnd={listingCompareAtPriceVnd ?? product.compareAtPriceVnd}
+                size="lg"
+              />
+            </div>
+          )}
+
           {/* ── Listing badges only — hidden when none assigned ──────── */}
           {directListing?.badges && directListing.badges.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
@@ -185,7 +235,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
           )}
 
           <h1
-            className="font-heading text-2xl leading-tight md:text-3xl lg:text-4xl"
+            className="font-heading text-xl leading-tight md:text-2xl lg:text-3xl"
           >{displayName}</h1>
           {displayTagline && (
             <p className="font-heading text-[15px] font-300 italic text-(--color-muted)">{displayTagline}</p>
@@ -206,16 +256,6 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
               </span>
             )}
           </div>
-
-          {(listingPrice ?? product.price).amount > 0 && (
-            <PriceLine
-              price={listingPrice ?? product.price}
-              compareAtPrice={listingCompareAtPrice ?? product.compareAtPrice}
-              priceVnd={listingPriceVnd ?? product.priceVnd}
-              compareAtPriceVnd={listingCompareAtPriceVnd ?? product.compareAtPriceVnd}
-              size="lg"
-            />
-          )}
 
           {product.verdict && <ExpertVerdict verdict={product.verdict} />}
 
@@ -334,13 +374,10 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         {dict.product.trust_quote}
       </blockquote>
 
-      {/* ── Reviews section ────────────────────────────────────────────────── */}
-      <section className="mt-16" aria-labelledby="reviews-heading">
-        <ReviewGrid reviews={reviews} totalCount={reviewsRes.meta.total} dict={dict.review} />
-        <div className="mt-8">
-          <ReviewForm listingSlug={slug} dict={dict.review} />
-        </div>
-      </section>
+      {/* ── Write a review ─────────────────────────────────────────────────── */}
+      <div className="mt-12">
+        <ReviewForm listingSlug={slug} dict={dict.review} />
+      </div>
 
       {relatedListings.length > 0 && (
         <section className="mt-16" aria-labelledby="related-heading">

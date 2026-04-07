@@ -18,6 +18,7 @@ import { usePathname } from 'next/navigation';
 import { X, ShoppingBag, Minus, Plus, Trash2, Tag, ChevronRight, Lock } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useDict } from '@/context/DictionaryContext';
+import { FreeShippingBar } from '@/components/features/FreeShippingBar';
 import type { CartItem } from '@/types';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -179,12 +180,15 @@ function CouponRow({ isVn }: { isVn: boolean }) {
     }
   };
 
-  if (cart?.coupon) {
+  // Code-based promotion applied = a promotion with requires_code=true (isAutoApplied false + has code)
+  const appliedCodePromo = cart?.promotions?.find((p) => !p.isAutoApplied && p.code);
+
+  if (appliedCodePromo) {
     return (
       <div className="flex items-center gap-2 rounded-[10px] bg-green-50 px-3 py-2 text-[13px]">
         <Tag className="h-4 w-4 text-green-600" />
         <span className="flex-1 font-500 text-green-700">
-          {dict.cart.coupon_applied.replace('{code}', cart.coupon.code)}
+          {dict.cart.coupon_applied.replace('{code}', appliedCodePromo.code!)}
         </span>
         <button
           type="button"
@@ -350,6 +354,11 @@ export function CartDrawer() {
             {/* Footer (only shown when cart has items) */}
             {cart && cart.items.length > 0 && (
               <div className="shrink-0 border-t border-(--color-border) px-5 pt-4 pb-[max(20px,env(safe-area-inset-bottom))]">
+                {/* Free shipping upsell bar */}
+                <div className="mb-3">
+                  <FreeShippingBar isVn={isVn} />
+                </div>
+
                 {/* Coupon */}
                 <div className="mb-3">
                   <CouponRow isVn={isVn} />
@@ -361,14 +370,15 @@ export function CartDrawer() {
                     <span>{dict.cart.subtotal}</span>
                     <span className="font-600 text-(--color-stone)">{subtotalFormatted}</span>
                   </div>
-                  {cart.coupon && (
-                    <div className="flex justify-between text-green-600">
-                      <span>{dict.cart.discount.replace('{code}', cart.coupon.code)}</span>
+                  {/* Promotions discount rows */}
+                  {cart.promotions?.map((promo) => promo.discountCents > 0 && (
+                    <div key={promo.id} className="flex justify-between text-green-600">
+                      <span>{dict.cart.promotion_discount.replace('{name}', promo.name)}</span>
                       <span className="font-600">
-                        −{isVn ? formatVnd(cart.coupon.discountCents) : formatUsd(cart.coupon.discountCents)}
+                        −{isVn ? formatVnd(promo.discountCents) : formatUsd(promo.discountCents)}
                       </span>
                     </div>
-                  )}
+                  ))}
                   <div className="flex justify-between text-[11px] text-(--color-sand-dark)">
                     <span>{dict.cart.shipping_fee}</span>
                     <span>{dict.cart.shipping_calculated}</span>

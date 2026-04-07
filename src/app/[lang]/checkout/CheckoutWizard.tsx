@@ -338,7 +338,9 @@ export function CheckoutWizard({ lang, dict, isVn }: CheckoutWizardProps) {
 
   // ── Computed totals ─────────────────────────────────────────────────────────
   const subtotal    = isVn ? (cart?.subtotalCentsVnd ?? 0) : (cart?.subtotalCents ?? 0);
-  const discountAmt = cart?.coupon?.discountCents ?? 0;
+  const promoDiscount  = cart?.promotions?.reduce((sum, p) => sum + p.discountCents, 0) ?? 0;
+  const couponDiscount = 0; // legacy coupon field removed in Sprint 4
+  const discountAmt    = promoDiscount + couponDiscount;
   const selectedRate = shippingRates.find((r) => r.id === selectedRateId);
   const shippingAmt = selectedRate?.rateCents ?? 0;
   const total       = subtotal - discountAmt + shippingAmt;
@@ -752,12 +754,13 @@ export function CheckoutWizard({ lang, dict, isVn }: CheckoutWizardProps) {
                     {shippingAmt === 0 ? dict.shipping_free : formatPrice(shippingAmt, isVn)}
                   </span>
                 </div>
-                {discountAmt > 0 && (
-                  <div className="flex justify-between text-green-600">
-                    <span>{dict.discount_label.replace('{code}', cart?.coupon?.code ?? '')}</span>
-                    <span className="font-600">−{formatPrice(discountAmt, isVn)}</span>
+                {/* Itemized promotions breakdown */}
+                {cart?.promotions?.map((promo) => promo.discountCents > 0 && (
+                  <div key={promo.id} className="flex justify-between text-green-600">
+                    <span>{dict.promotion_discount?.replace('{name}', promo.name) ?? promo.name}</span>
+                    <span className="font-600">−{formatPrice(promo.discountCents, isVn)}</span>
                   </div>
-                )}
+                ))}
                 <div className="flex justify-between border-t border-(--color-border) pt-2 text-[15px] font-700 text-(--color-stone)">
                   <span>{dict.total_label}</span>
                   <span className="text-(--color-cta)">{formatPrice(total, isVn)}</span>

@@ -44,7 +44,11 @@
     "sort_newest": "Newest",
     "sort_top_rated": "Top Rated",
     "sort_price_asc": "Price: Low → High",
-    "sort_price_desc": "Price: High → Low"
+    "sort_price_desc": "Price: High → Low",
+    "flash_sales_title": "Flash Sales",
+    "flash_sales_description": "Limited-time deals on our most loved pieces.",
+    "flash_sales_ends": "Ends",
+    "flash_sales_empty": "No flash sales right now. Check back soon!"
   },
   "catalog": {
     "filters_heading": "Filters",
@@ -149,7 +153,10 @@
     "submit_error": "Something went wrong. Please try again.",
     "no_reviews": "No reviews yet",
     "be_first": "Be the first to share your experience",
-    "customer_reviews": "Customer Reviews"
+    "customer_reviews": "Customer Reviews",
+    "view_all": "View all reviews",
+    "ratings": "ratings",
+    "reviews_for_item": "Reviews for this item"
   },
   "like": {
     "like": "Like",
@@ -176,7 +183,12 @@
     "shipping_fee": "Shipping fee",
     "shipping_calculated": "Calculated at checkout",
     "oos_warning": "Some items are out of stock. Please remove them before checkout.",
-    "coupon_question": "Have a discount code?"
+    "coupon_question": "Have a discount code?",
+    "free_shipping_remaining": "Add {amount} more for free shipping",
+    "free_shipping_unlocked": "Free shipping unlocked!",
+    "promotions_applied": "{n} promotion applied",
+    "auto_applied": "Auto-applied",
+    "promotion_discount": "Promotion: {name}"
   },
   "checkout": {
     "title": "Checkout",
@@ -234,6 +246,7 @@
     "subtotal": "Subtotal",
     "shipping_label": "Shipping",
     "discount_label": "Discount ({code})",
+    "promotion_discount": "Promotion: {name}",
     "total_label": "Total",
     "cod_description": "Pay with cash when your order arrives.",
     "bank_transfer_description": "Transfer instructions will be shown after placing your order.",

@@ -564,21 +564,25 @@ export interface CartItem {
   listing: CartItemListing;
 }
 
-export interface CartCoupon {
-  code: string;
-  type: string;
-  value: number;
+export interface CartPromotion {
+  id: number;
+  name: string;
+  type: 'percent' | 'fixed_cents' | 'free_shipping' | 'bogo' | 'bundle' | 'tiered';
   discountCents: number;
+  shippingDiscountCents: number;
+  isAutoApplied: boolean;
+  code?: string;
 }
 
 export interface Cart {
   id: number;
   sessionToken: string | null;
   items: CartItem[];
-  coupon: CartCoupon | null;
+  promotions: CartPromotion[];
   subtotalCents: number;
   subtotalCentsVnd: number;
   itemCount: number;
+  freeShippingRemainingCents: number | null;
 }
 
 export interface Address {

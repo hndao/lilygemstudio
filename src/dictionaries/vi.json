@@ -44,7 +44,11 @@
     "sort_newest": "Mới nhất",
     "sort_top_rated": "Đánh giá cao",
     "sort_price_asc": "Giá: Thấp → Cao",
-    "sort_price_desc": "Giá: Cao → Thấp"
+    "sort_price_desc": "Giá: Cao → Thấp",
+    "flash_sales_title": "Flash Sale",
+    "flash_sales_description": "Ưu đãi có giới hạn thời gian cho những sản phẩm được yêu thích nhất.",
+    "flash_sales_ends": "Kết thúc",
+    "flash_sales_empty": "Hiện chưa có flash sale. Hãy quay lại sau!"
   },
   "catalog": {
     "filters_heading": "Bộ Lọc",
@@ -149,7 +153,10 @@
     "submit_error": "Đã có lỗi xảy ra. Vui lòng thử lại.",
     "no_reviews": "Chưa có đánh giá",
     "be_first": "Hãy là người đầu tiên đánh giá",
-    "customer_reviews": "Đánh giá khách hàng"
+    "customer_reviews": "Đánh giá khách hàng",
+    "view_all": "Xem tất cả đánh giá",
+    "ratings": "đánh giá",
+    "reviews_for_item": "Đánh giá sản phẩm này"
   },
   "like": {
     "like": "Thích",
@@ -176,7 +183,12 @@
     "shipping_fee": "Phí vận chuyển",
     "shipping_calculated": "Tính khi thanh toán",
     "oos_warning": "Một số sản phẩm đã hết hàng. Vui lòng xoá chúng trước khi thanh toán.",
-    "coupon_question": "Bạn có mã giảm giá?"
+    "coupon_question": "Bạn có mã giảm giá?",
+    "free_shipping_remaining": "Mua thêm {amount} để được miễn phí vận chuyển",
+    "free_shipping_unlocked": "Đã mở khóa miễn phí vận chuyển!",
+    "promotions_applied": "Đã áp dụng {n} ưu đãi",
+    "auto_applied": "Tự động áp dụng",
+    "promotion_discount": "Ưu đãi: {name}"
   },
   "checkout": {
     "title": "Thanh toán",
@@ -234,6 +246,7 @@
     "subtotal": "Tạm tính",
     "shipping_label": "Phí vận chuyển",
     "discount_label": "Giảm giá ({code})",
+    "promotion_discount": "Ưu đãi: {name}",
     "total_label": "Tổng cộng",
     "cod_description": "Trả tiền mặt khi nhận được hàng.",
     "bank_transfer_description": "Hướng dẫn chuyển khoản sẽ hiển thị sau khi đặt hàng.",
