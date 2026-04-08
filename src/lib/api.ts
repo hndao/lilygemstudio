@@ -221,7 +221,10 @@ export async function getListings(
 
   return apiFetch<PaginatedResponse<ListingCard>>(`/listings?${qs}`, {
     revalidate: REVALIDATION.LISTING_LIST,
-    tags: [CACHE_TAGS.LISTINGS],
+    // WHY site-scoped tag: ListingObserver fires "listings:{site}" (e.g.
+    // "listings:lilygemstudio"). Using a plain "listings" tag here would cause
+    // a tag mismatch and ISR purges would never invalidate this fetch cache.
+    tags: [`listings:${SITE_KEY}`],
   });
 }
 

@@ -26,10 +26,14 @@ import type { ListingListParams } from '@/types';
 
 export const revalidate = 86400; // 24h ISR — matches LISTING_LIST TTL
 
-export const metadata: Metadata = {
-  title: 'Cửa Hàng',
-  description: 'Khám phá bộ sưu tập trang sức đá quý thủ công của chúng tôi.',
-};
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const dict = await getDictionary(lang);
+  return {
+    title: dict.shop.title,
+    description: dict.shop.description,
+  };
+}
 
 const RESERVED_PARAMS = new Set([
   'page', 'sort', 'q', 'category', 'badge',

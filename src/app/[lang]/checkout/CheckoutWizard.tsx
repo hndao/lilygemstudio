@@ -281,8 +281,14 @@ export function CheckoutWizard({ lang, dict, isVn }: CheckoutWizardProps) {
     setRatesLoading(true);
     calculateShipping(form.countryCode, cart.subtotalCents)
       .then((rates) => {
-        setShippingRates(rates);
-        if (rates.length > 0) setSelectedRateId(rates[0].id);
+        // If cart has a free-shipping promotion active, inject a $0 rate at the top.
+        // freeShippingRemainingCents === 0 means threshold is met.
+        const freeUnlocked = cart.freeShippingRemainingCents === 0;
+        const allRates: ShippingRate[] = freeUnlocked
+          ? [{ id: -2, name: dict.shipping_free, rateCents: 0, estimatedDaysMin: null, estimatedDaysMax: null }, ...rates]
+          : rates;
+        setShippingRates(allRates);
+        if (allRates.length > 0) setSelectedRateId(allRates[0].id);
       })
       .catch(() => setShippingRates([]))
       .finally(() => setRatesLoading(false));

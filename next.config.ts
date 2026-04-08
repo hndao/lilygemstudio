@@ -125,6 +125,16 @@ const nextConfig: NextConfig = {
   // Gzip/brotli compression on the Node.js server — critical for API route responses
   compress: true,
 
+  // ── Redirects ─────────────────────────────────────────────────────────────
+  async redirects() {
+    return [
+      // /catalog (bare) → default language shop
+      { source: "/catalog", destination: "/vi/shop", permanent: true },
+      // /:lang/catalog → /:lang/shop
+      { source: "/:lang/catalog", destination: "/:lang/shop", permanent: true },
+    ];
+  },
+
   // ── HTTP Security Headers ─────────────────────────────────────────────────
   async headers() {
     return [
