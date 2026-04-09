@@ -64,6 +64,44 @@ export function ListingCard({
     : (listing.comparePriceCents != null ? listing.formattedCompareAtPrice : listing.comparePriceCentsVnd != null ? listing.formattedCompareAtPriceVnd : null);
   const isOnSale = comparePrice != null;
 
+  // Active promotion overrides compare-at: show promotional price + original as strikethrough
+  const promoPrice = preferVnd
+    ? (listing.formattedPromotionalPriceVnd ?? listing.formattedPromotionalPrice)
+    : (listing.formattedPromotionalPrice ?? listing.formattedPromotionalPriceVnd);
+  const isPromoActive = promoPrice != null;
+  const saleDisplayPrice = isPromoActive ? promoPrice : (isOnSale ? primaryPrice : null);
+  const strikethroughPrice = isPromoActive ? primaryPrice : (isOnSale ? comparePrice : null);
+  const isSale = isPromoActive || isOnSale;
+
+  // Compute discount % for the badge label (e.g. "-25%")
+  const discountLabel = (() => {
+    if (isPromoActive) {
+      const base = preferVnd
+        ? (listing.priceCentsVnd ?? listing.priceCents)
+        : (listing.priceCents ?? listing.priceCentsVnd);
+      const promo = preferVnd
+        ? (listing.promotionalPriceCentsVnd ?? listing.promotionalPriceCents)
+        : (listing.promotionalPriceCents ?? listing.promotionalPriceCentsVnd);
+      if (base && promo && base > 0) {
+        const pct = Math.round((1 - promo / base) * 100);
+        if (pct > 0) return `-${pct}%`;
+      }
+    }
+    if (isOnSale) {
+      const current = preferVnd
+        ? (listing.priceCentsVnd ?? listing.priceCents)
+        : (listing.priceCents ?? listing.priceCentsVnd);
+      const compare = preferVnd
+        ? (listing.comparePriceCentsVnd ?? listing.comparePriceCents)
+        : (listing.comparePriceCents ?? listing.comparePriceCentsVnd);
+      if (current && compare && compare > 0) {
+        const pct = Math.round((1 - current / compare) * 100);
+        if (pct > 0) return `-${pct}%`;
+      }
+    }
+    return dict.catalog.on_sale;
+  })();
+
   return (
     <article className="group flex flex-col overflow-hidden rounded-xl border border-(--color-border) bg-(--color-surface) shadow-(--shadow-soft) transition-shadow duration-200 hover:shadow-(--shadow-card)">
       {/* Image wrapper */}
@@ -108,32 +146,30 @@ export function ListingCard({
           </button>
         )}
 
-        {/* Badge overlay — top-left stack */}
-        <div className="absolute left-2 top-2 flex flex-col gap-1">
-          {/* Stock state always takes priority */}
-          {isOutOfStock ? (
-            <div className="rounded-full bg-(--color-stone) px-2 py-0.5 text-[10px] font-600 text-white">
-              {dict.catalog.out_of_stock}
-            </div>
-          ) : (
-            <>
-              {/* Admin listing badges — promotion first, max 2 shown on card */}
-              {listing.badges && listing.badges.slice(0, 2).map((badge) => (
-                <ListingBadgePill key={badge.id} badge={badge} size="sm" />
-              ))}
-              {/* Auto stock badges when no admin badges cover urgency */}
-              {(!listing.badges || listing.badges.length === 0) && isOnSale && (
-                <div className="rounded-full bg-(--color-promo) px-2 py-0.5 text-[10px] font-600 text-white">
-                  {dict.catalog.on_sale}
-                </div>
-              )}
-              {(!listing.badges || listing.badges.length === 0) && !isOnSale && isLowStock && (
-                <div className="rounded-full bg-(--color-cta) px-2 py-0.5 text-[10px] font-600 text-white">
-                  {dict.catalog.low_stock.replace('{n}', String(listing.quantity))}
-                </div>
-              )}
-            </>
-          )}
+        {/* Badge row — single container keeps left + right items vertically aligned */}
+        <div className="absolute left-2 right-2 top-2 flex items-center justify-between gap-1">
+          {/* Left: discount / stock label */}
+          <div>
+            {isOutOfStock ? (
+              <span className="inline-flex items-center rounded-full bg-(--color-stone) px-2 py-0.5 text-[10px] font-600 leading-none text-white whitespace-nowrap">
+                {dict.catalog.out_of_stock}
+              </span>
+            ) : isSale ? (
+              <span className="inline-flex items-center rounded-full bg-(--color-promo) px-2 py-0.5 text-[10px] font-600 leading-none text-white whitespace-nowrap">
+                {discountLabel}
+              </span>
+            ) : isLowStock ? (
+              <span className="inline-flex items-center rounded-full bg-(--color-cta) px-2 py-0.5 text-[10px] font-600 leading-none text-white whitespace-nowrap">
+                {dict.catalog.low_stock.replace('{n}', String(listing.quantity))}
+              </span>
+            ) : null}
+          </div>
+          {/* Right: admin badge, max 1 on card */}
+          <div>
+            {!isOutOfStock && listing.badges && listing.badges.length > 0 && (
+              <ListingBadgePill badge={listing.badges[0]} size="sm" />
+            )}
+          </div>
         </div>
       </Link>
 
@@ -163,20 +199,29 @@ export function ListingCard({
           </div>
         )}
 
-        {/* Price row */}
-        <div className="mt-auto pt-2 flex flex-wrap items-baseline gap-1.5">
-          {primaryPrice && (
-            <span className={[
-              'font-heading text-sm font-700',
-              isOnSale ? 'text-(--color-promo)' : 'text-(--color-terracotta-dark)',
-            ].join(' ')}>
-              {primaryPrice}
-            </span>
-          )}
-          {comparePrice && (
-            <span className="text-xs text-(--color-sand-dark) line-through">
-              {comparePrice}
-            </span>
+        {/* Price block */}
+        <div className="mt-auto pt-2 flex flex-col gap-0.5">
+          {isSale ? (
+            <>
+              <span className="font-heading text-sm font-700 text-(--color-promo)">
+                {saleDisplayPrice}
+              </span>
+              {strikethroughPrice && (
+                <div className="flex items-center gap-1 text-xs text-(--color-muted)">
+                  <span>{strikethroughPrice}</span>
+                  <span>{dict.catalog.original_price}</span>
+                  {discountLabel && (
+                    <span className="font-600 text-red-500">{discountLabel}</span>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            primaryPrice && (
+              <span className="font-heading text-sm font-700 text-(--color-terracotta-dark)">
+                {primaryPrice}
+              </span>
+            )
           )}
         </div>
       </div>

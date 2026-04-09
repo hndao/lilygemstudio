@@ -692,6 +692,11 @@ export interface ListingCard {
   priceCentsVnd: number | null;
   comparePriceCents: number | null;
   comparePriceCentsVnd: number | null;
+  /** Effective price after active auto-applied promotions. null = no active promo. */
+  promotionalPriceCents: number | null;
+  promotionalPriceCentsVnd: number | null;
+  formattedPromotionalPrice: string | null;
+  formattedPromotionalPriceVnd: string | null;
   coverImage: ProductImage | null;
   quantity: number | null;
   isLive: boolean;

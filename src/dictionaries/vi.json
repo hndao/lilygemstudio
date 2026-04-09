@@ -61,6 +61,7 @@
     "badge_limited": "Giới Hạn",
     "out_of_stock": "Hết hàng",
     "on_sale": "Giảm giá",
+    "original_price": "Giá gốc",
     "low_stock": "Còn {n} sản phẩm",
     "add_to_cart": "Thêm vào giỏ",
     "add_to_cart_aria": "Thêm {name} vào giỏ",

@@ -114,6 +114,19 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     ? { amount: directListing.comparePriceCentsVnd, currency: 'USD' as const, formatted: directListing.formattedCompareAtPriceVnd ?? '' }
     : null;
 
+  // Promotional price from active auto-applied promotions — overrides regular price display
+  const listingPromoPrice = directListing?.promotionalPriceCents
+    ? { amount: directListing.promotionalPriceCents, currency: 'USD' as const, formatted: directListing.formattedPromotionalPrice ?? '' }
+    : null;
+  const listingPromoPriceVnd = directListing?.promotionalPriceCentsVnd
+    ? { amount: directListing.promotionalPriceCentsVnd, currency: 'VND' as const, formatted: directListing.formattedPromotionalPriceVnd ?? '' }
+    : null;
+  // When a promo is active, the original listing price becomes the "compare at" strikethrough
+  const effectivePrice       = listingPromoPrice ?? listingPrice;
+  const effectiveCompareAt   = listingPromoPrice ? listingPrice : listingCompareAtPrice;
+  const effectivePriceVnd    = listingPromoPriceVnd ?? listingPriceVnd;
+  const effectiveCompareAtVnd = listingPromoPriceVnd ? listingPriceVnd : listingCompareAtPriceVnd;
+
   const displayName = lang === 'vi'
     ? (directListing?.titleVi || directListing?.title || product.nameVi || product.name)
     : (directListing?.title || product.name);
@@ -127,6 +140,19 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   const rawBrandStoryVi = directListing?.brandStoryVi ?? product.brandStoryVi;
   const displayBrandStory = lang === 'vi' && rawBrandStoryVi ? rawBrandStoryVi : rawBrandStory;
 
+
+  // Discount badge label for detail page (e.g. "-30%")
+  const detailDiscountLabel = (() => {
+    if (directListing?.promotionalPriceCents && directListing?.priceCents && directListing.priceCents > 0) {
+      const pct = Math.round((1 - directListing.promotionalPriceCents / directListing.priceCents) * 100);
+      if (pct > 0) return `-${pct}%`;
+    }
+    if (directListing?.priceCents && directListing?.comparePriceCents && directListing.comparePriceCents > 0) {
+      const pct = Math.round((1 - directListing.priceCents / directListing.comparePriceCents) * 100);
+      if (pct > 0) return `-${pct}%`;
+    }
+    return null;
+  })();
 
   // ── Breadcrumbs ────────────────────────────────────────────────────────────
   const crumbs = [
@@ -212,25 +238,30 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
 
         {/* Product info — right column */}
         <div className="flex flex-col gap-4">
-          {/* ── Price — top of column, highlighted ───────────────────── */}
-          {(listingPrice ?? product.price).amount > 0 && (
-            <div className="inline-flex">
-              <PriceLine
-                price={listingPrice ?? product.price}
-                compareAtPrice={listingCompareAtPrice ?? product.compareAtPrice}
-                priceVnd={listingPriceVnd ?? product.priceVnd}
-                compareAtPriceVnd={listingCompareAtPriceVnd ?? product.compareAtPriceVnd}
-                size="lg"
-              />
+          {/* ── Discount label + listing badges row ──────────────────── */}
+          {(detailDiscountLabel || (directListing?.badges && directListing.badges.length > 0)) && (
+            <div className="flex flex-wrap items-center gap-2">
+              {detailDiscountLabel && (
+                <span className="inline-flex items-center rounded-full bg-(--color-promo) px-2.5 py-1 text-xs font-600 text-white leading-none whitespace-nowrap">
+                  {detailDiscountLabel}
+                </span>
+              )}
+              {directListing?.badges?.map((badge) => (
+                <ListingBadgePill key={badge.id} badge={badge} size="md" />
+              ))}
             </div>
           )}
 
-          {/* ── Listing badges only — hidden when none assigned ──────── */}
-          {directListing?.badges && directListing.badges.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2">
-              {directListing.badges.map((badge) => (
-                <ListingBadgePill key={badge.id} badge={badge} size="md" />
-              ))}
+          {/* ── Price ─────────────────────────────────────────────────── */}
+          {(listingPrice ?? product.price).amount > 0 && (
+            <div className="inline-flex">
+              <PriceLine
+                price={effectivePrice ?? product.price}
+                compareAtPrice={effectiveCompareAt ?? product.compareAtPrice}
+                priceVnd={effectivePriceVnd ?? product.priceVnd}
+                compareAtPriceVnd={effectiveCompareAtVnd ?? product.compareAtPriceVnd}
+                size="lg"
+              />
             </div>
           )}
 

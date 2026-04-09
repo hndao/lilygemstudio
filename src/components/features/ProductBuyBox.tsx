@@ -142,11 +142,13 @@ export function ProductBuyBox({
     : null;
   const displayPrice = preferVnd ? (priceVnd ?? price) : price;
 
-  // Button label price = unit price × quantity
+  // Button label price = effective (promotional if active, else regular) unit price × quantity
   const buttonTotalPrice = listing
     ? (() => {
         const useVnd = preferVnd && listing.priceCentsVnd != null;
-        const cents  = useVnd ? listing.priceCentsVnd! : listing.priceCents;
+        const cents = useVnd
+          ? (listing.promotionalPriceCentsVnd ?? listing.priceCentsVnd!)
+          : (listing.promotionalPriceCents ?? listing.priceCents);
         if (cents == null) return listingPriceDisplay;
         return useVnd
           ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(cents * quantity)

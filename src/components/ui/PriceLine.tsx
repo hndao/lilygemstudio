@@ -42,7 +42,7 @@ export function PriceLine({
         className={[
           'font-heading',
           sizes.price,
-          'text-(--color-terracotta-dark)',
+          saleBool ? 'text-(--color-promo)' : 'text-(--color-terracotta-dark)',
         ].join(' ')}
         aria-label={`Price: ${current.formatted}`}
       >

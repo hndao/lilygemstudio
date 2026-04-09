@@ -61,6 +61,7 @@
     "badge_limited": "Limited",
     "out_of_stock": "Out of Stock",
     "on_sale": "Sale",
+    "original_price": "Original price",
     "low_stock": "Only {n} left",
     "add_to_cart": "Add to Cart",
     "add_to_cart_aria": "Add {name} to cart",
