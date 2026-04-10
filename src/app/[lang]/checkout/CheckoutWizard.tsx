@@ -285,7 +285,7 @@ export function CheckoutWizard({ lang, dict, isVn }: CheckoutWizardProps) {
         // freeShippingRemainingCents === 0 means threshold is met.
         const freeUnlocked = cart.freeShippingRemainingCents === 0;
         const allRates: ShippingRate[] = freeUnlocked
-          ? [{ id: -2, name: dict.shipping_free, rateCents: 0, estimatedDaysMin: null, estimatedDaysMax: null }, ...rates]
+          ? [{ id: -2, name: dict.shipping_free, rateCents: 0, estimatedDaysMin: null, estimatedDaysMax: null, minOrderCents: null }, ...rates]
           : rates;
         setShippingRates(allRates);
         if (allRates.length > 0) setSelectedRateId(allRates[0].id);
