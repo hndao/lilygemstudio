@@ -12,7 +12,7 @@
 
 export interface Money {
   amount: number;        // integer cents — avoids float precision bugs
-  currency: 'USD' | 'CAD';
+  currency: 'USD' | 'CAD' | 'VND';
   formatted: string;     // pre-formatted by API: "$49.99" — no client-side Intl needed
 }
 
