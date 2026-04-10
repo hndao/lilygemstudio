@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { X, User, Package, MapPin, LogOut, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { useAuth } from '@/hooks/useAuth';
 import type { Locale } from '@/middleware';
 import type { Dictionary } from '@/lib/i18n';
-import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -17,6 +19,19 @@ interface MobileMenuProps {
 
 export function MobileMenu({ isOpen, onClose, dict, lang }: MobileMenuProps) {
   const base = `/${lang}`;
+  const { customer, logout, openAuthModal } = useAuth();
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSearchSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (!q) return;
+    setSearchQuery('');
+    onClose();
+    router.push(`${base}/shop?q=${encodeURIComponent(q)}`);
+  }, [searchQuery, base, router, onClose]);
 
   const NAV_LINKS = [
     { href: base, label: dict.nav.home },
@@ -25,10 +40,27 @@ export function MobileMenu({ isOpen, onClose, dict, lang }: MobileMenuProps) {
     { href: `${base}/contact`, label: dict.nav.contact },
   ];
 
+  const ACCOUNT_LINKS = [
+    { href: `${base}/account`, label: dict.header.my_account, icon: User },
+    { href: `${base}/account/orders`, label: dict.header.my_orders, icon: Package },
+    { href: `${base}/account/addresses`, label: dict.header.my_addresses, icon: MapPin },
+  ];
+
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : '';
+    if (!isOpen) setSearchQuery('');
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
+
+  const handleSignIn = () => {
+    onClose();
+    openAuthModal();
+  };
+
+  const handleLogout = async () => {
+    onClose();
+    await logout();
+  };
 
   return (
     <AnimatePresence>
@@ -58,7 +90,7 @@ export function MobileMenu({ isOpen, onClose, dict, lang }: MobileMenuProps) {
             {/* Drawer header */}
             <div className="flex items-center justify-between border-b border-(--color-border) px-6 py-4">
               <span className="font-heading text-lg font-700 text-(--color-stone)">
-                🌸 LilyGem
+                🌸 LilyGem Studio
               </span>
               <button
                 onClick={onClose}
@@ -67,6 +99,23 @@ export function MobileMenu({ isOpen, onClose, dict, lang }: MobileMenuProps) {
               >
                 <X className="h-5 w-5" />
               </button>
+            </div>
+
+            {/* Search */}
+            <div className="border-b border-(--color-border) px-4 py-3">
+              <form onSubmit={handleSearchSubmit}>
+                <div className="relative flex items-center">
+                  <Search className="absolute left-3 h-4 w-4 text-(--color-muted) pointer-events-none" aria-hidden="true" />
+                  <input
+                    ref={searchInputRef}
+                    type="search"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={dict.header.search_placeholder}
+                    className="w-full rounded-lg border border-(--color-border) bg-(--color-background) py-2.5 pl-9 pr-4 text-sm text-(--color-stone) placeholder:text-(--color-muted) outline-none focus:ring-1 focus:ring-(--color-cta)"
+                  />
+                </div>
+              </form>
             </div>
 
             {/* Nav links */}
@@ -89,6 +138,61 @@ export function MobileMenu({ isOpen, onClose, dict, lang }: MobileMenuProps) {
               ))}
             </ul>
 
+            {/* Language switcher */}
+            <div className="border-t border-(--color-border) px-6 py-3">
+              <LanguageSwitcher currentLang={lang} dict={dict} />
+            </div>
+
+            {/* Profile section */}
+            <div className="mt-auto border-t border-(--color-border) p-4">
+              {customer ? (
+                <>
+                  {/* Logged-in: name + links */}
+                  <div className="mb-3 flex items-center gap-3 px-2">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--color-cta) text-[13px] font-700 text-white">
+                      {customer.name.charAt(0).toUpperCase()}
+                    </span>
+                    <span className="truncate text-sm font-600 text-(--color-stone)">
+                      {customer.name}
+                    </span>
+                  </div>
+                  <ul className="flex flex-col gap-0.5">
+                    {ACCOUNT_LINKS.map(({ href, label, icon: Icon }) => (
+                      <li key={href}>
+                        <Link
+                          href={href}
+                          onClick={onClose}
+                          className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm text-(--color-stone) transition-colors hover:bg-(--color-sand)"
+                        >
+                          <Icon className="h-4 w-4 text-(--color-muted)" />
+                          {label}
+                        </Link>
+                      </li>
+                    ))}
+                    <li>
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm text-red-600 transition-colors hover:bg-red-50"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        {dict.header.sign_out}
+                      </button>
+                    </li>
+                  </ul>
+                </>
+              ) : (
+                /* Not logged in: Sign in button */
+                <button
+                  type="button"
+                  onClick={handleSignIn}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-(--color-cta) px-4 py-3 text-sm font-600 text-white transition-colors hover:bg-(--color-cta-hover)"
+                >
+                  <User className="h-4 w-4" />
+                  {dict.header.sign_in}
+                </button>
+              )}
+            </div>
           </motion.nav>
         </>
       )}

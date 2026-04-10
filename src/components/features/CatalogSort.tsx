@@ -8,28 +8,34 @@
  * needed — the URL is the source of truth.
  */
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useDict } from '@/context/DictionaryContext';
 import type { ProductListParams } from '@/types';
 
 type SortOption = NonNullable<ProductListParams['sort']>;
 
-const SORT_OPTIONS: Array<{ value: SortOption; label: string }> = [
-  { value: 'newest', label: 'Newest' },
-  { value: 'top_rated', label: 'Top Rated' },
-  { value: 'price_asc', label: 'Price: Low → High' },
-  { value: 'price_desc', label: 'Price: High → Low' },
-];
-
 export function CatalogSort() {
   const router = useRouter();
   const params = useSearchParams();
+  const pathname = usePathname();
+  const lang = pathname.split('/')[1] ?? 'en';
+  const dict = useDict();
+  const s = dict.shop;
+
+  const SORT_OPTIONS: Array<{ value: SortOption; label: string }> = [
+    { value: 'newest',    label: s.sort_newest },
+    { value: 'top_rated', label: s.sort_top_rated },
+    { value: 'price_asc', label: s.sort_price_asc },
+    { value: 'price_desc', label: s.sort_price_desc },
+  ];
+
   const activeSort = (params.get('sort') as SortOption) ?? 'newest';
 
   function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const next = new URLSearchParams(params.toString());
     next.set('sort', e.target.value);
     next.delete('page');
-    router.push(`/shop?${next.toString()}`);
+    router.push(`/${lang}/shop?${next.toString()}`);
   }
 
   return (
@@ -38,7 +44,7 @@ export function CatalogSort() {
         htmlFor="catalog-sort"
         className="brand-label shrink-0"
       >
-        Sort:
+        {s.sort_label}
       </label>
       <select
         id="catalog-sort"
@@ -53,4 +59,3 @@ export function CatalogSort() {
     </div>
   );
 }
-

@@ -12,31 +12,34 @@
 
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { getProducts, getSiteSettings } from '@/lib/api';
+import { getListings, getSiteSettings } from '@/lib/api';
 import { HeroSection } from '@/components/features/HeroSection';
 import { AsSeenOnBar } from '@/components/features/AsSeenOnBar';
-import { ProductGrid } from '@/components/features/ProductGrid';
+import { ListingGrid } from '@/components/features/ListingGrid';
 import { OurStorySection } from '@/components/features/OurStorySection';
 
 // ISR: revalidate every 24h — matches PRODUCT_LIST and SETTINGS TTL in cache.ts
 export const revalidate = 86400;
 
-export default async function HomePage() {
+export default async function HomePage({ params }: { params: Promise<{ lang: string }> }) {
+  const { lang } = await params;
+
   // Fetch settings and products in parallel — no sequential waterfall.
   // Both calls are ISR-cached (24h) so they add zero DB load on repeat visits.
-  const [settingsResult, productsResult] = await Promise.allSettled([
+  const [settingsResult, listingsResult] = await Promise.allSettled([
     getSiteSettings(),
-    getProducts({ sort: 'top_rated', perPage: 8 }),
+    getListings({ perPage: 8, platform: 'direct' }),
   ]);
 
   const settings = settingsResult.status === 'fulfilled' ? settingsResult.value : null;
-  const featuredProducts = productsResult.status === 'fulfilled' ? productsResult.value.data : [];
+  const featuredListings = listingsResult.status === 'fulfilled' ? listingsResult.value.data : [];
 
-  // Use the first hero slide from settings; HeroSection has its own fallback
-  const heroSlide = settings?.hero?.hero_slides?.[0];
+  // All hero slides + mode from settings; HeroSection has its own fallback
+  const heroSlides = settings?.hero?.hero_slides ?? [];
+  const heroMode   = settings?.hero?.hero_mode ?? 'single';
 
-  // Preload URL — use the CMS image if available, otherwise the fallback
-  const heroPreloadUrl = heroSlide?.image_url
+  // Preload URL — use the first CMS image if available, otherwise the fallback
+  const heroPreloadUrl = heroSlides[0]?.image_url
     ?? 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1600&q=80';
 
   return (
@@ -52,8 +55,8 @@ export default async function HomePage() {
         fetchPriority="high"
       />
 
-      {/* 1. Hero — full-bleed, LCP image. slide prop drives all content from CMS. */}
-      <HeroSection slide={heroSlide} />
+      {/* 1. Hero — full-bleed, LCP image. slides/heroMode drive all content from CMS. */}
+      <HeroSection slides={heroSlides} heroMode={heroMode} lang={lang} />
 
       {/* 2. Social proof bar — only shows platforms configured in Settings → Social Links */}
       <AsSeenOnBar social={settings?.social} />
@@ -77,8 +80,8 @@ export default async function HomePage() {
           </div>
 
           <Suspense fallback={<ProductGridSkeleton />}>
-            <ProductGrid
-              products={featuredProducts}
+            <ListingGrid
+              listings={featuredListings}
               priorityCount={4}
             />
           </Suspense>
@@ -96,7 +99,7 @@ export default async function HomePage() {
       </section>
 
       {/* 4. Our Story editorial section */}
-      <OurStorySection />
+      <OurStorySection content={settings?.pages?.page_home} lang={lang} />
     </main>
   );
 }

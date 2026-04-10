@@ -21,48 +21,74 @@
  *        safe-area-inset-bottom for iPhone notch.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
 import { Heart, ShoppingCart, ExternalLink } from 'lucide-react';
 import { trackAffiliateClick } from '@/lib/analytics';
 import { AFFILIATE_LINK_PROPS } from '@/lib/ftc';
+import { apiToggleLike, apiGetLikeStatus } from '@/lib/auth';
+import { useAuth } from '@/hooks/useAuth';
 import { MobileCartSheet } from '@/components/features/MobileCartSheet';
 import type { Dictionary } from '@/lib/i18n';
-import type { AffiliateLink, ColorOption, Money, ProductImage } from '@/types';
+import type { AffiliateLink, ListingCard, Money, ProductImage } from '@/types';
 
 interface MobileStickyBarProps {
   productId: string;
-  productSlug: string;
+  listingSlug: string;
   productName: string;
   price: Money;
   priceVnd?: Money;
   coverImage: ProductImage;
   affiliateLink: AffiliateLink;
   zaloUrl?: string;
-  /** Color options for the mobile cart sheet — from above_cart color field */
-  colorOptions?: ColorOption[];
   stockQuantity?: number | null;
   scrollThreshold?: number;
   dict: Dictionary['buybox'];
+  listing?: ListingCard | null;
 }
 
 export function MobileStickyBar({
   productId,
-  productSlug,
+  listingSlug,
   productName,
   price,
   priceVnd,
   coverImage,
   affiliateLink,
   zaloUrl,
-  colorOptions,
   stockQuantity,
-  scrollThreshold = 600,
+  scrollThreshold = 250,
   dict,
+  listing,
 }: MobileStickyBarProps) {
+  const { customer, token, openAuthModal } = useAuth();
   const [visible, setVisible] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [wishlisted, setWishlisted] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [likeLoading, setLikeLoading] = useState(false);
+
+  // Fetch persisted like status once auth is ready
+  useEffect(() => {
+    if (!customer || !token) return;
+    apiGetLikeStatus(listingSlug, token)
+      .then(({ liked: l }) => setLiked(l))
+      .catch(() => {});
+  }, [customer, token, listingSlug]);
+
+  const handleWishlistToggle = useCallback(async () => {
+    if (!customer || !token) { openAuthModal(); return; }
+    const prev = liked;
+    setLiked(!liked);
+    setLikeLoading(true);
+    try {
+      const { liked: newLiked } = await apiToggleLike(listingSlug, token);
+      setLiked(newLiked);
+    } catch {
+      setLiked(prev);
+    } finally {
+      setLikeLoading(false);
+    }
+  }, [customer, token, liked, listingSlug, openAuthModal]);
 
   useEffect(() => {
     const handleScroll = () => setVisible(window.scrollY > scrollThreshold);
@@ -72,8 +98,60 @@ export function MobileStickyBar({
 
   const zaloHref = zaloUrl ?? '#';
 
-  /* ── Global layout (Shop on Etsy) ─────────────────────────────────── */
+  /* ── Global layout ─────────────────────────────────────────────────── */
   const renderGlobalBar = () => {
+    // Direct listing available → show cart bar (no Zalo icon for non-VN)
+    if (listing) {
+      const externalLinks = (listing.platformLinks ?? []).filter(
+        (l) => l.platform !== 'direct' && l.url,
+      );
+      return (
+        <div className="flex w-full items-center gap-2.5 px-4 py-3">
+          <button
+            type="button"
+            onClick={handleWishlistToggle}
+            disabled={likeLoading}
+            className={[
+              'flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] border-[1.5px] transition-all',
+              liked
+                ? 'border-(--color-promo) bg-(--color-promo)/10'
+                : 'border-(--color-border) hover:bg-(--color-quartz-mist)',
+            ].join(' ')}
+            aria-label={liked ? dict.wishlist_remove : dict.wishlist_add}
+          >
+            <Heart
+              className={`h-5 w-5 text-(--color-promo) ${liked ? 'fill-(--color-promo)' : ''}`}
+              aria-hidden="true"
+            />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSheetOpen(true)}
+            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-[12px] bg-(--color-cta) text-[15px] font-600 text-(--color-cream) transition-all hover:bg-(--color-cta-hover)"
+            aria-label={dict.add_to_cart}
+          >
+            <ShoppingCart className="h-[18px] w-[18px]" aria-hidden="true" />
+            {dict.add_to_cart_short}
+          </button>
+
+          {externalLinks.map((link) => (
+            <a
+              key={link.platform}
+              href={link.url}
+              target="_blank"
+              rel="nofollow noopener noreferrer sponsored"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] border-[1.5px] border-(--color-border) transition-all hover:bg-(--color-quartz-mist)"
+              aria-label={dict.buy_on.replace('%s', link.platform.charAt(0).toUpperCase() + link.platform.slice(1))}
+            >
+              <ExternalLink className="h-[18px] w-[18px] text-(--color-stone)" aria-hidden="true" />
+            </a>
+          ))}
+        </div>
+      );
+    }
+
+    // No direct listing → affiliate link
     const rawNetwork = affiliateLink.network.charAt(0).toUpperCase() + affiliateLink.network.slice(1);
     const isFree = price.amount === 0;
     const ctaLabel = isFree ? 'Check Current Price' : `Shop on ${rawNetwork}`;
@@ -86,15 +164,15 @@ export function MobileStickyBar({
           </div>
           <div className="min-w-0">
             <p className="truncate text-xs font-600 text-(--color-stone)">{productName}</p>
-            <p className="text-xs font-700 text-(--color-cta)">
-              {isFree ? 'Invaluable Peace of Mind' : price.formatted}
-            </p>
+            {!isFree && (
+              <p className="text-xs font-700 text-(--color-cta)">{price.formatted}</p>
+            )}
           </div>
         </div>
         <a
           href={`/go/${productId}`}
           {...AFFILIATE_LINK_PROPS}
-          onClick={() => trackAffiliateClick({ slug: productSlug, network: affiliateLink.network, name: productName })}
+          onClick={() => trackAffiliateClick({ slug: listingSlug, network: affiliateLink.network, name: productName })}
           aria-label={ctaLabel}
           className="flex min-h-[60px] min-w-[140px] items-center justify-center gap-1.5 bg-(--color-cta) px-4 font-heading text-xs font-700 uppercase tracking-widest text-white transition-opacity hover:opacity-90"
         >
@@ -112,17 +190,18 @@ export function MobileStickyBar({
         {/* Wishlist icon */}
         <button
           type="button"
-          onClick={() => setWishlisted((prev) => !prev)}
+          onClick={handleWishlistToggle}
+            disabled={likeLoading}
           className={[
             'flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] border-[1.5px] transition-all',
-            wishlisted
+            liked
               ? 'border-(--color-promo) bg-(--color-promo)/10'
               : 'border-(--color-border) hover:bg-(--color-quartz-mist)',
           ].join(' ')}
-          aria-label={wishlisted ? dict.wishlist_remove : dict.wishlist_add}
+          aria-label={liked ? dict.wishlist_remove : dict.wishlist_add}
         >
           <Heart
-            className={`h-5 w-5 text-(--color-promo) ${wishlisted ? 'fill-(--color-promo)' : ''}`}
+            className={`h-5 w-5 text-(--color-promo) ${liked ? 'fill-(--color-promo)' : ''}`}
             aria-hidden="true"
           />
         </button>
@@ -149,20 +228,6 @@ export function MobileStickyBar({
           {dict.add_to_cart_short}
         </button>
       </div>
-
-      {/* Bottom sheet for size/qty selection */}
-      <MobileCartSheet
-        isOpen={sheetOpen}
-        onClose={() => setSheetOpen(false)}
-        productId={productId}
-        productSlug={productSlug}
-        productName={productName}
-        price={priceVnd ?? price}
-        coverImage={coverImage.src}
-        colorOptions={colorOptions}
-        stockQuantity={stockQuantity}
-        dict={dict}
-      />
     </>
   );
 
@@ -188,6 +253,20 @@ export function MobileStickyBar({
         <div className="geo-show-vn w-full">
           {renderVnBar()}
         </div>
+      )}
+
+      {/* Single MobileCartSheet instance — opened by either bar's cart button */}
+      {listing && (
+        <MobileCartSheet
+          isOpen={sheetOpen}
+          onClose={() => setSheetOpen(false)}
+          productId={productId}
+          productName={productName}
+          coverImage={coverImage.src}
+          stockQuantity={stockQuantity}
+          dict={dict}
+          listing={listing}
+        />
       )}
     </div>
   );

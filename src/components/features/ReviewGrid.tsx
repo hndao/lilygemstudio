@@ -19,20 +19,25 @@ import { ReviewCard } from './ReviewCard';
 interface ReviewGridProps {
   reviews: Review[];
   totalCount: number;
+  dict: { no_reviews: string; be_first: string; customer_reviews: string };
 }
 
-export function ReviewGrid({ reviews, totalCount }: ReviewGridProps) {
+export function ReviewGrid({ reviews, totalCount, dict }: ReviewGridProps) {
   if (reviews.length === 0) {
     return (
-      <p className="text-sm text-(--color-muted)">
-        No reviews yet. Be the first to share your experience.
-      </p>
+      <div className="flex flex-col items-center gap-3 py-12 text-center">
+        <div className="flex gap-0.5 text-[32px] leading-none text-(--color-sand-dark)" aria-hidden="true">
+          {'☆'.repeat(5)}
+        </div>
+        <p className="text-[15px] font-600 text-(--color-stone)">{dict.no_reviews}</p>
+        <p className="text-[13px] text-(--color-muted)">{dict.be_first}</p>
+      </div>
     );
   }
 
   return (
-    <section aria-label={`Customer reviews — ${totalCount} total`}>
-      <h2 className="mb-6">Customer Reviews ({totalCount})</h2>
+    <section aria-label={`${dict.customer_reviews} — ${totalCount} total`}>
+      <h2 className="mb-6">{dict.customer_reviews} ({totalCount})</h2>
 
       {/*
        * CSS columns masonry:

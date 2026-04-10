@@ -15,6 +15,9 @@ import { SUPPORTED_LOCALES } from '@/middleware';
 import { getDictionary } from '@/lib/i18n';
 import { Header } from '@/components/shared/Header';
 import { Footer } from '@/components/shared/Footer';
+import { CartDrawer } from '@/components/features/CartDrawer';
+import { PromotionBanner } from '@/components/features/PromotionBanner';
+import { DictionaryProvider } from '@/context/DictionaryContext';
 import { notFound } from 'next/navigation';
 
 interface LangLayoutProps {
@@ -38,10 +41,12 @@ export default async function LangLayout({ children, params }: LangLayoutProps) 
   const locale = lang as Locale;
 
   return (
-    <>
+    <DictionaryProvider dict={dict}>
       <Header dict={dict} lang={locale} />
+      <PromotionBanner lang={lang} />
       <main>{children}</main>
       <Footer dict={dict} lang={locale} />
-    </>
+      <CartDrawer />
+    </DictionaryProvider>
   );
 }

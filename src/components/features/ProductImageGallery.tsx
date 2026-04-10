@@ -25,6 +25,8 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
+import { X } from 'lucide-react';
+import { useProductColor } from '@/context/ProductColorContext';
 import type { ProductImage } from '@/types';
 
 // ── Media slide types ──────────────────────────────────────────────────────────
@@ -50,6 +52,8 @@ export function ProductImageGallery({ images, productName, videoUrl }: ProductIm
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [mobileIndex, setMobileIndex] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
   const activeSlide = slides[activeIndex] ?? slides[0];
   const thumbnails = slides.slice(0, 4);
@@ -73,11 +77,38 @@ export function ProductImageGallery({ images, productName, videoUrl }: ProductIm
     return () => observer.disconnect();
   }, [slides.length]);
 
+  // Open/close lightbox — sync <dialog> open state
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (lightboxOpen) {
+      dialog.showModal();
+      document.body.style.overflow = 'hidden';
+    } else {
+      dialog.close();
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [lightboxOpen]);
+
   const scrollToSlide = useCallback((i: number) => {
     const carousel = carouselRef.current;
     if (!carousel) return;
     (carousel.children[i] as HTMLElement)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
   }, []);
+
+  // Jump to first image matching the active color tag when selection changes
+  const { activeTag } = useProductColor();
+  useEffect(() => {
+    if (!activeTag) return;
+    const matchIndex = slides.findIndex(
+      (s) => s.type === 'image' && s.image.tag === activeTag,
+    );
+    if (matchIndex >= 0) {
+      setActiveIndex(matchIndex);
+      scrollToSlide(matchIndex);
+    }
+  }, [activeTag, slides, scrollToSlide]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -154,7 +185,13 @@ export function ProductImageGallery({ images, productName, videoUrl }: ProductIm
       {/* ── DESKTOP: Static main view + thumbnail strip ────────────────────── */}
       <div className="hidden md:flex md:flex-col md:gap-3">
         {/* Main viewer */}
-        <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-(--color-sand-light)">
+        <div
+          className={[
+            'relative aspect-square w-full overflow-hidden rounded-xl bg-(--color-sand-light)',
+            activeSlide.type === 'image' ? 'cursor-zoom-in' : '',
+          ].join(' ')}
+          onClick={() => activeSlide.type === 'image' && setLightboxOpen(true)}
+        >
           {activeSlide.type === 'video' ? (
             <video
               src={activeSlide.url}
@@ -222,6 +259,39 @@ export function ProductImageGallery({ images, productName, videoUrl }: ProductIm
           </div>
         )}
       </div>
+
+      {/* ── DESKTOP LIGHTBOX ─────────────────────────────────────────────── */}
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
+      <dialog
+        ref={dialogRef}
+        className="fixed inset-0 m-0 h-dvh w-dvw max-w-none max-h-none overflow-hidden bg-black/90 p-0 backdrop:bg-transparent [&::backdrop]:hidden"
+        aria-label="Image lightbox"
+        onClick={(e) => { if (e.target === e.currentTarget) setLightboxOpen(false); }}
+        onKeyDown={(e) => { if (e.key === 'Escape') setLightboxOpen(false); }}
+      >
+        <button
+          type="button"
+          onClick={() => setLightboxOpen(false)}
+          className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+          aria-label="Close lightbox"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        {lightboxOpen && activeSlide.type === 'image' && (
+          <div className="flex h-full w-full items-center justify-center p-8">
+            <div className="relative h-full w-full">
+              <Image
+                src={activeSlide.image.src}
+                alt={activeSlide.image.alt || productName}
+                fill
+                sizes="100vw"
+                className="object-contain"
+              />
+            </div>
+          </div>
+        )}
+      </dialog>
     </div>
   );
 }

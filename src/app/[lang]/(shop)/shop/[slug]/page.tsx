@@ -14,24 +14,27 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { getProduct, getReviews, getProductsBySlugs, getSiteSettings } from '@/lib/api';
+import { getProduct, getReviews, getSiteSettings, getListingBySlug, getListings } from '@/lib/api';
 import { getDictionary } from '@/lib/i18n';
 import { productJsonLd, breadcrumbJsonLd, generateProductMeta } from '@/lib/seo';
 import { ProductImageGallery } from '@/components/features/ProductImageGallery';
-import { ProductTabs } from '@/components/features/ProductTabs';
-import { ProductGrid } from '@/components/features/ProductGrid';
-import { ArtisanSpotlight } from '@/components/features/ArtisanSpotlight';
+import { ProductColorProvider } from '@/context/ProductColorContext';
+import { ListingGrid } from '@/components/features/ListingGrid';
 import { AffiliateCTA } from '@/components/features/AffiliateCTA';
 import { ProductVNPanel } from '@/components/features/ProductVNPanel';
-import { SpecsBox } from '@/components/features/SpecsBox';
 import { ExpertVerdict } from '@/components/features/ExpertVerdict';
 import { FeatureAnalysis } from '@/components/features/FeatureAnalysis';
 import { BlocksRenderer } from '@/components/features/BlocksRenderer';
 import { MobileStickyBar } from '@/components/features/MobileStickyBar';
+import { ReviewCard } from '@/components/features/ReviewCard';
+import { ReviewsDialog } from '@/components/features/ReviewsDialog';
+import { ReviewForm } from '@/components/features/ReviewForm';
 import { StarRating } from '@/components/ui/StarRating';
 import { PriceLine } from '@/components/ui/PriceLine';
 import { Badge } from '@/components/ui/Badge';
-import type { ColorOption, FieldWithValue } from '@/types';
+import { ListingBadgePill } from '@/components/ui/ListingBadgePill';
+import { ProductSpecs } from '@/components/features/ProductSpecs';
+import { FengShuiCard } from '@/components/features/FengShuiCard';
 
 export const revalidate = 3600; // 1h ISR — matches PRODUCT_DETAIL TTL
 
@@ -41,11 +44,15 @@ interface ProductPageProps {
 }
 
 export async function generateMetadata({ params, searchParams }: ProductPageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug, lang } = await params;
   const { preview_token: token } = await searchParams;
   try {
-    const { data: product } = await getProduct(slug, token);
-    const meta = generateProductMeta(product);
+    // slug is a listing slug — resolve to product slug first
+    const { data: listing } = await getListingBySlug(slug);
+    const productSlug = listing.bundleProducts[0]?.slug;
+    if (!productSlug) return { title: 'Product Not Found' };
+    const { data: product } = await getProduct(productSlug, token);
+    const meta = generateProductMeta(product, { listingSlug: slug, lang, listingTitle: listing.title ?? undefined });
     if (token) {
       return { ...meta, robots: { index: false, follow: false } };
     }
@@ -59,8 +66,16 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   const { slug, lang } = await params;
   const { preview_token: token } = await searchParams;
 
+  // slug is a listing slug — resolve listing first, then fetch product by product slug
+  const listingRes = await getListingBySlug(slug).catch(() => null);
+  if (!listingRes) notFound();
+
+  const directListing = listingRes.data;
+  const productSlug = directListing.bundleProducts[0]?.slug;
+  if (!productSlug) notFound();
+
   const [productRes, reviewsRes, dict, settings] = await Promise.all([
-    getProduct(slug, token).catch(() => null),
+    getProduct(productSlug, token).catch(() => null),
     getReviews(slug, 1).catch(() => ({ data: [], meta: { total: 0, currentPage: 1, lastPage: 1, perPage: 12 } })),
     getDictionary(lang),
     getSiteSettings().catch(() => null),
@@ -74,74 +89,70 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   const product = productRes.data;
   const reviews = reviewsRes.data;
 
-  const relatedSlugs = product.tags.slice(0, 4).filter((t) => t !== slug);
-  const relatedProducts = relatedSlugs.length > 0
-    ? await getProductsBySlugs(relatedSlugs)
-    : [];
+  // Always use listings for "You May Also Like" — product slugs can't be used
+  // as shop URLs since the detail page routes by listing slug, not product slug.
+  const relatedListings = await getListings({ category: product.category?.slug, perPage: 5, platform: 'direct' })
+    .then((r) => r.data.filter((l) => l.slug !== slug).slice(0, 4))
+    .catch(() => []);
 
-  const galleryImages = product.images?.length > 0 ? product.images : [product.coverImage];
+  // Listing images take precedence over product images when available
+  const galleryImages = directListing?.images?.length
+    ? directListing.images
+    : product.images?.length > 0 ? product.images : [product.coverImage];
 
-  const displayName = lang === 'vi' && product.nameVi ? product.nameVi : product.name;
-  const displayTagline = lang === 'vi' && product.taglineVi ? product.taglineVi : product.tagline;
+  // Listing prices override product prices when explicitly set on the listing
+  const listingPrice = directListing?.priceCents
+    ? { amount: directListing.priceCents, currency: 'USD' as const, formatted: directListing.formattedPrice ?? '' }
+    : null;
+  const listingCompareAtPrice = directListing?.comparePriceCents
+    ? { amount: directListing.comparePriceCents, currency: 'USD' as const, formatted: directListing.formattedCompareAtPrice ?? '' }
+    : null;
+  const listingPriceVnd = directListing?.priceCentsVnd
+    ? { amount: directListing.priceCentsVnd, currency: 'USD' as const, formatted: directListing.formattedPriceVnd ?? '' }
+    : null;
+  const listingCompareAtPriceVnd = directListing?.comparePriceCentsVnd
+    ? { amount: directListing.comparePriceCentsVnd, currency: 'USD' as const, formatted: directListing.formattedCompareAtPriceVnd ?? '' }
+    : null;
+
+  // Promotional price from active auto-applied promotions — overrides regular price display
+  const listingPromoPrice = directListing?.promotionalPriceCents
+    ? { amount: directListing.promotionalPriceCents, currency: 'USD' as const, formatted: directListing.formattedPromotionalPrice ?? '' }
+    : null;
+  const listingPromoPriceVnd = directListing?.promotionalPriceCentsVnd
+    ? { amount: directListing.promotionalPriceCentsVnd, currency: 'VND' as const, formatted: directListing.formattedPromotionalPriceVnd ?? '' }
+    : null;
+  // When a promo is active, the original listing price becomes the "compare at" strikethrough
+  const effectivePrice       = listingPromoPrice ?? listingPrice;
+  const effectiveCompareAt   = listingPromoPrice ? listingPrice : listingCompareAtPrice;
+  const effectivePriceVnd    = listingPromoPriceVnd ?? listingPriceVnd;
+  const effectiveCompareAtVnd = listingPromoPriceVnd ? listingPriceVnd : listingCompareAtPriceVnd;
+
+  const displayName = lang === 'vi'
+    ? (directListing?.titleVi || directListing?.title || product.nameVi || product.name)
+    : (directListing?.title || product.name);
+  const displayTagline = lang === 'vi'
+    ? (directListing?.taglineVi || directListing?.tagline || product.taglineVi || product.tagline)
+    : (directListing?.tagline || product.tagline);
   const displayCategoryName = lang === 'vi' && product.category?.nameVi ? product.category.nameVi : product.category?.name;
   const displayDescription = lang === 'vi' && product.descriptionVi ? product.descriptionVi : product.description;
+  // Listing brand story takes priority; falls back to product brand story.
+  const rawBrandStory   = directListing?.brandStory   ?? product.brandStory;
+  const rawBrandStoryVi = directListing?.brandStoryVi ?? product.brandStoryVi;
+  const displayBrandStory = lang === 'vi' && rawBrandStoryVi ? rawBrandStoryVi : rawBrandStory;
 
 
-  // ── Split custom fields by display_position ────────────────────────────────
-  const defs = product.customFieldDefinitions ?? [];
-  const fieldValues = product.customFields ?? {};
-
-  // Specs box: non-color fields routed to specs_box (or unset, which defaults to specs_box).
-  // FALLBACK: when the category has no definitions yet, auto-label every value
-  // from customFields. Single ColorFieldValue objects ({ name, hex }) are shown
-  // as text (name only); arrays (multi-color) are skipped here and handled below.
-  const specsBoxFields: FieldWithValue[] = defs.length > 0
-    ? defs
-        .filter((def) => {
-          const pos = def.display_position ?? 'specs_box';
-          // Multi-color above_cart fields go to ColorSwatches, not SpecsBox
-          if (def.type === 'color' && def.multiple && pos === 'above_cart') return false;
-          return pos === 'specs_box';
-        })
-        .flatMap((def) => {
-          const value = fieldValues[def.name];
-          if (value == null || value === '') return [];
-          // Single color: extract name for display and attach hex for the swatch dot
-          if (def.type === 'color' && typeof value === 'object' && !Array.isArray(value)) {
-            const cv = value as { name: string; hex: string };
-            return [{ definition: { ...def, hex: cv.hex }, value: cv.name }];
-          }
-          return [{ definition: def, value: value as string | number | boolean }];
-        })
-    : Object.entries(fieldValues)
-        .filter(([, v]) => {
-          if (v === null || v === undefined || v === '') return false;
-          if (Array.isArray(v)) return false; // skip ColorOption[] arrays
-          return true;
-        })
-        .map(([key, value]) => {
-          const isColor = typeof value === 'object' && value !== null;
-          const cv = isColor ? (value as { name: string; hex: string }) : null;
-          return {
-            definition: {
-              name: key,
-              label: key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-              type: isColor ? 'color' as const : 'text' as const,
-              ...(cv ? { hex: cv.hex } : {}),
-            },
-            value: cv ? cv.name : value as string | number | boolean,
-          };
-        });
-
-  // Above-cart color field (multi-color picker)
-  const colorDef = defs.find(
-    (def) => def.type === 'color' && def.display_position === 'above_cart' && def.multiple,
-  );
-  const colorOptions: ColorOption[] | undefined =
-    colorDef && Array.isArray(fieldValues[colorDef.name])
-      ? (fieldValues[colorDef.name] as ColorOption[])
-      : undefined;
-  const colorLabel = colorDef?.label;
+  // Discount badge label for detail page (e.g. "-30%")
+  const detailDiscountLabel = (() => {
+    if (directListing?.promotionalPriceCents && directListing?.priceCents && directListing.priceCents > 0) {
+      const pct = Math.round((1 - directListing.promotionalPriceCents / directListing.priceCents) * 100);
+      if (pct > 0) return `-${pct}%`;
+    }
+    if (directListing?.priceCents && directListing?.comparePriceCents && directListing.comparePriceCents > 0) {
+      const pct = Math.round((1 - directListing.priceCents / directListing.comparePriceCents) * 100);
+      if (pct > 0) return `-${pct}%`;
+    }
+    return null;
+  })();
 
   // ── Breadcrumbs ────────────────────────────────────────────────────────────
   const crumbs = [
@@ -155,7 +166,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     <main className="mx-auto max-w-[1280px] px-4 py-8 md:px-6 md:py-10 lg:px-8">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd(product, reviews)) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd(product, reviews, directListing, lang)) }}
       />
       <script
         type="application/ld+json"
@@ -184,59 +195,118 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       </nav>
 
       {/* Split layout: image left, info right */}
+      {/* ProductColorProvider bridges color swatch selection → gallery image filtering */}
+      <ProductColorProvider>
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-12 lg:gap-16">
-        <ProductImageGallery images={galleryImages} productName={displayName} videoUrl={product.videoUrl} />
+        {/* Left column: gallery + reviews preview */}
+        <div className="flex flex-col gap-8">
+          <ProductImageGallery images={galleryImages} productName={displayName} videoUrl={product.videoUrl} />
+
+          {/* ── Reviews under gallery ─────────────────────────────── */}
+          <div>
+            <h2 className="mb-4 font-heading text-base font-700 text-(--color-stone)">
+              {dict.review.customer_reviews}
+              {(directListing.reviewCount ?? 0) > 0 && (
+                <span className="ml-1.5 font-400 text-(--color-muted)">({directListing.reviewCount})</span>
+              )}
+            </h2>
+
+            {reviews.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 py-10 text-center">
+                <div className="flex gap-0.5 text-[28px] leading-none text-(--color-sand-dark)" aria-hidden="true">
+                  {'☆'.repeat(5)}
+                </div>
+                <p className="text-[14px] font-600 text-(--color-stone)">{dict.review.no_reviews}</p>
+                <p className="text-[13px] text-(--color-muted)">{dict.review.be_first}</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {reviews.slice(0, 3).map((review) => (
+                  <ReviewCard key={review.id} review={review} />
+                ))}
+              </div>
+            )}
+
+            <ReviewsDialog
+              reviews={reviews}
+              totalCount={reviewsRes.meta.total}
+              averageRating={directListing.averageRating ?? null}
+              dict={dict.review}
+            />
+          </div>
+        </div>
 
         {/* Product info — right column */}
         <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center gap-2">
-            {product.badge && <Badge variant={product.badge} />}
-            {product.categories && product.categories.length > 0 && product.categories.map((cat) => (
-              <Link
-                key={cat.slug}
-                href={`/${lang}/shop?category=${cat.slug}`}
-                className="rounded-full border border-(--color-border) px-2.5 py-0.5 text-[11px] font-500 text-(--color-muted) hover:border-(--color-cta) hover:text-(--color-cta) transition-colors"
-              >
-                {lang === 'vi' && cat.nameVi ? cat.nameVi : cat.name}
-              </Link>
-            ))}
-          </div>
-
-          <h1 className="text-2xl leading-tight md:text-3xl lg:text-4xl">{displayName}</h1>
-          <p className="text-[13px] font-500 text-(--color-cta)">{displayTagline}</p>
-
-          {product.price.amount === 0 ? (
-            <p className="font-heading text-lg font-700 text-(--color-cta)">
-              Invaluable Peace of Mind
-            </p>
-          ) : (
-            <PriceLine
-              price={product.price}
-              compareAtPrice={product.compareAtPrice}
-              priceVnd={product.priceVnd}
-              compareAtPriceVnd={product.compareAtPriceVnd}
-              size="lg"
-            />
+          {/* ── Discount label + listing badges row ──────────────────── */}
+          {(detailDiscountLabel || (directListing?.badges && directListing.badges.length > 0)) && (
+            <div className="flex flex-wrap items-center gap-2">
+              {detailDiscountLabel && (
+                <span className="inline-flex items-center rounded-full bg-(--color-promo) px-2.5 py-1 text-xs font-600 text-white leading-none whitespace-nowrap">
+                  {detailDiscountLabel}
+                </span>
+              )}
+              {directListing?.badges?.map((badge) => (
+                <ListingBadgePill key={badge.id} badge={badge} size="md" />
+              ))}
+            </div>
           )}
 
-          <StarRating
-            rating={product.reviewSummary.averageRating}
-            count={product.reviewSummary.totalCount}
-            size="md"
-          />
+          {/* ── Price ─────────────────────────────────────────────────── */}
+          {(listingPrice ?? product.price).amount > 0 && (
+            <div className="inline-flex">
+              <PriceLine
+                price={effectivePrice ?? product.price}
+                compareAtPrice={effectiveCompareAt ?? product.compareAtPrice}
+                priceVnd={effectivePriceVnd ?? product.priceVnd}
+                compareAtPriceVnd={effectiveCompareAtVnd ?? product.compareAtPriceVnd}
+                size="lg"
+              />
+            </div>
+          )}
+
+          <h1
+            className="font-heading text-xl leading-tight md:text-2xl lg:text-3xl"
+          >{displayName}</h1>
+          {displayTagline && (
+            <p className="font-heading text-[15px] font-300 italic text-(--color-muted)">{displayTagline}</p>
+          )}
+
+          <div className="flex flex-wrap items-center gap-3">
+            <StarRating
+              rating={directListing.averageRating ?? 0}
+              count={directListing.reviewCount ?? 0}
+              size="md"
+            />
+            {(directListing.likesCount ?? 0) > 0 && (
+              <span className="flex items-center gap-1.5 text-[13px] text-(--color-muted)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+                <span className="font-500">{directListing.likesCount}</span>
+              </span>
+            )}
+          </div>
 
           {product.verdict && <ExpertVerdict verdict={product.verdict} />}
 
+          {/* Brand story — decorative quote card above variant pickers */}
+          {displayBrandStory && (
+            <div className="overflow-hidden rounded-[14px] bg-(--color-cream) px-7 py-6">
+              <div
+                className="relative font-heading text-[15px] font-300 italic leading-[1.75] text-(--color-stone) prose-p:m-0"
+                dangerouslySetInnerHTML={{ __html: displayBrandStory }}
+              />
+            </div>
+          )}
+
           <div className="h-px bg-(--color-border)" aria-hidden="true" />
 
-          {/* ── VN: ColorSwatches + SpecsBox + BuyBox (in ProductVNPanel) ── */}
+          {/* ── VN: VariantPicker + BuyBox ── */}
           <div className="geo-show-vn w-full">
             <ProductVNPanel
-              colorOptions={colorOptions}
-              colorLabel={colorLabel}
-              specsBoxFields={specsBoxFields}
               productId={product.id}
-              productSlug={slug}
+              listingSlug={slug}
               productName={displayName}
               price={product.price}
               priceVnd={product.priceVnd}
@@ -245,26 +315,69 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
               coverImage={galleryImages[0].src}
               stockQuantity={product.quantity}
               dict={dict.buybox}
+              listing={directListing}
+              trustBadges={product.trustBadges}
+              variants={product.variants}
+              lang={lang}
+              sizeGuideLabel={dict.buybox.size_guide}
             />
           </div>
 
-          {/* ── Global: SpecsBox + AffiliateCTA ────────────────────────── */}
+          {/* ── Global: VariantPicker + BuyBox (USD, no Zalo); no listing → AffiliateCTA ── */}
           <div className="geo-hide-vn w-full flex flex-col gap-5">
-            <SpecsBox fields={specsBoxFields} title={dict.buybox.specs_title} />
-            <AffiliateCTA
-              affiliateLink={product.affiliateLink}
-              affiliateLinkVn={product.affiliateLinkVn}
-              productId={product.id}
-              productSlug={slug}
-              productName={displayName}
-              price={product.price}
-              priceVnd={product.priceVnd}
-            />
+            {directListing ? (
+              <ProductVNPanel
+                productId={product.id}
+                listingSlug={slug}
+                productName={displayName}
+                price={product.price}
+                priceVnd={product.priceVnd}
+                coverImage={galleryImages[0].src}
+                stockQuantity={product.quantity}
+                dict={dict.buybox}
+                listing={directListing}
+                preferVnd={false}
+                trustBadges={product.trustBadges}
+                variants={product.variants}
+                lang={lang}
+                sizeGuideLabel={dict.buybox.size_guide}
+              />
+            ) : (
+              <>
+                <AffiliateCTA
+                  affiliateLink={product.affiliateLink}
+                  affiliateLinkVn={product.affiliateLinkVn}
+                  productId={product.id}
+                  productSlug={productSlug}
+                  productName={displayName}
+                  price={product.price}
+                  priceVnd={product.priceVnd}
+                />
+              </>
+            )}
           </div>
 
-          {product.artisan && <ArtisanSpotlight artisan={product.artisan} />}
+          {/* Specs — inside right column; hidden for multi-product bundles */}
+          {product.customFields && Object.keys(product.customFields).length > 0
+            && directListing.bundleProducts.length <= 1
+            && (
+              <ProductSpecs
+                customFields={product.customFields as Record<string, string | number | boolean | import('@/types').ColorFieldValue>}
+                customFieldDefinitions={product.customFieldDefinitions}
+                lang={lang}
+                className="mt-2"
+              />
+            )
+          }
+
+          {/* Feng shui section — inside right column per mockup */}
+          {product.fengShui && (
+            <FengShuiCard profile={product.fengShui} lang={lang} className="mt-2" />
+          )}
+
         </div>
       </div>
+      </ProductColorProvider>
 
       {/* ── Below-the-fold ─────────────────────────────────────────────────── */}
 
@@ -276,32 +389,46 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         <BlocksRenderer blocks={product.blocks} className="mt-10" />
       )}
 
-      <ProductTabs description={displayDescription ?? ''} />
+      {displayDescription && (
+        <div className="mt-12">
+          <h2 className="mb-4 font-heading text-base font-700 text-(--color-stone)">
+            {dict.product.description_heading}
+          </h2>
+          <div
+            className="prose max-w-none text-sm leading-relaxed text-(--color-muted)"
+            dangerouslySetInnerHTML={{ __html: displayDescription }}
+          />
+        </div>
+      )}
 
       <blockquote className="mt-16 border-l-2 border-(--color-sand-dark) pl-5 text-sm italic leading-relaxed text-(--color-muted)">
-        Every piece featured on LilyGem Studio is carefully crafted and verified for quality.
-        When you shop with us, you support independent artisans. No middlemen, no mystery — just authentic beauty you can trust.
+        {dict.product.trust_quote}
       </blockquote>
 
-      {relatedProducts.length > 0 && (
+      {/* ── Write a review ─────────────────────────────────────────────────── */}
+      <div className="mt-12">
+        <ReviewForm listingSlug={slug} dict={dict.review} />
+      </div>
+
+      {relatedListings.length > 0 && (
         <section className="mt-16" aria-labelledby="related-heading">
-          <h2 id="related-heading" className="mb-6">You May Also Like</h2>
-          <ProductGrid products={relatedProducts} priorityCount={0} />
+          <h2 id="related-heading" className="mb-6">{dict.product.related_products}</h2>
+          <ListingGrid listings={relatedListings} priorityCount={0} />
         </section>
       )}
 
       <MobileStickyBar
         productId={product.id}
-        productSlug={slug}
+        listingSlug={slug}
         productName={displayName}
         price={product.price}
         priceVnd={product.priceVnd}
         coverImage={galleryImages[0]}
         affiliateLink={product.affiliateLink}
         zaloUrl={zaloUrl}
-        colorOptions={colorOptions}
         stockQuantity={product.quantity}
         dict={dict.buybox}
+        listing={directListing}
       />
     </main>
   );

@@ -21,32 +21,51 @@
  */
 
 import type { Metadata } from 'next';
-import type { ProductDetail, ProductCard, Review, Artisan, Post, ContentBlock } from '@/types';
+import type { ProductDetail, ProductCard, Review, Post, ContentBlock, ListingCard } from '@/types';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://dariiv.com';
 const SITE_NAME = 'DARIIV';
 
 // ── Metadata generators ────────────────────────────────────────────────────────
 
-export function generateProductMeta(product: ProductDetail): Metadata {
-  const url = `${SITE_URL}/shop/${product.slug}`;
+/**
+ * WHY listingSlug + lang options:
+ *  - listingSlug: shop pages route by listing slug, so canonical must use it.
+ *  - lang: lilygemstudio serves /en/shop/[slug] and /vi/shop/[slug] — hreflang
+ *    alternates tell Google which language version to show per locale, preventing
+ *    the wrong language from ranking for Vietnamese vs English queries.
+ */
+export function generateProductMeta(product: ProductDetail, options?: { listingSlug?: string; lang?: string; listingTitle?: string }): Metadata {
+  const pageSlug = options?.listingSlug ?? product.slug;
+  const lang = options?.lang ?? 'en';
+  const url = `${SITE_URL}/${lang}/shop/${pageSlug}`;
   // WHY dynamic OG route: Pinterest/TikTok crawlers cache the first OG image
   // they see. A branded 1200×630 with product name + price gets 3–5× more
   // repins/shares than a raw product photo with no context overlay.
   const ogImageUrl = `${SITE_URL}/api/og/product/${product.slug}`;
 
-  // WHY metadata.seo: imported products get AI-written meta tags stored in
-  // metadata.seo by ImportProductFromUrl. We prefer those over the generic
-  // name/tagline fallbacks because they are keyword-optimised and length-capped.
+  // WHY listingTitle takes precedence: the listing title is what the admin named
+  // this sellable item (e.g. "Moonlight & Golden Veil Agate Bangle Set") and is
+  // what appears as the page H1. The product's AI-imported seo.meta_title is an
+  // SEO-optimised fallback for when no listing title is provided.
   const seo = product.metadata?.seo;
-  const title = seo?.meta_title ?? product.name;
+  const title = options?.listingTitle ?? seo?.meta_title ?? product.name;
   const description = seo?.meta_description ?? product.tagline;
 
   return {
     title,
     description,
     ...(seo?.keywords?.length && { keywords: seo.keywords }),
-    alternates: { canonical: url },
+    alternates: {
+      canonical: url,
+      // WHY x-default = en: Google uses x-default for users whose language has
+      // no exact match. English is the broader international audience.
+      languages: {
+        en: `${SITE_URL}/en/shop/${pageSlug}`,
+        vi: `${SITE_URL}/vi/shop/${pageSlug}`,
+        'x-default': `${SITE_URL}/en/shop/${pageSlug}`,
+      },
+    },
     openGraph: {
       title: seo?.meta_title ?? `${product.name} | ${SITE_NAME}`,
       description,
@@ -131,11 +150,50 @@ export function generateCatalogMeta(params?: {
  * gives Google a geographic brand signal that improves local SEO.
  * Falls back to category name, then "DARIIV" as the brand entity.
  */
-export function productJsonLd(product: ProductDetail, reviews: Review[] = []): object {
+/**
+ * WHY listing + lang params: see dariiv-web/src/lib/seo.ts for full rationale.
+ * For lilygemstudio, the offer URL includes the lang prefix so Google crawls
+ * the correct language version of the page.
+ */
+export function productJsonLd(product: ProductDetail, reviews: Review[] = [], listing?: ListingCard, lang?: string): object {
   // WHY metadata.origin: artisan provenance stored by the importer/admin
   // (e.g. "Vermont, USA") gives Google a geographic brand signal.
   // Falls back to category name, then the site name.
-  const brandName = product.metadata?.origin ?? product.category?.name ?? 'DARIIV';
+  const brandName = product.metadata?.origin ?? product.category?.name ?? SITE_NAME;
+
+  // Use listing price when available (may differ from product base price for sales/bundles)
+  const priceAmount = listing?.priceCents ?? product.price.amount;
+
+  // Reflect real stock state: OutOfStock prevents misleading Rich Results
+  const isInStock = listing
+    ? listing.isLive && (listing.quantity === null || listing.quantity > 0)
+    : true;
+  const availability = isInStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
+
+  // Canonical page URL as offer URL; affiliate link is a separate redirect
+  const langPrefix = lang ?? 'en';
+  const offerUrl = listing?.slug
+    ? `${SITE_URL}/${langPrefix}/shop/${listing.slug}`
+    : product.affiliateLink.url;
+
+  const offer: Record<string, unknown> = {
+    '@type': 'Offer',
+    price: (priceAmount / 100).toFixed(2),
+    priceCurrency: 'USD',
+    availability,
+    itemCondition: 'https://schema.org/NewCondition',
+    url: offerUrl,
+    seller: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+  };
+
+  // Flash sale / limited-time pricing validity window
+  if (listing?.validUntil) {
+    offer.priceValidUntil = listing.validUntil.split('T')[0]; // YYYY-MM-DD
+  }
 
   const schema: Record<string, unknown> = {
     '@context': 'https://schema.org',
@@ -150,21 +208,7 @@ export function productJsonLd(product: ProductDetail, reviews: Review[] = []): o
       '@type': 'Brand',
       name: brandName,
     },
-    offers: {
-      '@type': 'Offer',
-      price: (product.price.amount / 100).toFixed(2),
-      priceCurrency: product.price.currency,
-      // WHY OnlineOnly: DARIIV is a pure affiliate site — no physical store.
-      // This prevents Google from showing "check in-store availability" UI.
-      availability: 'https://schema.org/InStock',
-      itemCondition: 'https://schema.org/NewCondition',
-      url: product.affiliateLink.url,
-      seller: {
-        '@type': 'Organization',
-        name: 'DARIIV',
-        url: SITE_URL,
-      },
-    },
+    offers: offer,
   };
 
   // VideoObject — enables Google's video rich result on the product page.
@@ -264,25 +308,7 @@ export function websiteJsonLd(): object {
   };
 }
 
-// ── Artisan & Journal metadata generators ─────────────────────────────────────
-
-export function generateArtisanMeta(artisan: Artisan): Metadata {
-  const url = `${SITE_URL}/artisans/${artisan.slug}`;
-  return {
-    title: `${artisan.name} — Artisan | ${SITE_NAME}`,
-    description: artisan.bioShort,
-    alternates: { canonical: url },
-    openGraph: {
-      title: `${artisan.name} | ${SITE_NAME}`,
-      description: artisan.bioShort,
-      url,
-      siteName: SITE_NAME,
-      type: 'profile',
-      images: [{ url: artisan.coverImage.src, width: artisan.coverImage.width, height: artisan.coverImage.height }],
-    },
-    twitter: { card: 'summary_large_image', title: artisan.name, description: artisan.bioShort, images: [artisan.coverImage.src] },
-  };
-}
+// ── Journal metadata generator ─────────────────────────────────────────────────
 
 export function generateJournalMeta(post: Post): Metadata {
   const url = `${SITE_URL}/journal/${post.slug}`;
@@ -302,26 +328,7 @@ export function generateJournalMeta(post: Post): Metadata {
   };
 }
 
-// ── Artisan & Journal JSON-LD ─────────────────────────────────────────────────
-
-/**
- * Person schema for artisan profile pages.
- * WHY Person not Organization: Individual makers are people, not brands.
- * Google's Knowledge Graph treats Person entities differently — they can
- * appear in "People also search for" panels and author attribution.
- */
-export function personJsonLd(artisan: Artisan): object {
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'Person',
-    name: artisan.name,
-    description: artisan.bioShort,
-    image: artisan.avatar.src,
-    url: `${SITE_URL}/artisans/${artisan.slug}`,
-    ...(artisan.location && { address: { '@type': 'PostalAddress', addressLocality: artisan.location } }),
-    worksFor: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
-  };
-}
+// ── Journal JSON-LD ───────────────────────────────────────────────────────────
 
 /**
  * Article schema for journal posts.
@@ -405,5 +412,5 @@ export function faqJsonLd(blocks: ContentBlock[]): object | null {
 }
 
 // ── Type re-export for convenience ────────────────────────────────────────────
-export type { ProductCard, ProductDetail, Review, Artisan, Post };
+export type { ProductCard, ProductDetail, Review, Post };
 

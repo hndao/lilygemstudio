@@ -99,7 +99,7 @@ export function CookieBanner() {
         <div
           role="region"
           aria-label="Cookie consent"
-          className="fixed inset-x-0 bottom-0 z-40 animate-[slideUp_0.35s_ease-out] border-t border-(--color-border) bg-white/95 shadow-[0_-8px_32px_rgba(0,0,0,0.10)] backdrop-blur-md"
+          className="fixed inset-x-0 bottom-[80px] md:bottom-0 z-40 animate-[slideUp_0.35s_ease-out] border-t border-(--color-border) bg-white/95 shadow-[0_-8px_32px_rgba(0,0,0,0.10)] backdrop-blur-md"
         >
           <div className="mx-auto flex max-w-[1280px] flex-col gap-4 px-4 py-5 md:flex-row md:items-center md:gap-6 md:px-6 lg:px-8">
             {/* Icon + copy */}

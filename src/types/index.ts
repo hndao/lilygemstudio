@@ -86,8 +86,13 @@ export interface ColorOption {
 export interface CustomFieldDefinition {
   name: string;                                    // snake_case key stored in custom_fields JSON
   label: string;                                   // human-readable UI label
+  labelVi?: string;                                // Vietnamese label
   type: 'text' | 'number' | 'boolean' | 'color';
   unit?: string;                                   // only present for type=number (e.g. "mm", "cm")
+  /** Label override shown only in the specs panel (EN). Falls back to label. */
+  specificationsEnLabel?: string;
+  /** Label override shown only in the specs panel (VI). Falls back to labelVi then label. */
+  specificationsViLabel?: string;
   group?: string;                                  // grouping label used for section headers
   required?: boolean;
   /** Only for type=color. When true, value is ColorOption[] (multi-swatch picker). Default false. */
@@ -176,6 +181,15 @@ export type ProductBlock =
  * related products. Fetching them for 24 grid cards = 24× wasted bytes.
  * ProductCard gets the lean shape; ProductDetail gets the full shape.
  */
+// ── Customer (storefront auth) ─────────────────────────────────────────────────
+
+export interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string | null;
+}
+
 export interface ProductCard {
   id: string;
   slug: string;
@@ -191,9 +205,11 @@ export interface ProductCard {
   affiliateLink: AffiliateLink;
   affiliateLinkVn?: AffiliateLink;
   reviewSummary: ReviewSummary;
-  badge?: 'new' | 'bestseller' | 'sale' | 'limited';
+  badge?: { slug: string; name: string; color: string; textColor: string } | null;
   /** null = unlimited / not tracked; 0 = out of stock; >0 = available quantity */
   quantity?: number | null;
+  /** Total number of likes from all customers */
+  likesCount?: number;
   /** Full CDN URL for the product demo/review video — null when no video uploaded */
   videoUrl?: string;
 }
@@ -213,38 +229,39 @@ export interface ProductDetail extends ProductCard {
   customFields?: Record<string, string | number | boolean | ColorFieldValue | ColorOption[]>;
   /** Field definitions from the assigned category — used to display labels, units, groups, and color swatches */
   customFieldDefinitions?: CustomFieldDefinition[];
-  artisan?: ArtisanCard;    // optional — not all products have an artisan profile
   /** AI-generated expert verdict — rendered by ExpertVerdict.tsx */
   verdict?: ProductVerdict;
   /** AI-generated pros/cons — rendered by FeatureAnalysis.tsx */
   pros_cons?: ProductProsCons;
   /** AI-generated content blocks — rendered by BlocksRenderer.tsx */
   blocks?: ProductBlock[];
-}
-
-// ── Artisan (two shapes: card vs full profile) ────────────────────────────────
-
-/**
- * WHY TWO SHAPES: The artisan grid only needs avatar + name + location + bio.
- * The full profile page needs all three story sections. Same pattern as Product.
- */
-export interface ArtisanCard {
-  id: string;
-  slug: string;
-  name: string;
-  location: string;
-  avatar: ProductImage;     // square image — reuses ProductImage shape
-  bioShort: string;
-  productCount?: number;    // present on list endpoint, absent when embedded in ProductDetail
-}
-
-export interface Artisan extends ArtisanCard {
-  coverImage: ProductImage; // wide hero image for the profile page
-  storyOrigin: string;      // Markdown — "Where I come from"
-  storyCraft: string;       // Markdown — "How I make things"
-  storyPhilosophy: string;  // Markdown — "Why I make things"
-  publishedAt: string;      // ISO 8601
-  products: ProductCard[];  // artisan's active products
+  /** Per-combination stock — used to mark individual option values as out-of-stock */
+  variants?: {
+    id: string;
+    attributes: Record<string, string>;
+    quantity: number | null;
+    isAvailable: boolean;
+    price_cents?: number | null;
+    price_cents_vnd?: number | null;
+    is_active: boolean;
+  }[];
+  /** Feng shui profile — assigned by admin, reusable across products */
+  fengShui?: {
+    elementSymbol: string;
+    elementName: string;
+    elementNameVi?: string;
+    description?: string;
+    descriptionVi?: string;
+    benefitTags: string[];
+  } | null;
+  /** Trust badges — admin-curated signals (shipping, authenticity, returns) */
+  trustBadges?: {
+    icon: string;
+    label: string;
+    labelVi?: string;
+    subLabel?: string;
+    subLabelVi?: string;
+  }[];
 }
 
 // ── Journal / Blog (two shapes: card vs full article) ────────────────────────
@@ -329,14 +346,84 @@ export interface Post extends PostCard {
 export interface HeroSlide {
   image_url: string;
   image_alt: string;
-  /** Headline — may contain \n to split into two lines */
-  title: string;
-  description: string;
-  cta_text: string;
+  /** Headline — bilingual. Legacy single-language `title` kept as fallback. */
+  title_en?: string;
+  title_vi?: string;
+  title?: string;          // legacy fallback
+  description_en?: string;
+  description_vi?: string;
+  description?: string;    // legacy fallback
+  cta_text_en?: string;
+  cta_text_vi?: string;
+  cta_text?: string;       // legacy fallback
   cta_url: string;
-  /** Optional secondary (outline) CTA — omit or leave blank to hide */
-  cta2_text?: string;
+  cta2_text_en?: string;
+  cta2_text_vi?: string;
+  cta2_text?: string;      // legacy fallback
   cta2_url?: string;
+}
+
+export interface PageAboutContent {
+  hero_image_url?: string;
+  hero_image_alt?: string;
+  hero_label_en?: string;   hero_label_vi?: string;
+  hero_title_en?: string;   hero_title_vi?: string;
+  hero_body_en?: string;    hero_body_vi?: string;
+  hero_cta_shop_en?: string;    hero_cta_shop_vi?: string;
+  hero_cta_contact_en?: string; hero_cta_contact_vi?: string;
+  stats?: Array<{ value: string; label_en: string; label_vi: string }>;
+  process_label_en?: string;   process_label_vi?: string;
+  process_heading_en?: string; process_heading_vi?: string;
+  process_steps?: Array<{ step: string; title_en: string; title_vi: string; body_en: string; body_vi: string }>;
+  values_label_en?: string;   values_label_vi?: string;
+  values_heading_en?: string; values_heading_vi?: string;
+  values_items?: Array<{ title_en: string; title_vi: string; body_en: string; body_vi: string }>;
+  cta_heading_en?: string; cta_heading_vi?: string;
+  cta_body_en?: string;    cta_body_vi?: string;
+  cta_shop_en?: string;    cta_shop_vi?: string;
+  cta_story_en?: string;   cta_story_vi?: string;
+}
+
+export interface PageStoryContent {
+  hero_image_url?: string;
+  hero_image_alt?: string;
+  hero_label_en?: string;   hero_label_vi?: string;
+  hero_title_en?: string;   hero_title_vi?: string;
+  hero_body_en?: string;    hero_body_vi?: string;
+  pillars_label_en?: string;   pillars_label_vi?: string;
+  pillars_heading_en?: string; pillars_heading_vi?: string;
+  pillar_a_title_en?: string;  pillar_a_title_vi?: string;
+  pillar_a_body_en?: string;   pillar_a_body_vi?: string;
+  pillar_b_title_en?: string;  pillar_b_title_vi?: string;
+  pillar_b_body_en?: string;   pillar_b_body_vi?: string;
+  philosophy_label_en?: string;   philosophy_label_vi?: string;
+  philosophy_heading_en?: string; philosophy_heading_vi?: string;
+  philosophy_body_en?: string;    philosophy_body_vi?: string;
+  cta_heading_en?: string; cta_heading_vi?: string;
+  cta_shop_en?: string;    cta_shop_vi?: string;
+  cta_about_en?: string;   cta_about_vi?: string;
+}
+
+export interface PageHomeContent {
+  hero_image_url?: string;
+  hero_image_alt?: string;
+  story_label_en?: string;   story_label_vi?: string;
+  story_heading_en?: string; story_heading_vi?: string;
+  story_body1_en?: string;   story_body1_vi?: string;
+  story_body2_en?: string;   story_body2_vi?: string;
+  story_body3_en?: string;   story_body3_vi?: string;
+  story_cta_en?: string;     story_cta_vi?: string;
+}
+
+export interface PageContactContent {
+  hero_label_en?: string;   hero_label_vi?: string;
+  hero_title_en?: string;   hero_title_vi?: string;
+  hero_body_en?: string;    hero_body_vi?: string;
+  sidebar_heading_en?: string; sidebar_heading_vi?: string;
+  sidebar_body_en?: string;    sidebar_body_vi?: string;
+  response_time_en?: string;   response_time_vi?: string;
+  form_heading_en?: string;    form_heading_vi?: string;
+  form_subheading_en?: string; form_subheading_vi?: string;
 }
 
 export interface SiteSettings {
@@ -365,6 +452,12 @@ export interface SiteSettings {
     hero_mode: 'single' | 'slider';
     hero_slides: HeroSlide[];
   };
+  pages?: {
+    page_about?: PageAboutContent;
+    page_story?: PageStoryContent;
+    page_contact?: PageContactContent;
+    page_home?: PageHomeContent;
+  };
 }
 
 // ── Category ──────────────────────────────────────────────────────────────────
@@ -376,6 +469,27 @@ export interface Category {
   nameVi?: string;          // Tiếng Việt translation
   slug: string;
   productCount: number;
+  /** Filter definitions for the shop sidebar — populated by the category's assigned field definitions */
+  filterDefinitions?: FilterDefinition[];
+}
+
+// ── Shop filter definitions (from category.filterDefinitions) ────────────────
+
+export interface FilterOptionItem {
+  value: string;
+  label: string;
+  hex?: string | null;
+}
+
+export interface FilterDefinition {
+  name: string;
+  label: string;
+  labelVi?: string | null;
+  /** 'variant' = backed by product_field_combinations; 'custom_field' = backed by product_field_values */
+  source: 'variant' | 'custom_field';
+  /** How the filter is rendered in the UI */
+  display: 'checkbox' | 'color_swatch' | 'button_grid' | 'text';
+  options: FilterOptionItem[];
 }
 
 /**
@@ -412,11 +526,262 @@ export interface ProductListParams {
   perPage?: number;
   category?: string;
   sort?: 'newest' | 'price_asc' | 'price_desc' | 'top_rated';
-  badge?: ProductCard['badge'];
+  badge?: string;
 }
 
 export interface PostListParams {
   page?: number;
   category?: string;
+}
+
+// ── Commerce ───────────────────────────────────────────────────────────────────
+
+export interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string | null;
+  site: string | null;
+  isBlocked: boolean;
+}
+
+export interface CartItemListing {
+  id: number;
+  resolvedTitle: string;
+  sku: string | null;
+  coverImage: ProductImage | null;
+  products: { id: number; name: string }[];
+}
+
+export interface CartItem {
+  id: number;
+  listingId: number;
+  quantity: number;
+  priceSnapshotCents: number | null;
+  priceSnapshotCentsVnd: number | null;
+  selectedOptions: Record<string, string>;
+  outOfStock: boolean;
+  listing: CartItemListing;
+}
+
+export interface CartPromotion {
+  id: number;
+  name: string;
+  type: 'percent' | 'fixed_cents' | 'free_shipping' | 'bogo' | 'bundle' | 'tiered';
+  discountCents: number;
+  shippingDiscountCents: number;
+  isAutoApplied: boolean;
+  code?: string;
+}
+
+export interface Cart {
+  id: number;
+  sessionToken: string | null;
+  items: CartItem[];
+  promotions: CartPromotion[];
+  subtotalCents: number;
+  subtotalCentsVnd: number;
+  itemCount: number;
+  freeShippingRemainingCents: number | null;
+}
+
+export interface Address {
+  id: number;
+  label: string | null;
+  recipientName: string;
+  phone: string | null;
+  email: string | null;
+  line1: string;
+  line2: string | null;
+  city: string;
+  state: string | null;
+  postalCode: string | null;
+  countryCode: string;
+  isDefault: boolean;
+}
+
+export interface AddressInput {
+  recipient_name: string;
+  phone?: string;
+  email?: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  state?: string;
+  postal_code?: string;
+  country_code: string;
+  label?: string;
+  is_default?: boolean;
+}
+
+export interface ShippingRate {
+  id: number;
+  name: string;
+  rateCents: number;
+  estimatedDaysMin: number | null;
+  estimatedDaysMax: number | null;
+  minOrderCents: number | null;
+}
+
+export interface OrderItem {
+  id: number;
+  listingId: number;
+  quantity: number;
+  unitPriceCents: number;
+  totalPriceCents: number;
+  listingSnapshot: {
+    id: number;
+    slug?: string;
+    resolvedTitle: string;
+    price_cents: number;
+    price_cents_vnd: number | null;
+    cover_image: ProductImage | null;
+    sku: string | null;
+    platforms: string[];
+    bundleProducts: { id: number; name: string; pivotQuantity: number }[];
+  };
+}
+
+export interface OrderShipment {
+  trackingNumber: string | null;
+  carrier: string | null;
+  shippedAt: string | null;
+  estimatedDelivery: string | null;
+}
+
+export interface OrderStatusHistory {
+  status: string;
+  note: string | null;
+  createdAt: string | null;
+}
+
+export interface Order {
+  id: number;
+  orderNumber: string;
+  status: string;
+  currency: string;
+  subtotalCents: number;
+  discountCents: number;
+  shippingCents: number;
+  totalCents: number;
+  formattedTotal: string;
+  couponCode: string | null;
+  shippingAddress: Omit<Address, 'id' | 'isDefault' | 'label'>;
+  notes: string | null;
+  paidAt: string | null;
+  createdAt: string;
+  items: OrderItem[];
+  payment: { provider: string; status: string; paidAt: string | null } | null;
+  shipment: OrderShipment | null;
+  statusHistories: OrderStatusHistory[];
+}
+
+export interface ListingCard {
+  id: number;
+  slug: string;
+  title: string | null;
+  resolvedTitle: string;
+  sku: string | null;
+  platforms: string[];
+  platformLinks: { platform: string; url: string }[];
+  formattedPrice: string | null;
+  formattedCompareAtPrice: string | null;
+  formattedPriceVnd: string | null;
+  formattedCompareAtPriceVnd: string | null;
+  priceCents: number | null;
+  priceCentsVnd: number | null;
+  comparePriceCents: number | null;
+  comparePriceCentsVnd: number | null;
+  /** Effective price after active auto-applied promotions. null = no active promo. */
+  promotionalPriceCents: number | null;
+  promotionalPriceCentsVnd: number | null;
+  formattedPromotionalPrice: string | null;
+  formattedPromotionalPriceVnd: string | null;
+  coverImage: ProductImage | null;
+  quantity: number | null;
+  isLive: boolean;
+  /** False when one or more bundle products have is_active=false. Show "Out of Stock". */
+  productsActive: boolean;
+  validFrom: string | null;
+  validUntil: string | null;
+  bundleProducts: {
+    id: number;
+    name: string;
+    slug: string;
+    pivotQuantity: number;
+    options: {
+      slug: string;
+      name: string;
+      fieldType: string;   // 'color' | 'text' | 'number' | 'boolean'
+      displayType: string; // 'color_swatch' | 'button_grid' | 'checkbox' | 'toggle' | 'text'
+      values: { slug: string; label: string; metadata: Record<string, string> }[];
+    }[];
+  }[];
+  /** Present when fetched via detail endpoint (showBySlug / show) */
+  images?: ProductImage[];
+  description?: string | null;
+  descriptionVi?: string | null;
+  titleVi?: string | null;
+  tagline?: string | null;
+  taglineVi?: string | null;
+  brandStory?: string | null;
+  brandStoryVi?: string | null;
+  /** Social proof — scoped to this listing directly */
+  averageRating?: number | null;
+  reviewCount?: number | null;
+  likesCount?: number | null;
+  /** Merchandising badges attached in admin — max 3, ordered by priority */
+  badges?: ListingBadge[];
+}
+
+export interface ListingBadge {
+  id: number;
+  name: string;
+  group: 'promotion' | 'status' | 'trust' | 'shipping' | 'exclusive';
+  color: string;      // hex background — "#DC2626"
+  textColor: string;  // hex text — "#FFFFFF"
+  expiresAt?: string | null; // ISO 8601 — null = no expiry; set for Flash Sale, Pre-order, etc.
+}
+
+export interface ListingListParams {
+  page?: number;
+  perPage?: number;
+  sort?: 'newest' | 'price_asc' | 'price_desc';
+  platform?: string;
+  query?: string;
+  category?: string;
+  badge?: string;
+  /** Price range filter — integer cents (USD) or đồng (VND) */
+  priceMin?: number;
+  priceMax?: number;
+  priceCurrency?: 'usd' | 'vnd';
+  /** Only show listings with available stock */
+  inStock?: boolean;
+  /** Arbitrary field slug → value filters (e.g. { stone_type: 'agate', color: 'gold' }) */
+  customFilters?: Record<string, string>;
+  /**
+   * Used client-side only — tells getListings() which customFilter keys should be
+   * routed to the variant_fields query param (combination-based) vs spec-based.
+   * Derived from the category's filterDefinitions.
+   */
+  filterDefinitions?: FilterDefinition[];
+}
+
+export interface CheckoutPayload {
+  currency: 'USD' | 'VND';
+  shipping_rate_cents: number;
+  shipping_address: AddressInput;
+  notes?: string;
+}
+
+// ── In-App Notification ────────────────────────────────────────────────────────
+
+export interface AppNotification {
+  id: string;
+  type: string;
+  message: string;
+  data: Record<string, unknown>;
+  readAt: string | null;
+  createdAt: string;
 }
 

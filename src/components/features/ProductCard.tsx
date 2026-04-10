@@ -62,7 +62,7 @@ export function ProductCard({
         {/* Badge overlay — top-left, per wireframe */}
         {badge && (
           <div className="absolute left-2 top-2">
-            <Badge variant={badge} />
+            <Badge badge={badge} />
           </div>
         )}
       </Link>

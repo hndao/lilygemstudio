@@ -15,8 +15,8 @@ import type {
   PaginatedResponse,
   ApiResponse,
   ProductListParams,
-  ArtisanCard,
-  Artisan,
+  ListingCard,
+  ListingListParams,
   PostCard,
   Post,
   SiteSettings,
@@ -79,16 +79,7 @@ const CARD_FIELDS = [
 const DETAIL_FIELDS = [
   ...CARD_FIELDS.split(','),
   'description', 'description_vi', 'brand_story', 'brand_story_vi', 'images', 'category',
-  'tags', 'metadata', 'artisan', 'custom_fields', 'blocks', 'video_path',
-].join(',');
-
-const ARTISAN_CARD_FIELDS = [
-  'id', 'slug', 'name', 'location', 'avatar', 'bio_short', 'product_count',
-].join(',');
-
-const ARTISAN_DETAIL_FIELDS = [
-  ...ARTISAN_CARD_FIELDS.split(','),
-  'cover_image', 'story_origin', 'story_craft', 'story_philosophy', 'published_at',
+  'tags', 'metadata', 'custom_fields', 'blocks', 'video_path',
 ].join(',');
 
 const POST_CARD_FIELDS = [
@@ -150,11 +141,11 @@ export async function getProduct(slug: string, previewToken?: string): Promise<A
 }
 
 /**
- * Fetch reviews for a product — always batched, never inside a render loop.
+ * Fetch reviews for a listing — always batched, never inside a render loop.
  * Revalidates slowly — review content is less time-sensitive than prices.
  */
 export async function getReviews(
-  productSlug: string,
+  listingSlug: string,
   page = 1,
 ): Promise<PaginatedResponse<Review>> {
   const qs = new URLSearchParams({
@@ -163,9 +154,9 @@ export async function getReviews(
     per_page: '12',
   });
 
-  return apiFetch<PaginatedResponse<Review>>(`/products/${productSlug}/reviews?${qs}`, {
+  return apiFetch<PaginatedResponse<Review>>(`/listings/${listingSlug}/reviews?${qs}`, {
     revalidate: REVALIDATION.REVIEWS,
-    tags: [CACHE_TAGS.reviews(productSlug)],
+    tags: [CACHE_TAGS.reviews(listingSlug)],
   });
 }
 
@@ -187,26 +178,61 @@ export async function getProductsBySlugs(slugs: string[]): Promise<ProductCard[]
   return res.data;
 }
 
-// ── Artisan API ────────────────────────────────────────────────────────────────
+// ── Listings API ──────────────────────────────────────────────────────────────
 
-/** Paginated list of published artisans for the /artisans grid. */
-export async function getArtisans(page = 1): Promise<PaginatedResponse<ArtisanCard>> {
-  const qs = new URLSearchParams({ fields: ARTISAN_CARD_FIELDS, page: String(page) });
-  return apiFetch<PaginatedResponse<ArtisanCard>>(`/artisans?${qs}`, {
-    revalidate: REVALIDATION.ARTISANS,
-    tags: [CACHE_TAGS.ARTISANS],
+/**
+ * Fetch paginated live listings for the shop grid and homepage featured section.
+ *
+ * WHY LISTINGS NOT PRODUCTS: Listings are the sellable unit — they carry the
+ * active price, stock state, and channel (platform=direct for VN direct-sell).
+ * Products are the catalog/SEO layer. The shop should show only items that are
+ * currently for sale with a real price.
+ */
+export async function getListings(
+  params: ListingListParams = {},
+): Promise<PaginatedResponse<ListingCard>> {
+  const qs = new URLSearchParams({
+    site: SITE_KEY,
+    platform: params.platform ?? 'direct',
+    page: String(params.page ?? 1),
+    per_page: String(params.perPage ?? 24),
+    ...(params.sort && { sort: params.sort }),
+    ...(params.query && { q: params.query }),
+    ...(params.category && { category: params.category }),
+    ...(params.badge && { badge: params.badge }),
+  });
+
+  if (params.priceMin)      qs.append('price_min',      String(params.priceMin));
+  if (params.priceMax)      qs.append('price_max',      String(params.priceMax));
+  if (params.priceCurrency) qs.append('price_currency', params.priceCurrency);
+  if (params.inStock)       qs.append('in_stock',       '1');
+
+  if (params.customFilters) {
+    for (const [k, v] of Object.entries(params.customFilters)) {
+      if (v) qs.append(k, v);
+    }
+  }
+
+  // Tell the API which custom filter keys should use variant combination queries
+  const variantFields = (params.filterDefinitions ?? [])
+    .filter(d => d.source === 'variant')
+    .map(d => d.name);
+  if (variantFields.length) qs.append('variant_fields', variantFields.join(','));
+
+  return apiFetch<PaginatedResponse<ListingCard>>(`/listings?${qs}`, {
+    revalidate: REVALIDATION.LISTING_LIST,
+    // WHY site-scoped tag: ListingObserver fires "listings:{site}" (e.g.
+    // "listings:lilygemstudio"). Using a plain "listings" tag here would cause
+    // a tag mismatch and ISR purges would never invalidate this fetch cache.
+    tags: [`listings:${SITE_KEY}`],
   });
 }
 
-/** Full artisan profile for /artisans/[slug]. */
-export async function getArtisan(slug: string, previewToken?: string): Promise<ApiResponse<Artisan>> {
-  const qs = previewToken
-    ? `fields=${ARTISAN_DETAIL_FIELDS}&preview_token=${previewToken}`
-    : `fields=${ARTISAN_DETAIL_FIELDS}`;
-  return apiFetch<ApiResponse<Artisan>>(`/artisans/${slug}?${qs}`, {
-    revalidate: REVALIDATION.ARTISANS,
-    tags: [CACHE_TAGS.ARTISANS, CACHE_TAGS.artisan(slug)],
-    noCache: !!previewToken,
+/** Fetch a single listing by its slug — used by the shop detail page. */
+export async function getListingBySlug(slug: string): Promise<ApiResponse<ListingCard>> {
+  return apiFetch<ApiResponse<ListingCard>>(`/listings/slug/${encodeURIComponent(slug)}`, {
+    revalidate: REVALIDATION.PRODUCT_DETAIL,
+    tags: [CACHE_TAGS.LISTINGS, `listing:${slug}`],
   });
 }
 
