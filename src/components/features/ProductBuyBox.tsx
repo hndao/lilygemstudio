@@ -189,6 +189,60 @@ export function ProductBuyBox({
     ? `${zaloUrl}?text=${encodeURIComponent(dict.zalo_text.replace('%s', productName))}`
     : '#';
 
+  // Global users (preferVnd=false): show only external platform links + trust badges
+  if (!preferVnd) {
+    return (
+      <div className="flex w-full flex-col gap-5">
+        {externalLinks.length > 0 && (
+          <div className={externalLinks.length === 1 ? 'flex' : 'grid grid-cols-2 gap-2'}>
+            {externalLinks.map((link) => {
+              const label = dict.buy_on.replace('%s', link.platform.charAt(0).toUpperCase() + link.platform.slice(1));
+              return (
+                <a
+                  key={link.platform}
+                  href={link.url}
+                  target="_blank"
+                  rel="nofollow noopener noreferrer sponsored"
+                  className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[12px] bg-(--color-cta) text-[16px] font-600 tracking-[0.02em] text-(--color-cream) transition-all hover:-translate-y-px hover:bg-(--color-cta-hover) hover:shadow-[0_4px_16px_rgba(139,111,78,0.25)] active:translate-y-0"
+                >
+                  {label}
+                </a>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Trust Signals */}
+        {trustBadges && trustBadges.length > 0 ? (
+          <div className="grid grid-cols-3 gap-2">
+            {trustBadges.map((b, i) => (
+              <div
+                key={i}
+                className="flex flex-col items-center gap-1 rounded-[10px] bg-(--color-cream) px-2 py-3 text-center"
+              >
+                <span className="text-[20px] leading-none">{b.icon}</span>
+                <span className="text-[11px] font-600 leading-tight text-(--color-stone)">
+                  {lang === 'vi' ? (b.labelVi ?? b.label) : b.label}
+                </span>
+                {(lang === 'vi' ? (b.subLabelVi ?? b.subLabel) : b.subLabel) && (
+                  <span className="text-[10px] leading-tight text-(--color-muted)">
+                    {lang === 'vi' ? (b.subLabelVi ?? b.subLabel) : b.subLabel}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center gap-4 text-xs text-(--color-muted)">
+            <span>🚚 {dict.trust_shipping}</span>
+            <span>✋ {dict.trust_handmade}</span>
+            <span>🔄 {dict.trust_returns}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="flex w-full flex-col gap-5">
       {/* ── Quantity Picker ────────────────────────────────────────────── */}
@@ -221,7 +275,8 @@ export function ProductBuyBox({
         {isOutOfStock ? (
           <span className="text-[12px] font-600 text-red-500">{dict.out_of_stock}</span>
         ) : hasKnownStock && maxQty <= 10 ? (
-          <span className="text-[12px] font-500 text-(--color-promo)">
+          <span className="inline-flex items-center gap-1 text-[12px] font-600 text-orange-500">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.66 11.2c-.23-.3-.51-.56-.77-.82-.67-.6-1.43-1.03-2.07-1.66C13.33 7.26 13 4.85 13.95 3c-.95.23-1.78.75-2.49 1.32C8.9 6.4 8.17 10.07 9.45 12.78c.14.3.08.68-.17.89-.26.2-.62.2-.87-.02-.1-.08-.18-.17-.24-.27-1.06-1.64-.7-3.58.24-5.06-1.7 1.13-2.71 3.13-2.86 5.08-.04.56-.06 1.12.04 1.67.08.58.23 1.16.47 1.7.49 1.09 1.3 1.98 2.31 2.56 1.14.65 2.52.85 3.82.63 1.44-.25 2.7-1.1 3.47-2.34.84-1.32.97-2.92.57-4.37-.23-.85-.67-1.63-.96-2.44zM11.63 18.5c-.72-.17-1.34-.56-1.76-1.14-.46-.62-.6-1.41-.4-2.15.17-.65.58-1.2 1.07-1.64.12-.1.24-.2.37-.3.07.3.19.59.39.85.22.29.54.52.87.65-.14.56-.08 1.18.23 1.7.18.31.44.58.74.76.27.17.58.27.89.29-.46.52-1.09.82-1.76.95z"/></svg>
             {dict.only_x_left.replace('%d', String(maxQty))}
           </span>
         ) : null}

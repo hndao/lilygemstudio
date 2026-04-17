@@ -281,6 +281,35 @@ export async function getCategories(): Promise<CategoryWithChildren[]> {
   return res.data;
 }
 
+// ── Home Sections API ─────────────────────────────────────────────────────────
+
+export interface HomePageSection {
+  id: number;
+  title_en: string;
+  title_vi?: string;
+  subtitle_en?: string;
+  subtitle_vi?: string;
+  show_view_all: boolean;
+  view_all_url?: string | null;
+  listings: ListingCard[];
+}
+
+/**
+ * Fetch enabled home page sections with embedded listing cards.
+ *
+ * WHY ONE CALL: Each section's listings are resolved server-side (manual: pivot;
+ * filter: scoped query). The frontend receives sections + cards in one response —
+ * no N+1, no waterfall, no client-side hydration needed.
+ */
+export async function getHomeSections(): Promise<HomePageSection[]> {
+  const qs = new URLSearchParams({ site: SITE_KEY });
+  const res = await apiFetch<{ data: HomePageSection[] }>(`/home-sections?${qs}`, {
+    revalidate: REVALIDATION.HOME_SECTIONS,
+    tags: [`listings:${SITE_KEY}`, CACHE_TAGS.HOME_SECTIONS(SITE_KEY)],
+  });
+  return res.data;
+}
+
 // ── Site Settings API ──────────────────────────────────────────────────────────
 
 /**

@@ -91,13 +91,17 @@
     "available": "Còn Hàng",
     "sold_out": "Hết Hàng",
     "description_heading": "Mô tả sản phẩm",
+    "see_more": "Xem toàn bộ mô tả",
+    "see_less": "Ẩn bớt",
     "trust_quote": "Mỗi sản phẩm trên LilyGem Studio đều được lựa chọn kỹ lưỡng và xác thực chất lượng. Mua sắm cùng chúng tôi là ủng hộ các nghệ nhân độc lập. Không trung gian, không bí ẩn — chỉ có vẻ đẹp đích thực bạn có thể tin tưởng."
   },
   "home": {
     "hero_title": "Trang Sức Đá Quý Tự Nhiên, Thủ Công",
     "hero_subtitle": "Khám phá bộ sưu tập vòng tay và nhẫn làm từ mã não, thạch anh hồng và đá tự nhiên.",
     "shop_now": "Mua Ngay",
-    "featured_title": "Sản Phẩm Nổi Bật"
+    "featured_title": "Sản Phẩm Nổi Bật",
+    "view_all": "Xem tất cả →",
+    "load_more": "Tải thêm"
   },
   "not_found": {
     "title": "Không Tìm Thấy Trang",

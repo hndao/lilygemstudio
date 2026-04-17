@@ -100,55 +100,52 @@ export function MobileStickyBar({
 
   /* ── Global layout ─────────────────────────────────────────────────── */
   const renderGlobalBar = () => {
-    // Direct listing available → show cart bar (no Zalo icon for non-VN)
+    // Direct listing with external links → show Heart + "Buy on X" (no Add to Cart for global users)
     if (listing) {
       const externalLinks = (listing.platformLinks ?? []).filter(
         (l) => l.platform !== 'direct' && l.url,
       );
-      return (
-        <div className="flex w-full items-center gap-2.5 px-4 py-3">
-          <button
-            type="button"
-            onClick={handleWishlistToggle}
-            disabled={likeLoading}
-            className={[
-              'flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] border-[1.5px] transition-all',
-              liked
-                ? 'border-(--color-promo) bg-(--color-promo)/10'
-                : 'border-(--color-border) hover:bg-(--color-quartz-mist)',
-            ].join(' ')}
-            aria-label={liked ? dict.wishlist_remove : dict.wishlist_add}
-          >
-            <Heart
-              className={`h-5 w-5 text-(--color-promo) ${liked ? 'fill-(--color-promo)' : ''}`}
-              aria-hidden="true"
-            />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSheetOpen(true)}
-            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-[12px] bg-(--color-cta) text-[15px] font-600 text-(--color-cream) transition-all hover:bg-(--color-cta-hover)"
-            aria-label={dict.add_to_cart}
-          >
-            <ShoppingCart className="h-[18px] w-[18px]" aria-hidden="true" />
-            {dict.add_to_cart_short}
-          </button>
-
-          {externalLinks.map((link) => (
-            <a
-              key={link.platform}
-              href={link.url}
-              target="_blank"
-              rel="nofollow noopener noreferrer sponsored"
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] border-[1.5px] border-(--color-border) transition-all hover:bg-(--color-quartz-mist)"
-              aria-label={dict.buy_on.replace('%s', link.platform.charAt(0).toUpperCase() + link.platform.slice(1))}
+      if (externalLinks.length > 0) {
+        return (
+          <div className="flex w-full items-center gap-2.5 px-4 py-3">
+            <button
+              type="button"
+              onClick={handleWishlistToggle}
+              disabled={likeLoading}
+              className={[
+                'flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] border-[1.5px] transition-all',
+                liked
+                  ? 'border-(--color-promo) bg-(--color-promo)/10'
+                  : 'border-(--color-border) hover:bg-(--color-quartz-mist)',
+              ].join(' ')}
+              aria-label={liked ? dict.wishlist_remove : dict.wishlist_add}
             >
-              <ExternalLink className="h-[18px] w-[18px] text-(--color-stone)" aria-hidden="true" />
-            </a>
-          ))}
-        </div>
-      );
+              <Heart
+                className={`h-5 w-5 text-(--color-promo) ${liked ? 'fill-(--color-promo)' : ''}`}
+                aria-hidden="true"
+              />
+            </button>
+
+            {externalLinks.map((link) => {
+              const label = dict.buy_on.replace('%s', link.platform.charAt(0).toUpperCase() + link.platform.slice(1));
+              return (
+                <a
+                  key={link.platform}
+                  href={link.url}
+                  target="_blank"
+                  rel="nofollow noopener noreferrer sponsored"
+                  onClick={() => trackAffiliateClick({ slug: listingSlug, network: link.platform, name: productName })}
+                  className="flex h-12 flex-1 items-center justify-center gap-2 rounded-[12px] bg-(--color-cta) text-[15px] font-600 text-(--color-cream) transition-all hover:bg-(--color-cta-hover)"
+                  aria-label={label}
+                >
+                  <ExternalLink className="h-[18px] w-[18px]" aria-hidden="true" />
+                  {label}
+                </a>
+              );
+            })}
+          </div>
+        );
+      }
     }
 
     // No direct listing → affiliate link

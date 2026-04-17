@@ -22,6 +22,7 @@ import { CatalogFilters } from '@/components/features/CatalogFilters';
 import { CatalogSort } from '@/components/features/CatalogSort';
 import { Pagination } from '@/components/features/Pagination';
 import { MobileFilterButton } from '@/components/features/MobileFilterButton';
+import { ActiveFiltersBar } from '@/components/features/ActiveFiltersBar';
 import type { ListingListParams } from '@/types';
 
 export const revalidate = 86400; // 24h ISR — matches LISTING_LIST TTL
@@ -125,6 +126,15 @@ export default async function ShopPage({ params, searchParams }: ShopPageProps) 
           </Suspense>
         </div>
       </div>
+
+      {/* Active filter chips */}
+      <Suspense>
+        <ActiveFiltersBar
+          categories={categories}
+          preferVnd={preferVnd}
+          dict={dict.catalog}
+        />
+      </Suspense>
 
       {/* Main layout: sidebar + grid */}
       <div className="flex flex-col gap-8 md:flex-row md:items-start md:gap-10">

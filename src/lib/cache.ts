@@ -46,6 +46,9 @@ export const REVALIDATION = {
 
   /** Listings grid — same cadence as product list; busted by ListingObserver */
   LISTING_LIST: 60 * 60 * 24,     // 24h
+
+  /** Home page sections — busted when admin creates/edits/reorders a section */
+  HOME_SECTIONS: 60 * 60 * 24,    // 24h
 } as const;
 
 // ── Cache tag helpers ─────────────────────────────────────────────────────────
@@ -84,6 +87,9 @@ export const CACHE_TAGS = {
 
   /** Narrow tag — invalidates one listing */
   listing: (id: number) => `listing:${id}`,
+
+  /** Home sections for a specific site */
+  HOME_SECTIONS: (site: string) => `home-sections:${site}`,
 } as const;
 
 // ── unstable_cache wrappers ───────────────────────────────────────────────────
