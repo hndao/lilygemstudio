@@ -91,13 +91,17 @@
     "available": "In Stock",
     "sold_out": "Sold Out",
     "description_heading": "Description",
+    "see_more": "Show full description",
+    "see_less": "Hide description",
     "trust_quote": "Every piece featured on LilyGem Studio is carefully crafted and verified for quality. When you shop with us, you support independent artisans. No middlemen, no mystery — just authentic beauty you can trust."
   },
   "home": {
     "hero_title": "Natural Gemstone Jewelry, Handcrafted",
     "hero_subtitle": "Discover our collection of bracelets and rings made from agate, rose quartz, and natural stones.",
     "shop_now": "Shop Now",
-    "featured_title": "Featured Products"
+    "featured_title": "Featured Products",
+    "view_all": "View all →",
+    "load_more": "Load More"
   },
   "not_found": {
     "title": "Page Not Found",

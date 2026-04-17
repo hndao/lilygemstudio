@@ -126,25 +126,44 @@ export function ListingCard({
           </div>
         )}
 
-        {/* Quick-add button — hover on desktop, always visible on mobile */}
-        {!isOutOfStock && (
-          <button
-            type="button"
-            onClick={handleQuickAdd}
-            disabled={addBusy}
-            className={[
-              'absolute bottom-2 left-2 right-2 flex items-center justify-center gap-1.5',
-              'rounded-[10px] bg-(--color-cta)/90 py-2 text-[12px] font-600 text-white backdrop-blur-sm',
-              'transition-all duration-200 disabled:opacity-60',
-              'opacity-100 translate-y-0',
-              'md:opacity-0 md:translate-y-1 md:group-hover:opacity-100 md:group-hover:translate-y-0',
-            ].join(' ')}
-            aria-label={dict.catalog.add_to_cart_aria.replace('{name}', listing.resolvedTitle)}
-          >
-            <ShoppingCart className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-            {addBusy ? '...' : dict.catalog.add_to_cart}
-          </button>
-        )}
+        {/* Quick-add button — VN only */}
+        {!isOutOfStock && (() => {
+          const externalLink = listing.platformLinks.find((l) => l.platform !== 'direct' && l.url);
+          const btnBase = [
+            'absolute bottom-2 left-2 right-2 flex items-center justify-center gap-1.5',
+            'rounded-[10px] py-2 text-[12px] font-600 text-white backdrop-blur-sm',
+            'transition-all duration-200',
+            'opacity-100 translate-y-0',
+            'md:opacity-0 md:translate-y-1 md:group-hover:opacity-100 md:group-hover:translate-y-0',
+          ].join(' ');
+          return (
+            <>
+              {/* VN: Add to Cart */}
+              <button
+                type="button"
+                onClick={handleQuickAdd}
+                disabled={addBusy}
+                className={`geo-show-vn ${btnBase} bg-(--color-cta)/90 disabled:opacity-60`}
+                aria-label={dict.catalog.add_to_cart_aria.replace('{name}', listing.resolvedTitle)}
+              >
+                <ShoppingCart className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                {addBusy ? '...' : dict.catalog.add_to_cart}
+              </button>
+
+              {/* Global: Buy on [platform] — button avoids nested <a> inside <Link> */}
+              {externalLink && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); window.open(externalLink.url, '_blank', 'noopener,noreferrer'); }}
+                  className={`geo-hide-vn ${btnBase} bg-(--color-cta)/90`}
+                  aria-label={dict.buybox.buy_on.replace('%s', externalLink.platform.charAt(0).toUpperCase() + externalLink.platform.slice(1))}
+                >
+                  {dict.buybox.buy_on.replace('%s', externalLink.platform.charAt(0).toUpperCase() + externalLink.platform.slice(1))}
+                </button>
+              )}
+            </>
+          );
+        })()}
 
         {/* Badge row — single container keeps left + right items vertically aligned */}
         <div className="absolute left-2 right-2 top-2 flex items-center justify-between gap-1">
@@ -159,7 +178,7 @@ export function ListingCard({
                 {discountLabel}
               </span>
             ) : isLowStock ? (
-              <span className="inline-flex items-center rounded-full bg-(--color-cta) px-2 py-0.5 text-[10px] font-600 leading-none text-white whitespace-nowrap">
+              <span className="inline-flex items-center rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-600 leading-none text-white whitespace-nowrap">
                 {dict.catalog.low_stock.replace('{n}', String(listing.quantity))}
               </span>
             ) : null}

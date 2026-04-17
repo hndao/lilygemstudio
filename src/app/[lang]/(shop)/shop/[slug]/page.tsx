@@ -35,6 +35,7 @@ import { Badge } from '@/components/ui/Badge';
 import { ListingBadgePill } from '@/components/ui/ListingBadgePill';
 import { ProductSpecs } from '@/components/features/ProductSpecs';
 import { FengShuiCard } from '@/components/features/FengShuiCard';
+import { ExpandableDescription } from '@/components/features/ExpandableDescription';
 
 export const revalidate = 3600; // 1h ISR — matches PRODUCT_DETAIL TTL
 
@@ -198,42 +199,9 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       {/* ProductColorProvider bridges color swatch selection → gallery image filtering */}
       <ProductColorProvider>
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-12 lg:gap-16">
-        {/* Left column: gallery + reviews preview */}
+        {/* Left column: gallery */}
         <div className="flex flex-col gap-8">
           <ProductImageGallery images={galleryImages} productName={displayName} videoUrl={product.videoUrl} />
-
-          {/* ── Reviews under gallery ─────────────────────────────── */}
-          <div>
-            <h2 className="mb-4 font-heading text-base font-700 text-(--color-stone)">
-              {dict.review.customer_reviews}
-              {(directListing.reviewCount ?? 0) > 0 && (
-                <span className="ml-1.5 font-400 text-(--color-muted)">({directListing.reviewCount})</span>
-              )}
-            </h2>
-
-            {reviews.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 py-10 text-center">
-                <div className="flex gap-0.5 text-[28px] leading-none text-(--color-sand-dark)" aria-hidden="true">
-                  {'☆'.repeat(5)}
-                </div>
-                <p className="text-[14px] font-600 text-(--color-stone)">{dict.review.no_reviews}</p>
-                <p className="text-[13px] text-(--color-muted)">{dict.review.be_first}</p>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {reviews.slice(0, 3).map((review) => (
-                  <ReviewCard key={review.id} review={review} />
-                ))}
-              </div>
-            )}
-
-            <ReviewsDialog
-              reviews={reviews}
-              totalCount={reviewsRes.meta.total}
-              averageRating={directListing.averageRating ?? null}
-              dict={dict.review}
-            />
-          </div>
         </div>
 
         {/* Product info — right column */}
@@ -290,15 +258,15 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
 
           {product.verdict && <ExpertVerdict verdict={product.verdict} />}
 
-          {/* Brand story — decorative quote card above variant pickers */}
-          {displayBrandStory && (
+          {/* Brand story — temporarily hidden */}
+          {/* {displayBrandStory && (
             <div className="overflow-hidden rounded-[14px] bg-(--color-cream) px-7 py-6">
               <div
                 className="relative font-heading text-[15px] font-300 italic leading-[1.75] text-(--color-stone) prose-p:m-0"
                 dangerouslySetInnerHTML={{ __html: displayBrandStory }}
               />
             </div>
-          )}
+          )} */}
 
           <div className="h-px bg-(--color-border)" aria-hidden="true" />
 
@@ -394,12 +362,46 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
           <h2 className="mb-4 font-heading text-base font-700 text-(--color-stone)">
             {dict.product.description_heading}
           </h2>
-          <div
-            className="prose max-w-none text-sm leading-relaxed text-(--color-muted)"
-            dangerouslySetInnerHTML={{ __html: displayDescription }}
+          <ExpandableDescription
+            html={displayDescription}
+            seeMoreLabel={dict.product.see_more}
+            seeLessLabel={dict.product.see_less}
           />
         </div>
       )}
+
+      {/* ── Reviews ──────────────────────────────────────────────────────────── */}
+      <div className="mt-12">
+        <h2 className="mb-4 font-heading text-base font-700 text-(--color-stone)">
+          {dict.review.customer_reviews}
+          {(directListing.reviewCount ?? 0) > 0 && (
+            <span className="ml-1.5 font-400 text-(--color-muted)">({directListing.reviewCount})</span>
+          )}
+        </h2>
+
+        {reviews.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 py-10 text-center">
+            <div className="flex gap-0.5 text-[28px] leading-none text-(--color-sand-dark)" aria-hidden="true">
+              {'☆'.repeat(5)}
+            </div>
+            <p className="text-[14px] font-600 text-(--color-stone)">{dict.review.no_reviews}</p>
+            <p className="text-[13px] text-(--color-muted)">{dict.review.be_first}</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {reviews.slice(0, 3).map((review) => (
+              <ReviewCard key={review.id} review={review} />
+            ))}
+          </div>
+        )}
+
+        <ReviewsDialog
+          reviews={reviews}
+          totalCount={reviewsRes.meta.total}
+          averageRating={directListing.averageRating ?? null}
+          dict={dict.review}
+        />
+      </div>
 
       <blockquote className="mt-16 border-l-2 border-(--color-sand-dark) pl-5 text-sm italic leading-relaxed text-(--color-muted)">
         {dict.product.trust_quote}

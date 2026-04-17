@@ -1,18 +1,19 @@
 /**
  * Homepage — React Server Component.
  *
- * WHY RSC: All product data is fetched here, server-side, before any HTML
- * is sent to the browser. Zero client-side waterfalls. The ProductGrid
- * receives pre-fetched data as props — no useEffect, no loading spinners.
+ * WHY RSC: All data is fetched server-side before any HTML is sent.
+ * Zero client-side waterfalls.
  *
- * DATA STRATEGY:
- *  - Featured products: top 8 by rating, ISR 24h (PRODUCT_LIST TTL)
- *  - No N+1: single getProducts() call returns all 8 cards with review summaries
+ * SECTION STRATEGY:
+ *  - Admin configures sections in Marketing → Home Page Sections in the admin panel.
+ *  - API returns enabled sections with embedded listing cards in a single call.
+ *  - When no sections are configured the section area is simply empty.
  */
 
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { getListings, getSiteSettings } from '@/lib/api';
+import { getHomeSections, getSiteSettings } from '@/lib/api';
+import { getDictionary } from '@/lib/i18n';
 import { HeroSection } from '@/components/features/HeroSection';
 import { AsSeenOnBar } from '@/components/features/AsSeenOnBar';
 import { ListingGrid } from '@/components/features/ListingGrid';
@@ -24,79 +25,79 @@ export const revalidate = 86400;
 export default async function HomePage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
 
-  // Fetch settings and products in parallel — no sequential waterfall.
-  // Both calls are ISR-cached (24h) so they add zero DB load on repeat visits.
-  const [settingsResult, listingsResult] = await Promise.allSettled([
+  // Fetch settings, sections + dictionary in parallel — zero sequential waterfalls.
+  const [settings, sections, dict] = await Promise.all([
     getSiteSettings(),
-    getListings({ perPage: 8, platform: 'direct' }),
+    getHomeSections().catch(() => []),
+    getDictionary(lang),
   ]);
 
-  const settings = settingsResult.status === 'fulfilled' ? settingsResult.value : null;
-  const featuredListings = listingsResult.status === 'fulfilled' ? listingsResult.value.data : [];
-
-  // All hero slides + mode from settings; HeroSection has its own fallback
-  const heroSlides = settings?.hero?.hero_slides ?? [];
-  const heroMode   = settings?.hero?.hero_mode ?? 'single';
-
-  // Preload URL — use the first CMS image if available, otherwise the fallback
+  // Hero config
+  const heroSlides     = settings?.hero?.hero_slides ?? [];
+  const heroMode       = settings?.hero?.hero_mode ?? 'single';
   const heroPreloadUrl = heroSlides[0]?.image_url
     ?? 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1600&q=80';
 
   return (
     <main>
-      {/* Explicit fetchpriority=high preload for the hero image.
-          Next.js cannot emit this automatically for external-URL fill images,
-          so we add it here in the RSC to guarantee the browser fetches it
-          during HTML parsing — before any JS executes. */}
-      <link
-        rel="preload"
-        as="image"
-        href={heroPreloadUrl}
-        fetchPriority="high"
-      />
+      {/* Explicit fetchpriority=high preload for the hero LCP image */}
+      <link rel="preload" as="image" href={heroPreloadUrl} fetchPriority="high" />
 
-      {/* 1. Hero — full-bleed, LCP image. slides/heroMode drive all content from CMS. */}
+      {/* 1. Hero */}
       <HeroSection slides={heroSlides} heroMode={heroMode} lang={lang} />
 
-      {/* 2. Social proof bar — only shows platforms configured in Settings → Social Links */}
+      {/* 2. Social proof bar */}
       <AsSeenOnBar social={settings?.social} />
 
-      {/* 3. Featured Products */}
-      <section className="bg-(--color-background) py-16 md:py-24" aria-labelledby="featured-heading">
-        <div className="mx-auto max-w-[1280px] px-4 md:px-6 lg:px-8">
-          <div className="mb-8 flex items-end justify-between">
-            <div>
-              <span className="brand-label">Featured Products</span>
-              <h2 id="featured-heading" className="mt-2">
-                Handpicked for You
-              </h2>
+      {/* 3. Dynamic product sections */}
+      {sections.map((section, i) => {
+        if (!section.listings.length) return null;
+
+        const title    = lang === 'vi' ? (section.title_vi    || section.title_en) : section.title_en;
+        const subtitle = lang === 'vi' ? (section.subtitle_vi || section.subtitle_en) : section.subtitle_en;
+
+        return (
+          <section
+            key={section.id}
+            className="bg-(--color-background) py-10 md:py-14"
+            aria-labelledby={`section-heading-${section.id}`}
+          >
+            <div className="mx-auto max-w-[1280px] px-4 md:px-6 lg:px-8">
+              <div className="mb-8 flex items-end justify-between">
+                <div>
+                  <span className="brand-label">{title}</span>
+                  {subtitle && (
+                    <h2 id={`section-heading-${section.id}`} className="mt-2">
+                      {subtitle}
+                    </h2>
+                  )}
+                </div>
+                {section.show_view_all && (
+                  <Link
+                    href={section.view_all_url || '/shop'}
+                    className="hidden text-sm font-500 text-(--color-sage) transition-colors hover:text-(--color-sage-dark) md:block"
+                  >
+                    {dict.home.view_all}
+                  </Link>
+                )}
+              </div>
+
+              <Suspense fallback={<ProductGridSkeleton />}>
+                <ListingGrid listings={section.listings} priorityCount={i === 0 ? 4 : 0} />
+              </Suspense>
+
+              <div className="mt-8 text-center md:hidden">
+                <Link
+                  href="/shop"
+                  className="inline-block rounded-md border border-(--color-cta) px-6 py-2.5 font-heading text-sm font-600 text-(--color-cta) transition-colors hover:bg-(--color-cta) hover:text-white"
+                >
+                  {dict.home.load_more}
+                </Link>
+              </div>
             </div>
-            <Link
-              href="/shop"
-              className="hidden text-sm font-500 text-(--color-sage) transition-colors hover:text-(--color-sage-dark) md:block"
-            >
-              View all →
-            </Link>
-          </div>
-
-          <Suspense fallback={<ProductGridSkeleton />}>
-            <ListingGrid
-              listings={featuredListings}
-              priorityCount={4}
-            />
-          </Suspense>
-
-          {/* Mobile "Load More" link — desktop shows "View all" in header */}
-          <div className="mt-8 text-center md:hidden">
-            <Link
-              href="/shop"
-              className="inline-block rounded-md border border-(--color-cta) px-6 py-2.5 font-heading text-sm font-600 text-(--color-cta) transition-colors hover:bg-(--color-cta) hover:text-white"
-            >
-              Load More
-            </Link>
-          </div>
-        </div>
-      </section>
+          </section>
+        );
+      })}
 
       {/* 4. Our Story editorial section */}
       <OurStorySection content={settings?.pages?.page_home} lang={lang} />
@@ -114,4 +115,3 @@ function ProductGridSkeleton() {
     </div>
   );
 }
-
